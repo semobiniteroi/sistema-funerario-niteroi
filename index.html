@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Funerário - Niterói</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="header-prefeitura">
+        <div class="logo-area">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Bras%C3%A3o_de_Niter%C3%B3i.svg/1200px-Bras%C3%A3o_de_Niter%C3%B3i.svg.png" alt="Brasão Niterói">
+        </div>
+        <div class="titulo-area">
+            <h2>Prefeitura Municipal de Niterói</h2>
+            <h3>Subsecretaria de Infraestrutura</h3>
+            <h3>Coordenadoria Municipal de Serviços Funerários</h3>
+        </div>
+        <div class="info-area">
+            <div class="controles-topo">
+                <div class="input-topo-group">
+                    <label>Local:</label>
+                    <select id="filtro-local">
+                        <option value="CEMITÉRIO DO MARUÍ">MARUÍ</option>
+                        <option value="CEMITÉRIO DE SÃO FRANCISCO">SÃO FRANCISCO</option>
+                        <option value="CEMITÉRIO DE ITAIPU">ITAIPU</option>
+                    </select>
+                </div>
+                
+                <div class="input-topo-group">
+                    <label>Data:</label>
+                    <input type="date" id="filtro-data">
+                </div>
+            </div>
+            <span class="badge-covid">ATENDIMENTOS - COVID-19</span>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="controles">
+            <button onclick="abrirModal()" class="btn-novo">
+                <span class="icon">+</span> Novo Atendimento
+            </button>
+            <button onclick="window.print()" class="btn-imprimir">
+                <span class="icon">🖨️</span> Imprimir Relatório
+            </button>
+        </div>
+
+        <div class="tabela-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="min-width: 150px;">Responsável / Urna</th>
+                        <th style="min-width: 60px;">Hora</th>
+                        <th style="min-width: 200px;">Nome / Causa Morte</th>
+                        <th style="min-width: 40px;">Gav</th>
+                        <th style="min-width: 40px;">Car</th>
+                        <th style="min-width: 60px;">Nº Sepul</th>
+                        <th style="min-width: 40px;">QD</th>
+                        <th style="min-width: 100px;">Hospital</th>
+                        <th style="min-width: 80px;">Cap</th>
+                        <th style="min-width: 120px;">Data/Hora Falec.</th>
+                        <th style="min-width: 80px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-corpo">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Registro de Atendimento</h3>
+                <span class="close" onclick="fecharModal()">&times;</span>
+            </div>
+            
+            <form id="form-atendimento">
+                <input type="hidden" id="docId"> 
+                
+                <div class="form-grid">
+                    
+                    <div class="input-group span-1">
+                        <label>Hora Sepultamento</label>
+                        <input type="time" id="hora" required>
+                    </div>
+                    <div class="input-group span-3">
+                        <label>Nome do Responsável</label>
+                        <input type="text" id="resp_nome" placeholder="Nome do familiar ou empresa">
+                    </div>
+
+                    <div class="input-group span-4">
+                        <label>Dados da Urna / Obs</label>
+                        <textarea id="urna_info" rows="2" placeholder="Ex: Urna Comp: 2.00..."></textarea>
+                    </div>
+
+                    <div class="input-group span-4">
+                        <label>Nome do Falecido</label>
+                        <input type="text" id="nome" required class="input-destaque">
+                    </div>
+
+                    <div class="input-group span-4">
+                        <label class="label-vermelho">Causa da Morte</label>
+                        <input type="text" id="causa" class="input-vermelho" placeholder="Selecione ou digite a causa..." list="lista-causas">
+                        <datalist id="lista-causas">
+                            <option value="OUTRA CAUSA (DIGITE O NOME)">
+                            <option value="CHOQUE SÉPTICO">
+                            <option value="INSUFICIÊNCIA RESPIRATÓRIA AGUDA">
+                            <option value="INSUFICIÊNCIA RENAL AGUDA">
+                            <option value="NEOPLASIA MALIGNA DE MAMA">
+                            <option value="NEOPLASIA MALIGNA DE PRÓSTATA">
+                            <option value="NEOPLASIA MALIGNA DE PULMÃO">
+                            <option value="NEOPLASIA MALIGNA DE CÓLON">
+                            <option value="INFARTO AGUDO DO MIOCÁRDIO (IAM)">
+                            <option value="ACIDENTE VASCULAR CEREBRAL (AVC)">
+                            <option value="PNEUMONIA NÃO ESPECIFICADA">
+                            <option value="SEPSE">
+                            <option value="FALÊNCIA MÚLTIPLA DE ÓRGÃOS">
+                            <option value="SENILIDADE">
+                            <option value="COVID-19">
+                            <option value="TRAUMATISMO CRANIANO">
+                            <option value="AFOGAMENTO">
+                            <option value="HIPERTENSÃO ARTERIAL">
+                            <option value="IAM/BAV DE PRIMEIRO GRAU">
+                            <option value="MORTE SEM ASSISTÊNCIA">
+                        </datalist>
+                    </div>
+
+                    <div class="input-group span-2">
+                        <label>Tipo Sepultura</label>
+                        <select id="tipo_sepultura" required>
+                            <option value="">Selecione...</option>
+                            <option value="GAVETA">Gaveta</option>
+                            <option value="CARNEIRO">Carneiro</option>
+                            <option value="COVA RASA">Cova Rasa</option>
+                        </select>
+                    </div>
+                    <div class="input-group span-1">
+                        <label>Nº Sepul</label>
+                        <input type="text" id="sepul">
+                    </div>
+                    <div class="input-group span-1">
+                        <label>QD</label>
+                        <input type="text" id="qd">
+                    </div>
+
+                    <div class="input-group span-2">
+                        <label>Hospital</label>
+                        <input type="text" id="hospital" list="lista-hospitais" placeholder="Selecione ou digite...">
+                        <datalist id="lista-hospitais">
+                            <option value="OUTRO HOSPITAL (DIGITE O NOME)">
+                            <option value="HMCT (CARLOS TORTELLY)">
+                            <option value="HEAL (AZEVEDO LIMA)">
+                            <option value="HUAP (ANTÔNIO PEDRO)">
+                            <option value="HOSP. ORÊNCIO DE FREITAS">
+                            <option value="HOSP. PSIQUIÁTRICO JURUJUBA">
+                            <option value="HOSP. OCEÂNICO">
+                            <option value="HOSP. GETULINHO">
+                            <option value="UPA MÁRIO MONTEIRO">
+                            <option value="UPA FONSECA">
+                            <option value="CHN (COMPLEXO HOSPITALAR)">
+                            <option value="HCN (CLÍNICAS DE NITERÓI)">
+                            <option value="HOSP. SANTA MARTHA">
+                            <option value="HOSP. SÃO LUCAS">
+                            <option value="HOSP. ICARAÍ">
+                            <option value="HEAT (ALBERTO TORRES)">
+                            <option value="HOSP. LUIZ PALMIER">
+                            <option value="PRONTO SOCORRO CENTRAL (SG)">
+                            <option value="HOSP. SÃO GONÇALO">
+                            <option value="HOSP. FRANCISCANO (NS. GRAÇAS)">
+                            <option value="DOMICÍLIO">
+                            <option value="IML - NITERÓI">
+                            <option value="IML - SÃO GONÇALO">
+                        </datalist>
+                    </div>
+                    
+                    <div class="input-group span-2">
+                        <label>Capela</label>
+                        <input type="text" id="cap" list="lista-capelas" placeholder="Selecione ou digite...">
+                        <datalist id="lista-capelas">
+                            <option value="CAPELA A">
+                            <option value="CAPELA B">
+                            <option value="CAPELA C">
+                            <option value="CAPELA D">
+                            <option value="CAPELA E">
+                            <option value="CAPELA F">
+                            <option value="CAPELA G">
+                            <option value="CAPELA H">
+                        </datalist>
+                    </div>
+
+                    <div class="input-group span-2">
+                        <label class="label-vermelho">Data Falecimento</label>
+                        <input type="date" id="data_obito" class="input-vermelho">
+                    </div>
+                    <div class="input-group span-2">
+                        <label class="label-vermelho">Hora Falecimento</label>
+                        <input type="time" id="hora_obito" class="input-vermelho">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                    <button type="submit" class="btn-salvar">Salvar Dados</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
