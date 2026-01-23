@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle Funerário - Niterói</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,11 +13,13 @@
         <div class="logo-area">
             <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" alt="Prefeitura de Niterói" id="logo-principal">
             <div class="titulo-area">
-                <h3 style="margin-left: 10px; border-left: 1px solid #ccc; padding-left: 10px;">Serviços Funerários</h3>
+                <h3 style="margin-left: 10px; border-left: 2px solid #999; padding-left: 15px;">Serviços Funerários</h3>
             </div>
         </div>
         
         <div class="info-area">
+            <button onclick="alternarDesign()" class="btn-tema" title="Mudar Visual">🎨 Alternar Tema</button>
+
             <div class="controles-topo">
                 <div class="input-topo-group">
                     <label>Local</label>
@@ -39,7 +41,8 @@
 
     <div class="main-content">
         <div class="controles">
-            <button onclick="window.print()" class="btn-imprimir">Imprimir</button>
+            <button onclick="imprimirRelatorio('portrait')" class="btn-imprimir">🖨️ Retrato</button>
+            <button onclick="imprimirRelatorio('landscape')" class="btn-imprimir">🖨️ Paisagem</button>
             <button onclick="abrirModal()" class="btn-novo">+ Novo Atendimento</button>
         </div>
 
@@ -57,7 +60,7 @@
                         <th>Hospital</th>
                         <th>Cap</th>
                         <th style="min-width: 130px;">Falecimento / Tempo</th>
-                        <th style="text-align: right; min-width: 80px;">Ações</th>
+                        <th style="text-align: right; min-width: 90px;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabela-corpo">
@@ -79,8 +82,7 @@
                 <div class="form-grid">
                     <div class="input-group span-1">
                         <label>Hora Sepultamento</label>
-                        <select id="hora" required>
-                            </select>
+                        <select id="hora" required></select>
                     </div>
                     <div class="input-group span-2">
                         <label>Nome do Responsável</label>
@@ -88,19 +90,11 @@
                     </div>
                     <div class="input-group span-1">
                         <label>Grau Parentesco</label>
-                        <input type="text" id="parentesco" list="lista-parentesco" placeholder="Selecione ou digite...">
+                        <input type="text" id="parentesco" list="lista-parentesco" placeholder="Selecione...">
                         <datalist id="lista-parentesco">
-                            <option value="CÔNJUGE">
-                            <option value="FILHO(A)">
-                            <option value="PAI/MÃE">
-                            <option value="IRMÃO(Ã)">
-                            <option value="NETO(A)">
-                            <option value="SOBRINHO(A)">
-                            <option value="GENRO/NORA">
-                            <option value="CUNHADO(A)">
-                            <option value="TIO(A)">
-                            <option value="PRIMO(A)">
-                            <option value="OUTRO">
+                            <option value="CÔNJUGE"><option value="FILHO(A)"><option value="PAI/MÃE"><option value="IRMÃO(Ã)">
+                            <option value="NETO(A)"><option value="SOBRINHO(A)"><option value="GENRO/NORA"><option value="CUNHADO(A)">
+                            <option value="TIO(A)"><option value="PRIMO(A)"><option value="OUTRO">
                         </datalist>
                     </div>
                     
@@ -108,17 +102,9 @@
                         <label>Funerária</label>
                         <input type="text" id="funeraria" list="lista-funerarias" placeholder="Selecione..." required>
                         <datalist id="lista-funerarias">
-                            <option value="RIO PAX NITERÓI">
-                            <option value="FUNERÁRIA SANTA ROSA">
-                            <option value="FUNERÁRIA NITERÓI">
-                            <option value="FUNERÁRIA SÃO FRANCISCO">
-                            <option value="FUNERÁRIA MENINO DEUS">
-                            <option value="SAF (ASSISTÊNCIA FAMILIAR)">
-                            <option value="PLASIR">
-                            <option value="SOCIAL">
-                            <option value="DOM BOSCO">
-                            <option value="MAVERICK">
-                            <option value="PRÓPRIA FAMÍLIA">
+                            <option value="RIO PAX NITERÓI"><option value="FUNERÁRIA SANTA ROSA"><option value="FUNERÁRIA NITERÓI">
+                            <option value="FUNERÁRIA SÃO FRANCISCO"><option value="FUNERÁRIA MENINO DEUS"><option value="SAF (ASSISTÊNCIA FAMILIAR)">
+                            <option value="PLASIR"><option value="SOCIAL"><option value="DOM BOSCO"><option value="MAVERICK"><option value="PRÓPRIA FAMÍLIA">
                         </datalist>
                     </div>
                     <div class="input-group span-1">
@@ -133,10 +119,7 @@
                         <label>Requisito Isenção</label>
                         <input type="text" id="requisito" list="lista-requisitos" placeholder="Motivo...">
                         <datalist id="lista-requisitos">
-                            <option value="CADUNICO">
-                            <option value="MOEDA ARARIBOIA">
-                            <option value="FUNCIONÁRIO PMN">
-                            <option value="OUTRO (DIGITE)">
+                            <option value="CADUNICO"><option value="MOEDA ARARIBOIA"><option value="FUNCIONÁRIO PMN"><option value="OUTRO (DIGITE)">
                         </datalist>
                     </div>
                     
@@ -163,12 +146,7 @@
                         <label>Tipo da Urna (Material/Modelo)</label>
                         <input type="text" id="tipo_urna_detalhe" list="lista-tipos-urna" placeholder="Ex: Madeira, Sextavada...">
                         <datalist id="lista-tipos-urna">
-                            <option value="MADEIRA PADRÃO">
-                            <option value="SEXTAVADA">
-                            <option value="ZINCO">
-                            <option value="BIO (ECOLÓGICA)">
-                            <option value="LUXO">
-                            <option value="IML / RABECÃO">
+                            <option value="MADEIRA PADRÃO"><option value="SEXTAVADA"><option value="ZINCO"><option value="BIO (ECOLÓGICA)"><option value="LUXO"><option value="IML / RABECÃO">
                         </datalist>
                     </div>
 
@@ -188,16 +166,16 @@
                     </div>
                     
                     <div class="input-group span-4">
-                        <label>Causa da Morte</label>
+                        <label>Causa da Morte (Selecione para adicionar)</label>
                         <div style="display: flex; gap: 10px;">
                             <select id="seletor_causas" style="width: 40%; border: 1px solid #3699ff;">
                                 <option value="">+ Adicionar Causa...</option>
                                 <option value="CHOQUE SÉPTICO">CHOQUE SÉPTICO</option>
                                 <option value="INSUFICIÊNCIA RESPIRATÓRIA">INSUFICIÊNCIA RESPIRATÓRIA</option>
-                                <option value="INSUFICIÊNCIA RENAL">INSUFICIÊNCIA RENAL</option>
+                                <option value="INSUFICIÊNCIA RENAL AGUDA">INSUFICIÊNCIA RENAL AGUDA</option>
                                 <option value="NEOPLASIA MALIGNA">NEOPLASIA MALIGNA</option>
                                 <option value="INFARTO AGUDO DO MIOCÁRDIO">INFARTO (IAM)</option>
-                                <option value="AVC">AVC</option>
+                                <option value="AVC">AVC (ACIDENTE VASCULAR)</option>
                                 <option value="PNEUMONIA">PNEUMONIA</option>
                                 <option value="SEPSE">SEPSE</option>
                                 <option value="FALÊNCIA MÚLTIPLA DE ÓRGÃOS">FALÊNCIA MÚLTIPLA</option>
@@ -205,8 +183,16 @@
                                 <option value="COVID-19">COVID-19</option>
                                 <option value="TRAUMATISMO CRANIANO">TRAUMATISMO CRANIANO</option>
                                 <option value="AFOGAMENTO">AFOGAMENTO</option>
-                                <option value="HIPERTENSÃO">HIPERTENSÃO</option>
-                                <option value="INDETERMINADA">INDETERMINADA</option>
+                                <option value="HIPERTENSÃO ARTERIAL">HIPERTENSÃO ARTERIAL</option>
+                                <option value="DIABETES MELLITUS">DIABETES MELLITUS</option>
+                                <option value="PARADA CARDIORRESPIRATÓRIA">PARADA CARDIORRESPIRATÓRIA</option>
+                                <option value="HEMORRAGIA DIGESTIVA">HEMORRAGIA DIGESTIVA</option>
+                                <option value="CIRROSE HEPÁTICA">CIRROSE HEPÁTICA</option>
+                                <option value="DOENÇA DE ALZHEIMER">DOENÇA DE ALZHEIMER</option>
+                                <option value="ACIDENTE DE TRÂNSITO">ACIDENTE DE TRÂNSITO</option>
+                                <option value="HOMICÍDIO (PAF)">HOMICÍDIO (PAF)</option>
+                                <option value="SUICÍDIO">SUICÍDIO</option>
+                                <option value="CAUSA INDETERMINADA">CAUSA INDETERMINADA</option>
                             </select>
                             <input type="text" id="causa" placeholder="Causas aparecerão aqui..." required style="width: 60%;">
                         </div>
@@ -270,41 +256,12 @@
                         <div style="flex: 1;">
                             <label>UF</label>
                             <select id="estado_obito">
-                                <option value="">UF</option>
-                                <option value="RJ">RJ</option>
-                                <option value="SP">SP</option>
-                                <option value="MG">MG</option>
-                                <option value="ES">ES</option>
-                                <option value="BA">BA</option>
-                                <option value="AC">AC</option>
-                                <option value="AL">AL</option>
-                                <option value="AP">AP</option>
-                                <option value="AM">AM</option>
-                                <option value="CE">CE</option>
-                                <option value="DF">DF</option>
-                                <option value="GO">GO</option>
-                                <option value="MA">MA</option>
-                                <option value="MT">MT</option>
-                                <option value="MS">MS</option>
-                                <option value="PA">PA</option>
-                                <option value="PB">PB</option>
-                                <option value="PR">PR</option>
-                                <option value="PE">PE</option>
-                                <option value="PI">PI</option>
-                                <option value="RN">RN</option>
-                                <option value="RS">RS</option>
-                                <option value="RO">RO</option>
-                                <option value="RR">RR</option>
-                                <option value="SC">SC</option>
-                                <option value="SE">SE</option>
-                                <option value="TO">TO</option>
+                                <option value="">UF</option><option value="RJ">RJ</option><option value="SP">SP</option><option value="MG">MG</option><option value="ES">ES</option>
                             </select>
                         </div>
                         <div style="flex: 2;">
                             <label>Cidade</label>
-                            <select id="cidade_obito" disabled>
-                                <option value="">Selecione a UF primeiro</option>
-                            </select>
+                            <select id="cidade_obito" disabled><option value="">Selecione a UF</option></select>
                         </div>
                     </div>
 
@@ -312,15 +269,8 @@
                         <label>Capela</label>
                         <input type="text" id="cap" list="lista-capelas" placeholder="Selecione..." required>
                         <datalist id="lista-capelas">
-                            <option value="SEM VELÓRIO / DIRETO">
-                            <option value="CAPELA A">
-                            <option value="CAPELA B">
-                            <option value="CAPELA C">
-                            <option value="CAPELA D">
-                            <option value="CAPELA E">
-                            <option value="CAPELA F">
-                            <option value="CAPELA G">
-                            <option value="CAPELA H">
+                            <option value="SEM VELÓRIO / DIRETO"><option value="CAPELA A"><option value="CAPELA B"><option value="CAPELA C">
+                            <option value="CAPELA D"><option value="CAPELA E"><option value="CAPELA F"><option value="CAPELA G"><option value="CAPELA H">
                         </datalist>
                     </div>
 
@@ -333,7 +283,15 @@
                         <input type="time" id="hora_obito" required>
                     </div>
 
-                    <div class="input-group span-4">
+                    <div class="input-group span-1">
+                        <label>Sepult. < 24h?</label>
+                        <select id="do_24h">
+                            <option value="NAO">NÃO</option>
+                            <option value="SIM">SIM (Liberado)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group span-3">
                         <label>Observações</label>
                         <textarea id="urna_info" rows="2" placeholder="Observações gerais..." required></textarea>
                     </div>
@@ -348,47 +306,95 @@
     </div>
 
     <div id="modal-visualizar" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 700px; background: #fff;">
             <div class="modal-header">
-                <h3>Detalhes do Atendimento</h3>
+                <h3>Ficha de Atendimento</h3>
                 <span class="close" onclick="fecharModalVisualizar()">&times;</span>
             </div>
             
-            <div style="padding: 30px;">
-                <div class="form-grid">
-                    <div class="input-group span-1"><label>Hora</label><div class="view-field" id="view_hora"></div></div>
-                    <div class="input-group span-3"><label>Responsável / Parentesco</label><div class="view-field" id="view_resp_completo"></div></div>
+            <div class="ficha-visualizacao">
+                <div class="ficha-header">
+                    <h2>Prefeitura Municipal de Niterói</h2>
+                    <p>Coordenadoria Municipal de Serviços Funerários</p>
+                </div>
 
-                    <div class="input-group span-3"><label>Funerária</label><div class="view-field" id="view_funeraria"></div></div>
-                    <div class="input-group span-1"><label>Isenção/Req.</label><div class="view-field" id="view_isencao_completa"></div></div>
+                <div class="ficha-linha">
+                    <span class="ficha-label">Horário:</span>
+                    <span class="ficha-valor" id="view_hora"></span>
+                </div>
+                
+                <div class="ficha-linha">
+                    <span class="ficha-label">Falecido(a):</span>
+                    <span class="ficha-valor" id="view_nome"></span>
+                </div>
 
-                    <div class="input-group span-2"><label>Tamanho Urna</label><div class="view-field" id="view_combo_urna"></div></div>
-                    <div class="input-group span-2"><label>Tipo/Material</label><div class="view-field" id="view_tipo_urna_detalhe"></div></div>
+                <div class="ficha-linha">
+                    <span class="ficha-label">Causa da Morte:</span>
+                    <span class="ficha-valor" id="view_causa"></span>
+                </div>
 
-                    <div class="input-group span-4">
-                        <label>Serviços Adicionais</label>
-                        <div class="view-field" id="view_servicos_adicionais"></div>
-                    </div>
+                <div class="ficha-linha">
+                    <span class="ficha-label">Data/Hora Óbito:</span>
+                    <span class="ficha-valor">
+                        <span id="view_data_obito"></span> às <span id="view_hora_obito"></span>
+                        <span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span>
+                    </span>
+                </div>
 
-                    <div class="input-group span-4"><label>Falecido (Tipo)</label><div class="view-field" id="view_nome" style="font-weight: 700;"></div></div>
-                    <div class="input-group span-4"><label>Causa Morte</label><div class="view-field" id="view_causa"></div></div>
+                <div class="ficha-linha">
+                    <span class="ficha-label">Responsável:</span>
+                    <span class="ficha-valor" id="view_resp_completo"></span>
+                </div>
 
-                    <div class="input-group span-2"><label>Tipo</label><div class="view-field" id="view_tipo_sepultura"></div></div>
-                    <div class="input-group span-1"><label>Nº Sepul</label><div class="view-field" id="view_sepul"></div></div>
-                    <div class="input-group span-1"><label>QD</label><div class="view-field" id="view_qd"></div></div>
+                <div class="ficha-linha">
+                    <span class="ficha-label">Funerária:</span>
+                    <span class="ficha-valor" id="view_funeraria"></span>
+                </div>
 
-                    <div class="input-group span-2"><label>Hospital / Local</label><div class="view-field" id="view_hospital_completo"></div></div>
-                    <div class="input-group span-2"><label>Capela</label><div class="view-field" id="view_cap"></div></div>
+                <div class="ficha-linha">
+                    <span class="ficha-label">Acolhimento:</span>
+                    <span class="ficha-valor" id="view_isencao_completa"></span>
+                </div>
 
-                    <div class="input-group span-2"><label>Data Falec.</label><div class="view-field" id="view_data_obito"></div></div>
-                    <div class="input-group span-2"><label>Hora Falec.</label><div class="view-field" id="view_hora_obito"></div></div>
+                <div class="ficha-linha">
+                    <span class="ficha-label">Dados da Urna:</span>
+                    <span class="ficha-valor">
+                        <span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span>
+                    </span>
+                </div>
 
-                    <div class="input-group span-4"><label>Observações / Motivo Troca</label><div class="view-field" id="view_urna_info" style="min-height: 60px;"></div></div>
+                <div class="ficha-linha">
+                    <span class="ficha-label">Serviços Extras:</span>
+                    <span class="ficha-valor" id="view_servicos_adicionais"></span>
+                </div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Local Sepul.:</span>
+                    <span class="ficha-valor">
+                        Tipo: <span id="view_tipo_sepultura"></span> | 
+                        Nº: <span id="view_sepul"></span> | 
+                        QD: <span id="view_qd"></span>
+                    </span>
+                </div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Local Óbito:</span>
+                    <span class="ficha-valor" id="view_hospital_completo"></span>
+                </div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Velório:</span>
+                    <span class="ficha-valor" id="view_cap"></span>
+                </div>
+
+                <div class="ficha-linha" style="border-bottom: none;">
+                    <span class="ficha-label">Observações:</span>
+                    <span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span>
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button>
+                <button type="button" class="btn-cancelar" style="width: 100%; justify-content: center;" onclick="fecharModalVisualizar()">Fechar</button>
             </div>
         </div>
     </div>

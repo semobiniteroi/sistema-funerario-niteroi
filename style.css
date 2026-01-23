@@ -24,9 +24,10 @@ body {
     margin: 0;
     padding-bottom: 50px;
     font-size: 13px;
+    transition: background-color 0.3s;
 }
 
-/* Utilitário para campos ocultos */
+/* Utilitário */
 .hidden { display: none !important; }
 
 /* --- HEADER --- */
@@ -42,12 +43,7 @@ body {
 }
 
 .logo-area { display: flex; align-items: center; gap: 15px; }
-.logo-area img { 
-    height: auto; 
-    max-height: 70px; 
-    max-width: 250px;
-    object-fit: contain;
-}
+.logo-area img { height: auto; max-height: 70px; max-width: 250px; object-fit: contain; }
 
 .titulo-area { text-align: left; }
 .titulo-area h3 { margin: 2px 0; font-size: 12px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; }
@@ -63,6 +59,12 @@ body {
 .divisor-vertical { width: 1px; height: 20px; background: #d1d3e0; }
 .badge-covid { background-color: var(--danger-light); color: var(--danger); padding: 8px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; }
 
+/* Botão de Tema */
+.btn-tema {
+    background-color: #333; color: white; border: none; border-radius: 20px; padding: 5px 15px; font-size: 11px; cursor: pointer; transition: background 0.3s;
+}
+.btn-tema:hover { background-color: #555; }
+
 /* --- ÁREA PRINCIPAL --- */
 .main-content { max-width: 95%; margin: 0 auto; }
 .controles { display: flex; justify-content: flex-end; gap: 15px; margin-bottom: 20px; }
@@ -71,7 +73,7 @@ button { border: none; border-radius: 6px; padding: 10px 20px; font-size: 13px; 
 .btn-novo { background-color: var(--primary-color); color: white; box-shadow: 0 4px 12px rgba(54, 153, 255, 0.3); }
 .btn-imprimir { background-color: var(--bg-card); color: var(--text-dark); border: 1px solid #ebedf3; }
 
-/* --- TABELA --- */
+/* --- TABELA (Moderno) --- */
 .tabela-container {
     background: var(--bg-card); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 0; overflow-x: auto;
 }
@@ -101,7 +103,6 @@ tbody tr:hover { background-color: #f4f6f9; }
 .btn-editar-circle { background-color: var(--primary-light); color: var(--primary-color); }
 .btn-excluir-circle { background-color: var(--danger-light); color: var(--danger); }
 
-/* Classes Específicas de Dados */
 .texto-vermelho { color: var(--excel-red) !important; font-weight: 700; }
 
 /* Checkboxes */
@@ -111,7 +112,7 @@ tbody tr:hover { background-color: #f4f6f9; }
 .checkbox-group label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500; color: var(--text-dark); }
 .checkbox-group input[type="checkbox"] { width: 16px; height: 16px; margin: 0; cursor: pointer; }
 
-/* Modais */
+/* Modais e Ficha */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.3); backdrop-filter: blur(2px); overflow-y: auto; }
 .modal-content { background-color: #fff; margin: 3% auto; width: 750px; max-width: 95%; border-radius: var(--border-radius); box-shadow: 0 10px 30px rgba(0,0,0,0.1); animation: slideUp 0.3s ease-out; }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -128,6 +129,14 @@ input:not([type="checkbox"]), textarea, select { padding: 10px 15px; border: 1px
 .btn-cancelar { background-color: #e4e6ef; }
 .btn-salvar { background-color: var(--primary-color); color: white; }
 
+.ficha-visualizacao { padding: 30px; background-color: #fff; color: #000; }
+.ficha-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
+.ficha-header h2 { font-size: 18px; margin: 0; font-weight: 900; text-transform: uppercase; }
+.ficha-header p { margin: 5px 0 0; font-size: 12px; font-weight: 600; color: #444; }
+.ficha-linha { display: flex; border-bottom: 1px solid #ddd; padding: 8px 0; align-items: baseline; }
+.ficha-label { font-weight: 800; font-size: 12px; color: #555; width: 140px; flex-shrink: 0; text-transform: uppercase; }
+.ficha-valor { font-weight: 700; font-size: 14px; color: #000; flex-grow: 1; white-space: pre-wrap; }
+
 /* Responsivo */
 @media (max-width: 768px) {
     .header-prefeitura { flex-direction: column; align-items: center; gap: 15px; text-align: center; }
@@ -136,14 +145,71 @@ input:not([type="checkbox"]), textarea, select { padding: 10px 15px; border: 1px
     .controles { justify-content: center; }
 }
 
+/* ========================================= */
+/* MODO DESIGN CLÁSSICO (SOBREPOSIÇÃO) */
+/* ========================================= */
+body.design-classico {
+    background-color: #fff;
+    font-family: 'Roboto', Arial, sans-serif;
+    color: #000;
+}
+
+body.design-classico .header-prefeitura {
+    background-color: #fff;
+    border: 2px solid #000;
+    box-shadow: none;
+    margin-bottom: 15px;
+    padding: 10px;
+}
+
+body.design-classico .tabela-container {
+    background: #fff;
+    border-radius: 0;
+    box-shadow: none;
+    border: 2px solid #000;
+    padding: 0;
+}
+
+body.design-classico table { border-collapse: collapse; }
+
+body.design-classico th {
+    background-color: #1f3a58;
+    color: white;
+    border: 1px solid #000;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 5px;
+    font-size: 11px;
+}
+
+body.design-classico td {
+    border: 1px solid #000;
+    color: #000;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px;
+    vertical-align: top;
+}
+
+body.design-classico tbody tr:hover { background-color: #eee; }
+
+body.design-classico .btn-icon {
+    border-radius: 4px;
+    border: 1px solid #000;
+    width: 25px;
+    height: 25px;
+}
+
+/* ========================================= */
+
 /* MODO IMPRESSÃO */
 @media print {
-    @page { size: portrait; margin: 5mm; }
+    @page { margin: 5mm; }
     body { background-color: white; font-size: 8px; margin: 0; padding: 0; }
     .main-content { max-width: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
     .header-prefeitura { box-shadow: none; border: 2px solid #000; padding: 5px; margin-bottom: 5px; flex-direction: row !important; justify-content: space-between; }
     .logo-area img { max-height: 40px !important; }
-    .controles, .btn-icon, .t-acoes, .badge-covid { display: none !important; }
+    .controles, .btn-icon, .t-acoes, .badge-covid, .btn-tema { display: none !important; }
     th:last-child, td:last-child { display: none !important; }
     .tabela-container { box-shadow: none; border: 2px solid #000; overflow: visible !important; display: block !important; padding: 0; border-radius: 0; }
     table { width: 100% !important; border-collapse: collapse !important; }
