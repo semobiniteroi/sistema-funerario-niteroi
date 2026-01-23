@@ -319,9 +319,21 @@
                     <p>Coordenadoria Municipal de Serviços Funerários</p>
                 </div>
 
-                <div class="ficha-linha"><span class="ficha-label">Horário:</span><span class="ficha-valor" id="view_hora"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Falecido(a):</span><span class="ficha-valor" id="view_nome"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Causa da Morte:</span><span class="ficha-valor" id="view_causa"></span></div>
+                <div class="ficha-linha">
+                    <span class="ficha-label">Horário:</span>
+                    <span class="ficha-valor" id="view_hora"></span>
+                </div>
+                
+                <div class="ficha-linha">
+                    <span class="ficha-label">Falecido(a):</span>
+                    <span class="ficha-valor" id="view_nome"></span>
+                </div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Causa da Morte:</span>
+                    <span class="ficha-valor" id="view_causa"></span>
+                </div>
+
                 <div class="ficha-linha">
                     <span class="ficha-label">Data/Hora Óbito:</span>
                     <span class="ficha-valor">
@@ -329,18 +341,57 @@
                         <span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span>
                     </span>
                 </div>
-                <div class="ficha-linha"><span class="ficha-label">Responsável:</span><span class="ficha-valor" id="view_resp_completo"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Funerária:</span><span class="ficha-valor" id="view_funeraria"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Acolhimento:</span><span class="ficha-valor" id="view_isencao_completa"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Dados da Urna:</span><span class="ficha-valor"><span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Serviços Extras:</span><span class="ficha-valor" id="view_servicos_adicionais"></span></div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Responsável:</span>
+                    <span class="ficha-valor" id="view_resp_completo"></span>
+                </div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Funerária:</span>
+                    <span class="ficha-valor" id="view_funeraria"></span>
+                </div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Acolhimento:</span>
+                    <span class="ficha-valor" id="view_isencao_completa"></span>
+                </div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Dados da Urna:</span>
+                    <span class="ficha-valor">
+                        <span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span>
+                    </span>
+                </div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Serviços Extras:</span>
+                    <span class="ficha-valor" id="view_servicos_adicionais"></span>
+                </div>
+
                 <div class="ficha-linha">
                     <span class="ficha-label">Local Sepul.:</span>
-                    <span class="ficha-valor">Tipo: <span id="view_tipo_sepultura"></span> | Nº: <span id="view_sepul"></span> | QD: <span id="view_qd"></span></span>
+                    <span class="ficha-valor">
+                        Tipo: <span id="view_tipo_sepultura"></span> | 
+                        Nº: <span id="view_sepul"></span> | 
+                        QD: <span id="view_qd"></span>
+                    </span>
                 </div>
-                <div class="ficha-linha"><span class="ficha-label">Local Óbito:</span><span class="ficha-valor" id="view_hospital_completo"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Velório:</span><span class="ficha-valor" id="view_cap"></span></div>
-                <div class="ficha-linha" style="border-bottom: none;"><span class="ficha-label">Observações:</span><span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span></div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Local Óbito:</span>
+                    <span class="ficha-valor" id="view_hospital_completo"></span>
+                </div>
+
+                <div class="ficha-linha">
+                    <span class="ficha-label">Velório:</span>
+                    <span class="ficha-valor" id="view_cap"></span>
+                </div>
+
+                <div class="ficha-linha" style="border-bottom: none;">
+                    <span class="ficha-label">Observações:</span>
+                    <span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span>
+                </div>
             </div>
 
             <div class="modal-footer" style="justify-content: space-between;">
@@ -348,6 +399,7 @@
                     <button type="button" class="btn-imprimir" id="btn-gerar-comprovante" onclick="gerarComprovante()">📄 Comprovante</button>
                     <button type="button" class="btn-novo" style="background-color: #e67e22;" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
                 </div>
+                
                 <button type="button" class="btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button>
             </div>
         </div>
@@ -389,10 +441,12 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
     <script src="script.js"></script>
 </body>
 </html>
