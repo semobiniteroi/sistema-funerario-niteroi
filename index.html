@@ -344,7 +344,10 @@
             </div>
 
             <div class="modal-footer" style="justify-content: space-between;">
-                <button type="button" class="btn-imprimir" id="btn-gerar-comprovante" onclick="gerarComprovante()">📄 Gerar Comprovante</button>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" class="btn-imprimir" id="btn-gerar-comprovante" onclick="gerarComprovante()">📄 Comprovante</button>
+                    <button type="button" class="btn-novo" style="background-color: #e67e22;" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
+                </div>
                 <button type="button" class="btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button>
             </div>
         </div>
@@ -386,12 +389,10 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
     <script src="script.js"></script>
 </body>
 </html>
