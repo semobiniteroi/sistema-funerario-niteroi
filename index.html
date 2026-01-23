@@ -41,6 +41,8 @@
 
     <div class="main-content">
         <div class="controles">
+            <button onclick="abrirModalEstatisticas()" class="btn-imprimir" style="border-color: #8e44ad; color: #8e44ad;">📊 Estatísticas</button>
+            
             <button onclick="imprimirRelatorio('portrait')" class="btn-imprimir">🖨️ Retrato</button>
             <button onclick="imprimirRelatorio('landscape')" class="btn-imprimir">🖨️ Paisagem</button>
             <button onclick="abrirModal()" class="btn-novo">+ Novo Atendimento</button>
@@ -398,6 +400,33 @@
                     📄 Gerar Comprovante
                 </button>
                 <button type="button" class="btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-estatisticas" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Relatório de Causas de Morte</h3>
+                <span class="close" onclick="fecharModalEstatisticas()">&times;</span>
+            </div>
+            
+            <div style="padding: 20px;">
+                <div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px;">
+                    <button onclick="carregarEstatisticas(7)" class="btn-imprimir">Últimos 7 Dias</button>
+                    <button onclick="carregarEstatisticas(14)" class="btn-imprimir">Últimos 14 Dias</button>
+                    <button onclick="carregarEstatisticas(30)" class="btn-imprimir">Últimos 30 Dias</button>
+                </div>
+
+                <div id="loading-stats" style="text-align:center; display:none; color:#666;">
+                    Carregando dados em tempo real...
+                </div>
+
+                <div id="lista-estatisticas" style="max-height: 400px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-cancelar" onclick="fecharModalEstatisticas()">Fechar</button>
             </div>
         </div>
     </div>

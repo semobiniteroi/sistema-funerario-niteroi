@@ -12,8 +12,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let unsubscribe = null;
+let statsUnsubscribe = null; // Unsubscribe para as estatísticas
 let sepulturaOriginal = ""; 
-// Variável global para armazenar o dado do atendimento selecionado para o comprovante
 let dadosAtendimentoAtual = null;
 
 const dimensoesUrna = {
@@ -24,15 +24,109 @@ const dimensoesUrna = {
     'PERPETUA': ''
 };
 
+// --- ESTATÍSTICAS EM TEMPO REAL ---
+window.abrirModalEstatisticas = function() {
+    document.getElementById('modal-estatisticas').style.display = 'block';
+    // Carrega 7 dias por padrão ao abrir
+    carregarEstatisticas(7);
+}
+
+window.fecharModalEstatisticas = function() {
+    document.getElementById('modal-estatisticas').style.display = 'none';
+    if (statsUnsubscribe) {
+        statsUnsubscribe(); // Para de ouvir o banco para economizar dados
+    }
+}
+
+window.carregarEstatisticas = function(dias) {
+    const loading = document.getElementById('loading-stats');
+    const divLista = document.getElementById('lista-estatisticas');
+    
+    // Limpa lista anterior e mostra loading
+    divLista.innerHTML = '';
+    loading.style.display = 'block';
+
+    if (statsUnsubscribe) statsUnsubscribe();
+
+    // Calcula data inicial (Hoje - X dias)
+    const dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - dias);
+    const dataInicioString = dataInicio.toISOString().split('T')[0];
+
+    // Query em tempo real
+    statsUnsubscribe = db.collection("atendimentos")
+        .where("data_ficha", ">=", dataInicioString)
+        .onSnapshot((snapshot) => {
+            loading.style.display = 'none';
+            let contagemCausas = {};
+            let totalMortes = 0;
+
+            snapshot.forEach(doc => {
+                const dados = doc.data();
+                if (dados.causa) {
+                    // Separa causas múltiplas (ex: "Infarto / Diabetes")
+                    const partes = dados.causa.split('/');
+                    partes.forEach(parte => {
+                        const causaLimpa = parte.trim().toUpperCase();
+                        if (causaLimpa) {
+                            contagemCausas[causaLimpa] = (contagemCausas[causaLimpa] || 0) + 1;
+                        }
+                    });
+                    totalMortes++;
+                }
+            });
+
+            // Converte para array e ordena
+            const ranking = Object.entries(contagemCausas)
+                .sort((a, b) => b[1] - a[1]); // Do maior para o menor
+
+            // Renderiza Tabela
+            if (ranking.length === 0) {
+                divLista.innerHTML = '<p style="text-align:center; padding:20px;">Nenhum dado neste período.</p>';
+                return;
+            }
+
+            let htmlTable = `
+                <div style="margin-bottom:10px; font-weight:bold; color:#555;">
+                    Total de Óbitos no período: ${totalMortes}
+                </div>
+                <table class="table-stats">
+                    <thead><tr><th>Causa da Morte</th><th width="80">Qtd</th><th width="100">Gráfico</th></tr></thead>
+                    <tbody>
+            `;
+
+            ranking.forEach(([causa, qtd]) => {
+                // Calcula porcentagem para a barra
+                const percent = Math.min(100, (qtd / totalMortes) * 100); 
+                htmlTable += `
+                    <tr>
+                        <td>${causa}</td>
+                        <td style="text-align:center; font-size:14px;">${qtd}</td>
+                        <td>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: ${percent}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            htmlTable += `</tbody></table>`;
+            divLista.innerHTML = htmlTable;
+
+        }, (error) => {
+            console.error("Erro estatisticas:", error);
+            loading.innerText = "Erro ao carregar dados.";
+        });
+}
+
 // --- FUNÇÃO GERAR COMPROVANTE ---
 window.gerarComprovante = function() {
     if (!dadosAtendimentoAtual) return;
     const d = dadosAtendimentoAtual;
 
-    // Helpers para checkbox
     const chk = (cond) => cond ? '( X )' : '(  )';
     
-    // Formatação de datas
     const fmtData = (dataStr) => {
         if (!dataStr) return "";
         const p = dataStr.split('-');
@@ -57,7 +151,6 @@ window.gerarComprovante = function() {
             .assinaturas { margin-top: 50px; display: flex; justify-content: space-between; }
             .assinatura-box { text-align: center; border-top: 1px solid #000; width: 45%; padding-top: 5px; }
             .obs-box { border: 1px solid #000; padding: 5px; font-size: 11px; margin-top: 10px; }
-            .destaque { font-weight: bold; }
             @media print {
                 @page { size: portrait; margin: 10mm; }
                 .no-print { display: none; }
@@ -424,8 +517,7 @@ window.visualizar = function(id) {
     db.collection("atendimentos").doc(id).get().then((doc) => {
         if (doc.exists) {
             const item = doc.data();
-            dadosAtendimentoAtual = item; // Salva para o comprovante
-
+            dadosAtendimentoAtual = item;
             document.getElementById('view_hora').innerText = item.hora || '-';
             let respTexto = item.resp_nome || '-';
             if (item.parentesco) respTexto += ` (${item.parentesco})`;
@@ -621,4 +713,5 @@ window.excluir = function(id) {
 window.onclick = function(event) {
     if (event.target == modal) fecharModal();
     if (event.target == modalVisualizar) fecharModalVisualizar();
+    if (event.target == document.getElementById('modal-estatisticas')) fecharModalEstatisticas();
 }
