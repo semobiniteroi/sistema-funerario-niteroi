@@ -1,297 +1,331 @@
-// --- CONFIGURAÇÃO FIREBASE ---
+// --- FIREBASE CONFIGURATION (Your Keys) ---
 const firebaseConfig = {
-    apiKey: "AIzaSyD37ZAe9afx70HjjiGQzxbUkrhtYSqVVms",
-    authDomain: "estoque-master-ba8d3.firebaseapp.com",
-    projectId: "estoque-master-ba8d3",
-    storageBucket: "estoque-master-ba8d3.firebasestorage.app",
-    messagingSenderId: "541199550434",
-    appId: "1:541199550434:web:90083885daa8a9756fdbbb"
+  apiKey: "AIzaSyB6pkQZNuLiYidKqstJdMXRl2OYW4JWmfs",
+  authDomain: "funeraria-niteroi.firebaseapp.com",
+  projectId: "funeraria-niteroi",
+  storageBucket: "funeraria-niteroi.firebasestorage.app",
+  messagingSenderId: "232673521828",
+  appId: "1:232673521828:web:f25a77f27ba1924cb77631"
 };
 
-// --- CONFIGURAÇÃO EMAILJS (v3.9) ---
-emailjs.init("Q0pklfvcpouN8CSjW");
-const EMAIL_SERVICE = "service_ip0xm56";
-const EMAIL_TEMPLATE = "template_04ocb0p"; 
-
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const fAuth = firebase.auth();
 
-let userRole = "pendente";
-let fullInventory = [];
-let currentPhotoBase64 = "";
-let isSignUpMode = false;
-let myChart = null;
+let unsubscribe = null;
 
-// --- AUTENTICAÇÃO ---
-const auth = {
-    async handleAuth(e) {
-        e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const pass = document.getElementById('login-password').value;
-        try {
-            if (isSignUpMode) {
-                await fAuth.createUserWithEmailAndPassword(email, pass);
-                await db.collection('usuarios').doc(email).set({
-                    funcao: "pendente", email: email, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                alert("Cadastro realizado! Aguarde a liberação do administrador Jefferson.");
-            } else { await fAuth.signInWithEmailAndPassword(email, pass); }
-        } catch (err) { alert("Erro de Acesso: " + err.message); }
-    },
-    logout() { fAuth.signOut().then(() => location.reload()); }
+// Urn Dimensions Map
+const dimensoesUrna = {
+    'NORMAL': 'COMP: 2.00<br>ALT: 0.41<br>LARG: 0.70',
+    'G': 'COMP: 2.00<br>ALT: 0.45<br>LARG: 0.80',
+    'GG': 'COMP: 2.00<br>ALT: 0.56<br>LARG: 0.85',
+    '3G': 'COMP: 2.00<br>ALT: 0.65<br>LARG: 0.95',
+    'PERPETUA': ''
 };
 
-fAuth.onAuthStateChanged(async (user) => {
-    if (user) {
-        document.getElementById('auth-screen').classList.add('hidden');
-        const userDoc = await db.collection('usuarios').doc(user.email).get();
-        userRole = userDoc.exists ? userDoc.data().funcao : "pendente";
-        document.getElementById('user-info').innerText = user.email;
+document.addEventListener('DOMContentLoaded', () => {
+    const hoje = new Date().toISOString().split('T')[0];
+    const inputData = document.getElementById('filtro-data');
+    const inputLocal = document.getElementById('filtro-local');
+    
+    inputData.value = hoje;
 
-        if (userRole === "pendente") {
-            document.getElementById('pending-msg').classList.remove('hidden');
-            document.getElementById('main-content').classList.add('hidden');
+    atualizarListener(hoje, inputLocal.value);
+
+    inputData.addEventListener('change', (e) => {
+        atualizarListener(e.target.value, inputLocal.value);
+    });
+
+    inputLocal.addEventListener('change', (e) => {
+        atualizarListener(inputData.value, e.target.value);
+    });
+});
+
+function atualizarListener(dataSelecionada, localSelecionado) {
+    if (unsubscribe) {
+        unsubscribe();
+    }
+
+    const tbody = document.getElementById('tabela-corpo');
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 20px;">Carregando dados...</td></tr>';
+
+    unsubscribe = db.collection("atendimentos")
+      .where("data_ficha", "==", dataSelecionada) 
+      .onSnapshot((snapshot) => {
+          let listaAtendimentos = [];
+          
+          snapshot.forEach(doc => {
+              let dado = doc.data();
+              dado.id = doc.id;
+              
+              // --- FIX IS HERE ---
+              // If the record has NO location (it's old), we assume it is "CEMITÉRIO DO MARUÍ".
+              // This makes the old data appear when "MARUÍ" is selected.
+              const localDoRegistro = dado.local || "CEMITÉRIO DO MARUÍ";
+
+              if (localDoRegistro === localSelecionado) {
+                  listaAtendimentos.push(dado);
+              }
+          });
+
+          listaAtendimentos.sort((a, b) => {
+              if (a.hora < b.hora) return -1;
+              if (a.hora > b.hora) return 1;
+              return 0;
+          });
+
+          renderizarTabela(listaAtendimentos);
+      }, (error) => {
+          console.error("Erro ao ler dados:", error);
+          tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:red;">Erro ao carregar dados.</td></tr>';
+      });
+}
+
+function renderizarTabela(lista) {
+    const tbody = document.getElementById('tabela-corpo');
+    tbody.innerHTML = ''; 
+
+    if (lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="padding: 40px; text-align:center; color:#b5b5c3;">Nenhum atendimento registrado neste local e data.</td></tr>';
+        return;
+    }
+
+    lista.forEach(item => {
+        const tr = document.createElement('tr');
+        
+        tr.onclick = () => visualizar(item.id);
+        tr.title = "Clique para ver detalhes";
+
+        // --- COLUMN 1: RESPONSIBLE / URN ---
+        let displayResponsavel = "";
+        
+        // Priority: Exemption / Funeral Home / Responsible
+        if (item.isencao === "50") {
+            displayResponsavel += `ACOLHIMENTO 50% TX`;
+            if(item.requisito) displayResponsavel += `<br>${item.requisito.toUpperCase()}`;
+            displayResponsavel += `<br>`;
+        } else if (item.isencao === "SIM") {
+            displayResponsavel += `ACOLHIMENTO 100% TX`;
+            if(item.requisito) displayResponsavel += `<br>${item.requisito.toUpperCase()}`;
+            displayResponsavel += `<br>`;
         } else {
-            document.getElementById('pending-msg').classList.add('hidden');
-            document.getElementById('main-content').classList.remove('hidden');
-            if (userRole === "admin") document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-            app.init();
+            if (item.funeraria) {
+                displayResponsavel += `${item.funeraria.toUpperCase()}<br>`;
+            } else if (item.resp_nome) {
+                displayResponsavel += `${item.resp_nome.toUpperCase()}<br>`;
+            }
         }
-    } else { document.getElementById('auth-screen').classList.remove('hidden'); }
-});
 
-// --- LÓGICA DO APP ---
-const app = {
-    init() {
-        db.collection('produtos').orderBy('name').onSnapshot(snap => {
-            fullInventory = [];
-            snap.forEach(doc => fullInventory.push({id: doc.id, ...doc.data()}));
-            this.renderProducts(fullInventory);
-        }, err => console.error("Firestore Error (Check AdBlock):", err));
-    },
+        // Urn Data
+        if (item.combo_urna && dimensoesUrna[item.combo_urna]) {
+            displayResponsavel += `URNA<br>${dimensoesUrna[item.combo_urna]}<br>`;
+        } else if (item.combo_urna) {
+            displayResponsavel += `URNA ${item.combo_urna}<br>`;
+        }
 
-    handleImage(input) {
-        const file = input.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX = 400; const scale = MAX / img.width;
-                canvas.width = MAX; canvas.height = img.height * scale;
-                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.5);
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    },
+        if (item.urna_info) {
+            displayResponsavel += `<span style="font-weight:normal; font-size:11px;">${item.urna_info.toUpperCase()}</span>`;
+        }
 
-    filterProducts() {
-        const term = document.getElementById('search-input').value.toLowerCase();
-        const filtered = fullInventory.filter(i => i.name.toLowerCase().includes(term) || i.category.toLowerCase().includes(term));
-        this.renderProducts(filtered);
-    },
-
-    renderProducts(items) {
-        const tbody = document.getElementById('stock-list');
-        tbody.innerHTML = '';
-        items.forEach(item => {
-            const threshold = item.minThreshold || 0;
-            const isLow = item.qty <= threshold && threshold > 0;
-            const admin = userRole === "admin" ? `<button class="btn-action in" onclick="ui.openMove('${item.id}', '${item.name}', 'ENTRADA')">In</button><button onclick="ui.openEdit('${item.id}', '${item.name}', '${item.category}', ${threshold})" style="background:none; border:none; cursor:pointer; font-size:1.1rem">✏️</button>` : '';
-
-            tbody.innerHTML += `
-                <tr class="${isLow ? 'low-stock' : ''}">
-                    <td><img src="${item.photo || 'https://placehold.co/48'}" class="img-thumb"></td>
-                    <td><div style="font-weight:700">${item.name}</div>${isLow ? '<span class="badge-low">CRÍTICO</span>' : ''}</td>
-                    <td><span style="color:#64748b">${item.category}</span></td>
-                    <td><strong style="font-size:1.1rem">${item.qty || 0}</strong></td>
-                    <td>
-                        <div style="display:flex; justify-content:flex-end; gap:5px;">
-                            ${admin}
-                            <button class="btn-action out" onclick="ui.openMove('${item.id}', '${item.name}', 'SAIDA')">Out</button>
-                            <button class="btn-action chart" onclick="app.showHistory('${item.id}', '${item.name}')">📊</button>
-                        </div>
-                    </td>
-                </tr>`;
-        });
-    },
-
-    async processMove(e) {
-        e.preventDefault();
-        const pid = document.getElementById('move-product-id').value;
-        const type = document.getElementById('move-type').value;
-        const qtyMove = parseInt(document.getElementById('move-qty').value);
-        const sector = type === 'ENTRADA' ? "REPOSIÇÃO" : document.getElementById('move-sector').value;
-
-        try {
-            const productRef = db.collection('produtos').doc(pid);
-            const doc = await productRef.get();
-            const pData = doc.data();
-
-            // --- BLOQUEIO DE SALDO NEGATIVO (NOVO) ---
-            if (type === 'SAIDA' && qtyMove > pData.qty) {
-                return alert(`⚠️ Operação cancelada! Você está tentando retirar ${qtyMove}un, mas o saldo atual é de apenas ${pData.qty}un.`);
-            }
-
-            const newQty = type === 'ENTRADA' ? (pData.qty + qtyMove) : (pData.qty - qtyMove);
-
-            await productRef.update({ qty: newQty });
-            await db.collection('historico').add({
-                productId: pid, type, qty: qtyMove, sector, employee: fAuth.currentUser.email,
-                productName: pData.name,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            // DISPARO DE EMAIL (SINCRONIZADO v3.9)
-            if (type === 'SAIDA' && newQty <= (pData.minThreshold || 0) && pData.minThreshold > 0) {
-                const params = {
-                    product_name: String(pData.name),
-                    current_qty: String(newQty),
-                    min_threshold: String(pData.minThreshold)
-                };
-                emailjs.send(EMAIL_SERVICE, EMAIL_TEMPLATE, params).catch(err => console.error("EmailJS Error", err));
-            }
-            ui.closeModal('move');
-        } catch (err) { alert(err.message); }
-    },
-
-    // --- FUNÇÕES DE EXPORTAÇÃO CSV (NOVO) ---
-    exportInventory() {
-        let csv = "Produto;Categoria;Saldo;Minimo\n";
-        fullInventory.forEach(p => {
-            csv += `${p.name};${p.category};${p.qty};${p.minThreshold}\n`;
-        });
-        this.downloadCSV(csv, "Inventario_LogMaster.csv");
-    },
-
-    async exportHistory() {
-        const trintaDias = new Date(); trintaDias.setDate(trintaDias.getDate() - 30);
-        const snap = await db.collection('historico').where('timestamp', '>=', trintaDias).orderBy('timestamp', 'desc').get();
+        // --- COLUMN 3: NAME / CAUSE ---
+        const conteudoNome = `<div style="font-weight:700; font-size:12px;">${item.nome.toUpperCase()}</div>
+                              <div class="texto-vermelho" style="font-size:11px; margin-top:2px;">
+                                (${item.causa ? item.causa.toUpperCase() : 'CAUSA NÃO INFORMADA'})
+                              </div>`;
         
-        let csv = "Data;Produto;Tipo;Qtd;Setor;Responsavel\n";
-        snap.forEach(doc => {
-            const d = doc.data();
-            const dataStr = d.timestamp ? d.timestamp.toDate().toLocaleString('pt-BR') : 'N/A';
-            csv += `${dataStr};${d.productName || 'N/A'};${d.type};${d.qty};${d.sector};${d.employee}\n`;
-        });
-        this.downloadCSV(csv, "Historico_Mensal_LogMaster.csv");
-    },
+        // --- COLUMN DEATH (Vertical) ---
+        let displayFalecimento = '';
+        if (item.data_obito) {
+            const partes = item.data_obito.split('-');
+            const dataFormatada = `${partes[2]}/${partes[1]}`; 
+            // Format: DAY: dd/mm AT: hh:mm
+            displayFalecimento = `
+                <div style="line-height:1.5;">
+                    <span class="texto-vermelho">DIA:</span><br>
+                    ${dataFormatada}<br>
+                    <span class="texto-vermelho">AS:</span><br>
+                    ${item.hora_obito || '--:--'}
+                </div>
+            `;
+        } else if (item.falecimento) {
+            displayFalecimento = `<div>${item.falecimento}</div>`;
+        }
 
-    downloadCSV(csv, filename) {
-        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", filename);
-        link.click();
-    },
+        tr.innerHTML = `
+            <td style="white-space: normal; vertical-align: top;">${displayResponsavel}</td>
+            <td style="text-align: center;">${item.hora || ''}</td>
+            <td style="text-align: center; vertical-align: middle;">${conteudoNome}</td>
+            <td style="text-align: center;">${item.gav || ''}</td>
+            <td style="text-align: center;">${item.car || ''}</td>
+            <td style="text-align: center;">${item.sepul || ''}</td>
+            <td style="text-align: center;">${item.qd || ''}</td>
+            <td style="text-align: center;">${item.hospital || ''}</td>
+            <td style="text-align: center;">${item.cap || ''}</td>
+            <td style="text-align: center;">${displayFalecimento}</td>
+            <td style="text-align: right;">
+                <div class="t-acoes">
+                    <button class="btn-icon btn-editar-circle" onclick="event.stopPropagation(); editar('${item.id}')" title="Editar">
+                        ✏️
+                    </button>
+                    <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation(); excluir('${item.id}')" title="Excluir">
+                        🗑️
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
-    async loadUsers() {
-        const tbody = document.getElementById('user-admin-list');
-        const snap = await db.collection('usuarios').get();
-        tbody.innerHTML = "";
-        snap.forEach(doc => {
-            tbody.innerHTML += `<tr><td>${doc.id}</td><td><strong>${doc.data().funcao}</strong></td><td>
-                <select onchange="app.updateUserRole('${doc.id}', this.value)" style="padding:4px; border-radius:6px;">
-                    <option value="">Ação...</option>
-                    <option value="admin">Admin</option>
-                    <option value="colaborador">Colaborador</option>
-                    <option value="pendente">Bloquear</option>
-                </select>
-            </td></tr>`;
-        });
-    },
+// --- MODALS ---
 
-    async updateUserRole(email, role) {
-        if (!role) return;
-        await db.collection('usuarios').doc(email).update({ funcao: role });
-        this.loadUsers();
-    },
+const modal = document.getElementById('modal');
+const modalVisualizar = document.getElementById('modal-visualizar');
+const form = document.getElementById('form-atendimento');
 
-    async showHistory(pid, name) {
-        document.getElementById('history-header').innerText = `Consumo: ${name}`;
-        ui.openModal('history');
-        const trintaDias = new Date(); trintaDias.setDate(trintaDias.getDate() - 30);
-        
-        setTimeout(async () => {
-            const snap = await db.collection('historico').where('productId', '==', pid).where('timestamp', '>=', trintaDias).orderBy('timestamp', 'desc').get();
-            const logs = []; snap.forEach(doc => logs.push(doc.data()));
+function abrirModal() {
+    form.reset();
+    document.getElementById('docId').value = '';
+    document.getElementById('tipo_sepultura').value = "";
+    document.getElementById('isencao').value = "NAO"; 
+    document.getElementById('combo_urna').value = ""; 
+    document.getElementById('requisito').value = "";
+    modal.style.display = 'block';
+}
+
+function fecharModal() { modal.style.display = 'none'; }
+function fecharModalVisualizar() { modalVisualizar.style.display = 'none'; }
+
+window.visualizar = function(id) {
+    db.collection("atendimentos").doc(id).get().then((doc) => {
+        if (doc.exists) {
+            const item = doc.data();
             
-            const calc = (d) => {
-                const limit = new Date().getTime() - (d * 24 * 60 * 60 * 1000);
-                const sum = logs.filter(l => l.type === 'SAIDA' && l.timestamp.toDate().getTime() >= limit).reduce((s,c)=>s+c.qty, 0);
-                return (sum / d).toFixed(1);
-            };
-
-            document.getElementById('avg-7').innerText = calc(7);
-            document.getElementById('avg-30').innerText = calc(30);
+            document.getElementById('view_hora').innerText = item.hora || '-';
+            document.getElementById('view_resp_nome').innerText = item.resp_nome || '-';
+            document.getElementById('view_funeraria').innerText = item.funeraria || '-';
             
-            this.renderChart(logs);
-            document.getElementById('history-content').innerHTML = logs.map(l => `
-                <div class="log-item">
-                    <span style="color:${l.type === 'ENTRADA' ? 'var(--success)' : 'var(--warning)'}; font-weight:700">${l.type} ${l.qty}un</span>
-                    - ${l.sector} | <small>${l.employee}</small>
-                </div>`).join('');
-        }, 500);
-    },
+            let textoIsencao = "NÃO (Pago)";
+            if (item.isencao === "SIM") textoIsencao = "SIM (Gratuidade)";
+            if (item.isencao === "50") textoIsencao = "SIM (50%)";
+            if (item.requisito) textoIsencao += ` - ${item.requisito}`;
+            
+            document.getElementById('view_isencao_completa').innerText = textoIsencao;
+            document.getElementById('view_urna_info').innerText = item.urna_info || '-';
+            document.getElementById('view_combo_urna').innerText = item.combo_urna || '-';
+            
+            document.getElementById('view_nome').innerText = item.nome || '-';
+            document.getElementById('view_causa').innerText = item.causa || '-';
+            
+            let tipo = '';
+            if (item.gav && item.gav.includes('X')) tipo = 'GAVETA';
+            else if (item.car && item.car.includes('X')) tipo = 'CARNEIRO';
+            else if (item.cova_rasa === 'X') tipo = 'COVA RASA';
+            else if (item.perpetua === 'X') tipo = 'PERPÉTUA';
+            
+            document.getElementById('view_tipo_sepultura').innerText = tipo || '-';
+            document.getElementById('view_sepul').innerText = item.sepul || '-';
+            document.getElementById('view_qd').innerText = item.qd || '-';
+            document.getElementById('view_hospital').innerText = item.hospital || '-';
+            document.getElementById('view_cap').innerText = item.cap || '-';
+            
+            let dataFormatada = item.data_obito;
+            if (dataFormatada && dataFormatada.includes('-')) {
+                const p = dataFormatada.split('-');
+                dataFormatada = `${p[2]}/${p[1]}/${p[0]}`;
+            }
+            document.getElementById('view_data_obito').innerText = dataFormatada || '-';
+            document.getElementById('view_hora_obito').innerText = item.hora_obito || '-';
 
-    renderChart(logs) {
-        const ctx = document.getElementById('usageChart').getContext('2d');
-        if (myChart) myChart.destroy();
-        const dias = [...Array(7)].map((_, i) => { 
-            const d = new Date(); d.setDate(d.getDate() - i); 
-            return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}); 
-        }).reverse();
-        const dados = dias.map(dia => logs.filter(l => l.type === 'SAIDA' && l.timestamp.toDate().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) === dia).reduce((s,c)=>s+c.qty, 0));
-        
-        myChart = new Chart(ctx, { 
-            type: 'line', 
-            data: { 
-                labels: dias, 
-                datasets: [{ label: 'Consumo', data: dados, borderColor: '#4f46e5', tension: 0.3, fill: true, backgroundColor: 'rgba(79, 70, 229, 0.05)' }] 
-            }, 
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } 
-        });
-    }
-};
+            modalVisualizar.style.display = 'block';
+        }
+    });
+}
 
-const ui = {
-    openModal(id) { document.getElementById('modal-' + id).classList.remove('hidden'); },
-    closeModal(id) { document.getElementById('modal-' + id).classList.add('hidden'); },
-    toggleAuthMode() {
-        isSignUpMode = !isSignUpMode;
-        document.getElementById('auth-title').innerText = isSignUpMode ? "Criar Conta" : "LogMaster Pro";
-        document.getElementById('auth-toggle').innerText = isSignUpMode ? "Já tem conta? Entre" : "Novo por aqui? Criar conta";
-    },
-    openEdit(id, name, cat, min) {
-        document.getElementById('p-edit-id').value = id;
-        document.getElementById('p-name').value = name;
-        document.getElementById('p-category').value = cat;
-        document.getElementById('p-min').value = min;
-        this.openModal('product');
-    },
-    openMove(id, name, type) {
-        document.getElementById('move-product-id').value = id;
-        document.getElementById('move-type').value = type;
-        const extra = document.getElementById('extra-fields');
-        type === 'ENTRADA' ? extra.classList.add('hidden') : extra.classList.remove('hidden');
-        this.openModal('move');
-    }
-};
+window.editar = function(id) {
+    db.collection("atendimentos").doc(id).get().then((doc) => {
+        if (doc.exists) {
+            const item = doc.data();
+            document.getElementById('docId').value = doc.id;
+            document.getElementById('hora').value = item.hora;
+            document.getElementById('nome').value = item.nome;
+            document.getElementById('causa').value = item.causa;
+            document.getElementById('resp_nome').value = item.resp_nome || '';
+            document.getElementById('urna_info').value = item.urna_info || item.responsavel || '';
+            document.getElementById('combo_urna').value = item.combo_urna || ""; 
+            document.getElementById('funeraria').value = item.funeraria || '';
+            document.getElementById('isencao').value = item.isencao || 'NAO';
+            document.getElementById('requisito').value = item.requisito || '';
+            document.getElementById('data_obito').value = item.data_obito || '';
+            document.getElementById('hora_obito').value = item.hora_obito || '';
+            
+            const selectTipo = document.getElementById('tipo_sepultura');
+            if (item.gav && item.gav.includes('X')) selectTipo.value = 'GAVETA';
+            else if (item.car && item.car.includes('X')) selectTipo.value = 'CARNEIRO';
+            else if (item.cova_rasa === 'X') selectTipo.value = 'COVA RASA';
+            else if (item.perpetua === 'X') selectTipo.value = 'PERPETUA';
+            else selectTipo.value = '';
 
-document.getElementById('login-form').addEventListener('submit', auth.handleAuth);
-document.getElementById('form-product').addEventListener('submit', (e) => {
+            document.getElementById('sepul').value = item.sepul;
+            document.getElementById('qd').value = item.qd;
+            document.getElementById('hospital').value = item.hospital;
+            document.getElementById('cap').value = item.cap;
+            
+            modal.style.display = 'block';
+        }
+    });
+}
+
+form.onsubmit = (e) => {
     e.preventDefault();
-    const id = document.getElementById('p-edit-id').value;
-    const data = {
-        name: document.getElementById('p-name').value, category: document.getElementById('p-category').value,
-        minThreshold: parseInt(document.getElementById('p-min').value), updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    
+    const id = document.getElementById('docId').value;
+    const tipoSelecionado = document.getElementById('tipo_sepultura').value;
+    const dataFicha = document.getElementById('filtro-data').value;
+    const localSelecionado = document.getElementById('filtro-local').value;
+
+    const dados = {
+        data_ficha: dataFicha,
+        local: localSelecionado,
+        hora: document.getElementById('hora').value,
+        resp_nome: document.getElementById('resp_nome').value,
+        urna_info: document.getElementById('urna_info').value,
+        combo_urna: document.getElementById('combo_urna').value, 
+        funeraria: document.getElementById('funeraria').value,
+        isencao: document.getElementById('isencao').value,
+        requisito: document.getElementById('requisito').value, 
+        nome: document.getElementById('nome').value,
+        causa: document.getElementById('causa').value,
+        gav: (tipoSelecionado === 'GAVETA') ? 'X' : '',
+        car: (tipoSelecionado === 'CARNEIRO') ? 'X' : '',
+        cova_rasa: (tipoSelecionado === 'COVA RASA') ? 'X' : '',
+        perpetua: (tipoSelecionado === 'PERPETUA') ? 'X' : '',
+        sepul: document.getElementById('sepul').value,
+        qd: document.getElementById('qd').value,
+        hospital: document.getElementById('hospital').value,
+        cap: document.getElementById('cap').value,
+        data_obito: document.getElementById('data_obito').value,
+        hora_obito: document.getElementById('hora_obito').value
     };
-    if (currentPhotoBase64) data.photo = currentPhotoBase64;
-    id ? db.collection('produtos').doc(id).update(data) : db.collection('produtos').add({...data, qty: 0});
-    ui.closeModal('product');
-});
-document.getElementById('form-move').addEventListener('submit', app.processMove);
+
+    if (id) {
+        db.collection("atendimentos").doc(id).update(dados)
+          .then(() => fecharModal())
+          .catch((error) => alert("Erro ao atualizar: " + error));
+    } else {
+        db.collection("atendimentos").add(dados)
+          .then(() => fecharModal())
+          .catch((error) => alert("Erro ao salvar: " + error));
+    }
+};
+
+window.excluir = function(id) {
+    if(confirm('Tem certeza?')) {
+        db.collection("atendimentos").doc(id).delete()
+          .catch((error) => alert("Erro ao excluir: " + error));
+    }
+}
+
+window.onclick = function(event) {
+    if (event.target == modal) fecharModal();
+    if (event.target == modalVisualizar) fecharModalVisualizar();
+}

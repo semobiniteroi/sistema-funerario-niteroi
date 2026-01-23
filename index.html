@@ -3,164 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogMaster Pro v3.9 - Gestão Niterói</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Controle Funerário - Niterói</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
-    <div id="auth-screen" class="modal-overlay">
-        <div class="modal-card auth-card">
-            <div class="auth-header">
-                <span class="auth-emoji">🏢</span>
-                <h2>LogMaster Pro</h2>
-                <p>Niterói - Gestão TI SEMOBI</p>
-            </div>
-            <form id="login-form">
-                <div class="field">
-                    <label>E-mail Corporativo</label>
-                    <input type="email" id="login-email" required placeholder="exemplo@niteroi.rj.gov.br">
-                </div>
-                <div class="field">
-                    <label>Senha de Acesso</label>
-                    <input type="password" id="login-password" required placeholder="••••••">
-                </div>
-                <button type="submit" class="btn-primary full-width" id="btn-auth-submit">Entrar no Sistema</button>
-                <div class="auth-footer">
-                    <a href="#" onclick="ui.toggleAuthMode()" id="auth-toggle">Novo por aqui? Criar conta</a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <header class="header">
-        <div class="container header-inner">
-            <div class="logo">
-                <span class="logo-icon">🚚</span>
-                <span class="logo-text">LogMaster <small>v3.9</small></span>
-            </div>
+    <header class="header-prefeitura">
+        <div class="logo-area">
+            <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" alt="Prefeitura de Niterói" id="logo-principal">
             
-            <div class="search-bar">
-                <input type="text" id="search-input" placeholder="🔍 Buscar por nome ou categoria..." oninput="app.filterProducts()">
+            <div class="titulo-area">
+                <h3 style="margin-left: 10px; border-left: 1px solid #ccc; padding-left: 10px;">Serviços Funerários</h3>
             </div>
-
-            <div class="nav-controls">
-                <span id="user-info" class="user-chip"></span>
-                <button class="btn-ghost admin-only hidden" onclick="app.loadUsers(); ui.openModal('users-mgmt')">Acessos</button>
-                
-                <div class="export-group admin-only hidden">
-                    <button class="btn-export" onclick="app.exportInventory()" title="Exportar Inventário">📋 Inventário</button>
-                    <button class="btn-export" onclick="app.exportHistory()" title="Exportar Histórico Mensal">📅 Histórico</button>
+        </div>
+        
+        <div class="info-area">
+            <div class="controles-topo">
+                <div class="input-topo-group">
+                    <label>Local</label>
+                    <select id="filtro-local">
+                        <option value="CEMITÉRIO DO MARUÍ">MARUÍ</option>
+                        <option value="CEMITÉRIO DE SÃO FRANCISCO">SÃO FRANCISCO</option>
+                        <option value="CEMITÉRIO DE ITAIPU">ITAIPU</option>
+                    </select>
                 </div>
-
-                <button class="btn-primary admin-only hidden" onclick="ui.openModal('product')">+ Novo</button>
-                <button class="btn-danger-light" onclick="auth.logout()">Sair</button>
+                <div class="divisor-vertical"></div>
+                <div class="input-topo-group">
+                    <label>Data</label>
+                    <input type="date" id="filtro-data">
+                </div>
             </div>
+            <span class="badge-covid">COVID-19</span>
         </div>
     </header>
 
-    <main class="container">
-        <div id="pending-msg" class="alert-box hidden">
-            <strong>Acesso em Análise:</strong> Sua conta aguarda aprovação administrativa.
+    <div class="main-content">
+        <div class="controles">
+            <button onclick="window.print()" class="btn-imprimir">
+                Imprimir
+            </button>
+            <button onclick="abrirModal()" class="btn-novo">
+                + Novo Atendimento
+            </button>
         </div>
 
-        <div id="main-content" class="content-card hidden">
-            <table class="inventory-table">
+        <div class="tabela-container">
+            <table>
                 <thead>
                     <tr>
-                        <th width="70">Foto</th>
-                        <th>Descrição</th>
-                        <th>Categoria</th>
-                        <th>Saldo</th>
-                        <th class="text-right">Ações</th>
+                        <th style="min-width: 220px;">Responsável / Urna</th>
+                        <th>Hora</th>
+                        <th style="min-width: 220px;">Nome / Causa</th>
+                        <th>Gav</th>
+                        <th>Car</th>
+                        <th>Nº Sepul</th>
+                        <th>QD</th>
+                        <th>Hospital</th>
+                        <th>Cap</th>
+                        <th style="min-width: 120px;">Falecimento</th>
+                        <th style="text-align: right; min-width: 100px;">Ações</th>
                     </tr>
                 </thead>
-                <tbody id="stock-list"></tbody>
+                <tbody id="tabela-corpo">
+                    </tbody>
             </table>
         </div>
-    </main>
+    </div>
 
-    <div id="modal-users-mgmt" class="modal-overlay hidden">
-        <div class="modal-card large">
+    <div id="modal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3>Permissões de Usuários</h3>
-                <button class="close-btn" onclick="ui.closeModal('users-mgmt')">&times;</button>
-            </div>
-            <div class="table-scroll">
-                <table class="sub-table">
-                    <thead><tr><th>E-mail</th><th>Função</th><th>Mudar para...</th></tr></thead>
-                    <tbody id="user-admin-list"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-product" class="modal-overlay hidden">
-        <div class="modal-card">
-            <h2 id="modal-product-title">Detalhes do Item</h2>
-            <form id="form-product">
-                <input type="hidden" id="p-edit-id">
-                <div class="field"><label>Nome do Produto</label><input type="text" id="p-name" required></div>
-                <div class="field"><label>Categoria</label><input type="text" id="p-category" required></div>
-                <div class="field"><label>Estoque Mínimo (Alerta)</label><input type="number" id="p-min" required></div>
-                <div class="field"><label>Foto</label><input type="file" onchange="app.handleImage(this)"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-link" onclick="ui.closeModal('product')">Voltar</button>
-                    <button type="submit" class="btn-primary">Salvar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="modal-move" class="modal-overlay hidden">
-        <div class="modal-card">
-            <h2 id="move-title">Movimentar</h2>
-            <form id="form-move">
-                <input type="hidden" id="move-product-id"><input type="hidden" id="move-type">
-                <div class="field"><label>Quantidade</label><input type="number" id="move-qty" min="1" required></div>
-                <div id="extra-fields" class="hidden">
-                    <div class="field"><label>Setor / Destino</label><input type="text" id="move-sector" placeholder="Ex: Manutenção Centro"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-link" onclick="ui.closeModal('move')">Cancelar</button>
-                    <button type="submit" id="btn-confirm-move" class="btn-primary">Confirmar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="modal-history" class="modal-overlay hidden">
-        <div class="modal-card large">
-            <div class="modal-header">
-                <h2 id="history-header">Análise de Fluxo</h2>
-                <button class="close-btn" onclick="ui.closeModal('history')">&times;</button>
+                <h3>Registro de Atendimento</h3>
+                <span class="close" onclick="fecharModal()">&times;</span>
             </div>
             
-            <div class="analysis-grid">
-                <div class="chart-container">
-                    <div style="height:350px; width:100%;">
-                        <canvas id="usageChart"></canvas>
+            <form id="form-atendimento">
+                <input type="hidden" id="docId"> 
+                
+                <div class="form-grid">
+                    <div class="input-group span-1">
+                        <label>Hora Sepultamento</label>
+                        <input type="time" id="hora" required step="1800">
+                    </div>
+                    <div class="input-group span-3">
+                        <label>Nome do Responsável</label>
+                        <input type="text" id="resp_nome" placeholder="Nome do familiar ou empresa" required>
+                    </div>
+                    
+                    <div class="input-group span-1">
+                        <label>Funerária</label>
+                        <input type="text" id="funeraria" list="lista-funerarias" placeholder="Selecione..." required>
+                        <datalist id="lista-funerarias">
+                            <option value="RIO PAX NITERÓI">
+                            <option value="FUNERÁRIA SANTA ROSA">
+                            <option value="FUNERÁRIA NITERÓI">
+                            <option value="FUNERÁRIA SÃO FRANCISCO">
+                            <option value="FUNERÁRIA MENINO DEUS">
+                            <option value="SAF (ASSISTÊNCIA FAMILIAR)">
+                            <option value="PLASIR">
+                            <option value="SOCIAL">
+                            <option value="DOM BOSCO">
+                            <option value="MAVERICK">
+                            <option value="PRÓPRIA FAMÍLIA">
+                        </datalist>
+                    </div>
+                    <div class="input-group span-1">
+                        <label>Isenção?</label>
+                        <select id="isencao" required>
+                            <option value="NAO">NÃO (PAGO)</option>
+                            <option value="SIM">SIM (GRATUIDADE)</option>
+                            <option value="50">SIM (50%)</option>
+                        </select>
+                    </div>
+                    <div class="input-group span-1">
+                        <label>Requisito Isenção</label>
+                        <input type="text" id="requisito" list="lista-requisitos" placeholder="Motivo...">
+                        <datalist id="lista-requisitos">
+                            <option value="CADUNICO">
+                            <option value="MOEDA ARARIBOIA">
+                            <option value="FUNCIONÁRIO PMN">
+                            <option value="OUTRO (DIGITE)">
+                        </datalist>
+                    </div>
+                    <div class="input-group span-1">
+                        <label>Modelo Urna</label>
+                        <select id="combo_urna">
+                            <option value="">Selecione...</option>
+                            <option value="NORMAL">Normal</option>
+                            <option value="G">G</option>
+                            <option value="GG">GG</option>
+                            <option value="3G">3G</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group span-4">
+                        <label>Nome do Falecido</label>
+                        <input type="text" id="nome" required style="font-weight: 600;">
+                    </div>
+                    
+                    <div class="input-group span-4">
+                        <label>Causa da Morte</label>
+                        <input type="text" id="causa" placeholder="Selecione ou digite..." list="lista-causas" required>
+                        <datalist id="lista-causas">
+                            <option value="OUTRA CAUSA (DIGITE O NOME)">
+                            <option value="CHOQUE SÉPTICO">
+                            <option value="INSUFICIÊNCIA RESPIRATÓRIA AGUDA">
+                            <option value="INSUFICIÊNCIA RENAL AGUDA">
+                            <option value="NEOPLASIA MALIGNA DE MAMA">
+                            <option value="NEOPLASIA MALIGNA DE PRÓSTATA">
+                            <option value="NEOPLASIA MALIGNA DE PULMÃO">
+                            <option value="NEOPLASIA MALIGNA DE CÓLON">
+                            <option value="INFARTO AGUDO DO MIOCÁRDIO (IAM)">
+                            <option value="ACIDENTE VASCULAR CEREBRAL (AVC)">
+                            <option value="PNEUMONIA NÃO ESPECIFICADA">
+                            <option value="SEPSE">
+                            <option value="FALÊNCIA MÚLTIPLA DE ÓRGÃOS">
+                            <option value="SENILIDADE">
+                            <option value="COVID-19">
+                            <option value="TRAUMATISMO CRANIANO">
+                            <option value="AFOGAMENTO">
+                            <option value="HIPERTENSÃO ARTERIAL">
+                            <option value="IAM/BAV DE PRIMEIRO GRAU">
+                            <option value="MORTE SEM ASSISTÊNCIA">
+                        </datalist>
+                    </div>
+
+                    <div class="input-group span-2">
+                        <label>Tipo Sepultura</label>
+                        <select id="tipo_sepultura" required>
+                            <option value="">Selecione...</option>
+                            <option value="GAVETA">Gaveta</option>
+                            <option value="CARNEIRO">Carneiro</option>
+                            <option value="PERPETUA">Perpétua</option>
+                            <option value="COVA RASA">Cova Rasa</option>
+                        </select>
+                    </div>
+                    <div class="input-group span-1">
+                        <label>Nº Sepul</label>
+                        <input type="text" id="sepul" required>
+                    </div>
+                    <div class="input-group span-1">
+                        <label>QD</label>
+                        <input type="text" id="qd" required>
+                    </div>
+
+                    <div class="input-group span-2">
+                        <label>Hospital</label>
+                        <input type="text" id="hospital" list="lista-hospitais" placeholder="Selecione..." required>
+                        <datalist id="lista-hospitais">
+                            <option value="OUTRO HOSPITAL (DIGITE O NOME)">
+                            <option value="HMCT (CARLOS TORTELLY)">
+                            <option value="HEAL (AZEVEDO LIMA)">
+                            <option value="HUAP (ANTÔNIO PEDRO)">
+                            <option value="HOSP. ORÊNCIO DE FREITAS">
+                            <option value="HOSP. PSIQUIÁTRICO JURUJUBA">
+                            <option value="HOSP. OCEÂNICO">
+                            <option value="HOSP. GETULINHO">
+                            <option value="UPA MÁRIO MONTEIRO">
+                            <option value="UPA FONSECA">
+                            <option value="CHN (COMPLEXO HOSPITALAR)">
+                            <option value="HCN (CLÍNICAS DE NITERÓI)">
+                            <option value="HOSP. SANTA MARTHA">
+                            <option value="HOSP. SÃO LUCAS">
+                            <option value="HOSP. ICARAÍ">
+                            <option value="HEAT (ALBERTO TORRES)">
+                            <option value="HOSP. LUIZ PALMIER">
+                            <option value="PRONTO SOCORRO CENTRAL (SG)">
+                            <option value="HOSP. SÃO GONÇALO">
+                            <option value="HOSP. FRANCISCANO (NS. GRAÇAS)">
+                            <option value="DOMICÍLIO">
+                            <option value="IML - NITERÓI">
+                            <option value="IML - SÃO GONÇALO">
+                        </datalist>
+                    </div>
+                    <div class="input-group span-2">
+                        <label>Capela</label>
+                        <input type="text" id="cap" list="lista-capelas" placeholder="Selecione..." required>
+                        <datalist id="lista-capelas">
+                            <option value="CAPELA A">
+                            <option value="CAPELA B">
+                            <option value="CAPELA C">
+                            <option value="CAPELA D">
+                            <option value="CAPELA E">
+                            <option value="CAPELA F">
+                            <option value="CAPELA G">
+                            <option value="CAPELA H">
+                        </datalist>
+                    </div>
+
+                    <div class="input-group span-2">
+                        <label>Data Falecimento</label>
+                        <input type="date" id="data_obito" required>
+                    </div>
+                    <div class="input-group span-2">
+                        <label>Hora Falecimento</label>
+                        <input type="time" id="hora_obito" required>
+                    </div>
+
+                    <div class="input-group span-4">
+                        <label>Observações</label>
+                        <textarea id="urna_info" rows="2" placeholder="Observações gerais..." required></textarea>
                     </div>
                 </div>
-                <div class="kpi-panel">
-                    <div class="kpi-card"><span>Média 7d</span><strong id="avg-7">0</strong></div>
-                    <div class="kpi-card"><span>Média 30d</span><strong id="avg-30">0</strong></div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                    <button type="submit" class="btn-salvar">Salvar Dados</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-visualizar" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detalhes do Atendimento</h3>
+                <span class="close" onclick="fecharModalVisualizar()">&times;</span>
+            </div>
+            
+            <div style="padding: 30px;">
+                <div class="form-grid">
+                    <div class="input-group span-1"><label>Hora</label><div class="view-field" id="view_hora"></div></div>
+                    <div class="input-group span-3"><label>Responsável</label><div class="view-field" id="view_resp_nome"></div></div>
+
+                    <div class="input-group span-3"><label>Funerária</label><div class="view-field" id="view_funeraria"></div></div>
+                    <div class="input-group span-1"><label>Isenção/Req.</label><div class="view-field" id="view_isencao_completa"></div></div>
+
+                    <div class="input-group span-4"><label>Modelo Urna</label><div class="view-field" id="view_combo_urna"></div></div>
+
+                    <div class="input-group span-4"><label>Falecido</label><div class="view-field" id="view_nome" style="font-weight: 700;"></div></div>
+                    <div class="input-group span-4"><label>Causa Morte</label><div class="view-field" id="view_causa"></div></div>
+
+                    <div class="input-group span-2"><label>Tipo</label><div class="view-field" id="view_tipo_sepultura"></div></div>
+                    <div class="input-group span-1"><label>Nº Sepul</label><div class="view-field" id="view_sepul"></div></div>
+                    <div class="input-group span-1"><label>QD</label><div class="view-field" id="view_qd"></div></div>
+
+                    <div class="input-group span-2"><label>Hospital</label><div class="view-field" id="view_hospital"></div></div>
+                    <div class="input-group span-2"><label>Capela</label><div class="view-field" id="view_cap"></div></div>
+
+                    <div class="input-group span-2"><label>Data Falec.</label><div class="view-field" id="view_data_obito"></div></div>
+                    <div class="input-group span-2"><label>Hora Falec.</label><div class="view-field" id="view_hora_obito"></div></div>
+
+                    <div class="input-group span-4"><label>Observações</label><div class="view-field" id="view_urna_info" style="min-height: 60px;"></div></div>
                 </div>
             </div>
 
-            <div class="log-history">
-                <h4>Logs Recentes</h4>
-                <div id="history-content" class="feed"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button>
             </div>
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
