@@ -42,7 +42,6 @@
     <div class="main-content">
         <div class="controles">
             <button onclick="abrirModalEstatisticas()" class="btn-imprimir" style="border-color: #8e44ad; color: #8e44ad;">📊 Estatísticas</button>
-            
             <button onclick="imprimirRelatorio('portrait')" class="btn-imprimir">🖨️ Retrato</button>
             <button onclick="imprimirRelatorio('landscape')" class="btn-imprimir">🖨️ Paisagem</button>
             <button onclick="abrirModal()" class="btn-novo">+ Novo Atendimento</button>
@@ -320,21 +319,9 @@
                     <p>Coordenadoria Municipal de Serviços Funerários</p>
                 </div>
 
-                <div class="ficha-linha">
-                    <span class="ficha-label">Horário:</span>
-                    <span class="ficha-valor" id="view_hora"></span>
-                </div>
-                
-                <div class="ficha-linha">
-                    <span class="ficha-label">Falecido(a):</span>
-                    <span class="ficha-valor" id="view_nome"></span>
-                </div>
-
-                <div class="ficha-linha">
-                    <span class="ficha-label">Causa da Morte:</span>
-                    <span class="ficha-valor" id="view_causa"></span>
-                </div>
-
+                <div class="ficha-linha"><span class="ficha-label">Horário:</span><span class="ficha-valor" id="view_hora"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">Falecido(a):</span><span class="ficha-valor" id="view_nome"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">Causa da Morte:</span><span class="ficha-valor" id="view_causa"></span></div>
                 <div class="ficha-linha">
                     <span class="ficha-label">Data/Hora Óbito:</span>
                     <span class="ficha-valor">
@@ -342,87 +329,53 @@
                         <span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span>
                     </span>
                 </div>
-
-                <div class="ficha-linha">
-                    <span class="ficha-label">Responsável:</span>
-                    <span class="ficha-valor" id="view_resp_completo"></span>
-                </div>
-
-                <div class="ficha-linha">
-                    <span class="ficha-label">Funerária:</span>
-                    <span class="ficha-valor" id="view_funeraria"></span>
-                </div>
-
-                <div class="ficha-linha">
-                    <span class="ficha-label">Acolhimento:</span>
-                    <span class="ficha-valor" id="view_isencao_completa"></span>
-                </div>
-
-                <div class="ficha-linha">
-                    <span class="ficha-label">Dados da Urna:</span>
-                    <span class="ficha-valor">
-                        <span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span>
-                    </span>
-                </div>
-
-                <div class="ficha-linha">
-                    <span class="ficha-label">Serviços Extras:</span>
-                    <span class="ficha-valor" id="view_servicos_adicionais"></span>
-                </div>
-
+                <div class="ficha-linha"><span class="ficha-label">Responsável:</span><span class="ficha-valor" id="view_resp_completo"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">Funerária:</span><span class="ficha-valor" id="view_funeraria"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">Acolhimento:</span><span class="ficha-valor" id="view_isencao_completa"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">Dados da Urna:</span><span class="ficha-valor"><span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span></span></div>
+                <div class="ficha-linha"><span class="ficha-label">Serviços Extras:</span><span class="ficha-valor" id="view_servicos_adicionais"></span></div>
                 <div class="ficha-linha">
                     <span class="ficha-label">Local Sepul.:</span>
-                    <span class="ficha-valor">
-                        Tipo: <span id="view_tipo_sepultura"></span> | 
-                        Nº: <span id="view_sepul"></span> | 
-                        QD: <span id="view_qd"></span>
-                    </span>
+                    <span class="ficha-valor">Tipo: <span id="view_tipo_sepultura"></span> | Nº: <span id="view_sepul"></span> | QD: <span id="view_qd"></span></span>
                 </div>
-
-                <div class="ficha-linha">
-                    <span class="ficha-label">Local Óbito:</span>
-                    <span class="ficha-valor" id="view_hospital_completo"></span>
-                </div>
-
-                <div class="ficha-linha">
-                    <span class="ficha-label">Velório:</span>
-                    <span class="ficha-valor" id="view_cap"></span>
-                </div>
-
-                <div class="ficha-linha" style="border-bottom: none;">
-                    <span class="ficha-label">Observações:</span>
-                    <span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span>
-                </div>
+                <div class="ficha-linha"><span class="ficha-label">Local Óbito:</span><span class="ficha-valor" id="view_hospital_completo"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">Velório:</span><span class="ficha-valor" id="view_cap"></span></div>
+                <div class="ficha-linha" style="border-bottom: none;"><span class="ficha-label">Observações:</span><span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span></div>
             </div>
 
             <div class="modal-footer" style="justify-content: space-between;">
-                <button type="button" class="btn-imprimir" id="btn-gerar-comprovante" onclick="gerarComprovante()">
-                    📄 Gerar Comprovante
-                </button>
+                <button type="button" class="btn-imprimir" id="btn-gerar-comprovante" onclick="gerarComprovante()">📄 Gerar Comprovante</button>
                 <button type="button" class="btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button>
             </div>
         </div>
     </div>
 
     <div id="modal-estatisticas" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
                 <h3>Relatório de Causas de Morte</h3>
                 <span class="close" onclick="fecharModalEstatisticas()">&times;</span>
             </div>
             
             <div style="padding: 20px;">
-                <div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px;">
-                    <button onclick="carregarEstatisticas(7)" class="btn-imprimir">Últimos 7 Dias</button>
-                    <button onclick="carregarEstatisticas(14)" class="btn-imprimir">Últimos 14 Dias</button>
-                    <button onclick="carregarEstatisticas(30)" class="btn-imprimir">Últimos 30 Dias</button>
+                <div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="carregarEstatisticas(7)" class="btn-imprimir">7 Dias</button>
+                    <button onclick="carregarEstatisticas(14)" class="btn-imprimir">14 Dias</button>
+                    <button onclick="carregarEstatisticas(30)" class="btn-imprimir">30 Dias</button>
+                    <div style="width: 1px; height: 25px; background: #ccc; margin: 0 10px;"></div>
+                    <button onclick="baixarExcel()" class="btn-novo" style="background-color: #27ae60;">📥 Excel</button>
+                    <button onclick="baixarPDF()" class="btn-novo" style="background-color: #c0392b;">📥 PDF</button>
                 </div>
 
                 <div id="loading-stats" style="text-align:center; display:none; color:#666;">
                     Carregando dados em tempo real...
                 </div>
 
-                <div id="lista-estatisticas" style="max-height: 400px; overflow-y: auto;"></div>
+                <div class="grafico-container">
+                    <canvas id="grafico-causas"></canvas>
+                </div>
+
+                <div id="lista-estatisticas" style="max-height: 300px; overflow-y: auto; margin-top: 20px;"></div>
             </div>
 
             <div class="modal-footer">
@@ -433,6 +386,12 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
     <script src="script.js"></script>
 </body>
 </html>
