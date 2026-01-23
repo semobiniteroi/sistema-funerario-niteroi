@@ -13,8 +13,9 @@ const db = firebase.firestore();
 
 let unsubscribe = null;
 let sepulturaOriginal = ""; 
+// Variável global para armazenar o dado do atendimento selecionado para o comprovante
+let dadosAtendimentoAtual = null;
 
-// Mapa de Dimensões das Urnas
 const dimensoesUrna = {
     'NORMAL': 'COMP: 2.00<br>ALT: 0.41<br>LARG: 0.70',
     'G': 'COMP: 2.00<br>ALT: 0.45<br>LARG: 0.80',
@@ -23,30 +24,156 @@ const dimensoesUrna = {
     'PERPETUA': ''
 };
 
-// --- FUNÇÃO ALTERNAR DESIGN ---
+// --- FUNÇÃO GERAR COMPROVANTE ---
+window.gerarComprovante = function() {
+    if (!dadosAtendimentoAtual) return;
+    const d = dadosAtendimentoAtual;
+
+    // Helpers para checkbox
+    const chk = (cond) => cond ? '( X )' : '(  )';
+    
+    // Formatação de datas
+    const fmtData = (dataStr) => {
+        if (!dataStr) return "";
+        const p = dataStr.split('-');
+        return `${p[2]}/${p[1]}/${p[0]}`;
+    };
+    
+    const dataHoje = new Date();
+    const dataAtualFmt = `${dataHoje.getDate().toString().padStart(2,'0')}/${(dataHoje.getMonth()+1).toString().padStart(2,'0')}/${dataHoje.getFullYear()}`;
+    const horaAtualFmt = `${dataHoje.getHours().toString().padStart(2,'0')}:${dataHoje.getMinutes().toString().padStart(2,'0')}`;
+
+    const htmlComprovante = `
+    <html>
+    <head>
+        <title>Comprovante de Atendimento</title>
+        <style>
+            body { font-family: "Courier New", Courier, monospace; font-size: 12px; margin: 20px; }
+            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+            .titulo { font-weight: bold; font-size: 16px; margin: 10px 0; text-align: center; }
+            .linha { margin: 5px 0; display: block; line-height: 1.5; }
+            .campo { font-weight: bold; }
+            .box { border: 1px solid #000; padding: 10px; margin: 10px 0; }
+            .assinaturas { margin-top: 50px; display: flex; justify-content: space-between; }
+            .assinatura-box { text-align: center; border-top: 1px solid #000; width: 45%; padding-top: 5px; }
+            .obs-box { border: 1px solid #000; padding: 5px; font-size: 11px; margin-top: 10px; }
+            .destaque { font-weight: bold; }
+            @media print {
+                @page { size: portrait; margin: 10mm; }
+                .no-print { display: none; }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h2>PREFEITURA MUNICIPAL DE NITERÓI</h2>
+            <p>ACOLHIMENTO - SERVIÇOS FUNERÁRIOS</p>
+        </div>
+
+        <div class="titulo">COMPROVANTE DE ATENDIMENTO</div>
+
+        <div class="box">
+            <span class="linha"><span class="campo">FALECIDO:</span> ${d.nome.toUpperCase()}</span>
+            <span class="linha"><span class="campo">FUNERÁRIA:</span> ${d.funeraria.toUpperCase()}</span>
+            <span class="linha"><span class="campo">DATA ATENDIMENTO:</span> ${dataAtualFmt} <span class="campo">HORA:</span> ${horaAtualFmt}</span>
+        </div>
+
+        <div class="box">
+            <span class="linha"><span class="campo">SEPULTAMENTO:</span> ${fmtData(d.data_ficha)} <span class="campo">HORA:</span> ${d.hora}</span>
+            <span class="linha">
+                <span class="campo">CEMITÉRIO:</span> 
+                ${chk(d.local.includes('MARUÍ'))} MARUÍ 
+                ${chk(d.local.includes('SÃO FRANCISCO'))} SÃO FRANCISCO 
+                ${chk(d.local.includes('ITAIPU'))} ITAIPU
+            </span>
+            <span class="linha">
+                <span class="campo">SEPULTURA:</span> ${d.sepul} 
+                <span class="campo">QUADRA:</span> ${d.qd} 
+                <span class="campo">CAPELA:</span> ${d.cap}
+            </span>
+            <span class="linha">
+                <span class="campo">DATA FALECIMENTO:</span> ${fmtData(d.data_obito)} <span class="campo">HORA:</span> ${d.hora_obito}
+            </span>
+        </div>
+
+        <div class="box">
+            <div class="linha"><span class="campo">ESTADO CIVIL:</span> ( ) SOLTEIRO ( ) CASADO ( ) VÍUVO ( ) UNIÃO ESTÁVEL ( ) DIVORCIADO</div>
+            <div class="linha" style="margin-top: 10px; font-weight:bold;">TIPO DE SEPULTURA:</div>
+            <div class="linha">
+                ${chk(d.tipo_sepultura === 'GAVETA' && d.classificacao_obito === 'ADULTO')} Gaveta Adulto 
+                ${chk(d.tipo_sepultura === 'CARNEIRO' && d.classificacao_obito === 'ADULTO')} Carneira Adulto 
+                ${chk(d.tipo_sepultura === 'COVA RASA' && d.classificacao_obito === 'ADULTO')} Cova Rasa Adulto
+            </div>
+            <div class="linha">
+                ${chk(d.tipo_sepultura === 'GAVETA' && d.classificacao_obito === 'ANJO')} Gaveta Anjo 
+                ${chk(d.tipo_sepultura === 'CARNEIRO' && d.classificacao_obito === 'ANJO')} Carneira Anjo 
+                ${chk(d.tipo_sepultura === 'PERPETUA')} Perpétuo
+            </div>
+            <div class="linha" style="margin-top: 10px;">
+                <span class="campo">TANATOPRAXIA:</span> ${chk(d.tanato === 'SIM')} SIM ${chk(d.tanato !== 'SIM')} NÃO
+            </div>
+        </div>
+
+        <div class="obs-box">
+            <strong>OBSERVAÇÕES:</strong><br>
+            1. PASSANDO DAS 36 HORAS DO FALECIMENTO SOMENTE COM TANATOPRAXIA.<br>
+            2. VELÓRIO COM DURAÇÃO DE DUAS HORAS ANTES DO SEPULTAMENTO.<br>
+            3. EM CASO DE ATRASO DO SERVIÇO FUNERÁRIO NÃO SERÁ ESTENDIDO O HORÁRIO ESTABELECIDO.<br>
+            4. TAXAS MUNICIPAIS E INVOL DEVEM SER PAGOS COM DUAS HORAS DE ANTECEDÊNCIA.
+        </div>
+
+        <div style="margin-top: 20px; font-size: 11px;">
+            <strong>TERMO DE COMPROMISSO CEMITÉRIOS MUNICIPAIS:</strong><br>
+            Sendo o FALECIDO CASADO, o responsável será obrigatoriamente o CÔNJUGE.<br>
+            Sendo o FALECIDO VIÚVO, os responsáveis serão obrigatoriamente os FILHOS.<br>
+            Sendo o FALECIDO SOLTEIRO, os responsáveis serão obrigatoriamente FILHOS, PAIS ou IRMÃOS.<br>
+            <em>Será exigida a apresentação de documentos de IDENTIDADE e CPF.</em>
+        </div>
+
+        <div class="assinaturas">
+            <div class="assinatura-box">
+                Assinatura Funcionário (Acolhimento)
+            </div>
+            <div class="assinatura-box">
+                Assinatura Responsável / Família<br>
+                <span style="font-size:10px;">${d.resp_nome.toUpperCase()}</span>
+            </div>
+        </div>
+
+        <div class="obs-box" style="margin-top: 20px;">
+            <strong>COMUNICADO:</strong><br>
+            Somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação:
+            GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL), TAXAS MUNICIPAIS PAGAS e INVOL.
+        </div>
+
+        <script>
+            window.onload = function() { window.print(); }
+        </script>
+    </body>
+    </html>
+    `;
+
+    const win = window.open('', '_blank');
+    win.document.write(htmlComprovante);
+    win.document.close();
+}
+
 window.alternarDesign = function() {
     document.body.classList.toggle('design-classico');
     const isClassic = document.body.classList.contains('design-classico');
     localStorage.setItem('designMode', isClassic ? 'classico' : 'moderno');
 }
 
-// --- FUNÇÃO DE IMPRESSÃO (COM DELAY PARA PROCESSAR O CSS) ---
 window.imprimirRelatorio = function(modo) {
     const oldStyle = document.getElementById('print-style');
     if (oldStyle) oldStyle.remove();
-
     const style = document.createElement('style');
     style.id = 'print-style';
     style.innerHTML = `@page { size: ${modo}; margin: 5mm; }`;
     document.head.appendChild(style);
-
-    // Timeout para garantir que o navegador atualize o layout antes de imprimir
-    setTimeout(() => {
-        window.print();
-    }, 200);
+    setTimeout(() => { window.print(); }, 200);
 }
 
-// --- FUNÇÃO CIDADES IBGE ---
 function carregarCidades(uf, cidadeSelecionada = "") {
     const selectCidade = document.getElementById('cidade_obito');
     if(!uf) {
@@ -78,12 +205,10 @@ function carregarCidades(uf, cidadeSelecionada = "") {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // APLICAR TEMA SALVO
     if (localStorage.getItem('designMode') === 'classico') {
         document.body.classList.add('design-classico');
     }
 
-    // RELÓGIO
     const selectHora = document.getElementById('hora');
     selectHora.innerHTML = '<option value="">--:--</option>';
     for (let h = 0; h < 24; h++) {
@@ -105,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
     inputData.addEventListener('change', (e) => atualizarListener(e.target.value, inputLocal.value));
     inputLocal.addEventListener('change', (e) => atualizarListener(inputData.value, e.target.value));
 
-    // Listeners
     const seletorCausas = document.getElementById('seletor_causas');
     if (seletorCausas) {
         seletorCausas.addEventListener('change', function() {
@@ -300,6 +424,8 @@ window.visualizar = function(id) {
     db.collection("atendimentos").doc(id).get().then((doc) => {
         if (doc.exists) {
             const item = doc.data();
+            dadosAtendimentoAtual = item; // Salva para o comprovante
+
             document.getElementById('view_hora').innerText = item.hora || '-';
             let respTexto = item.resp_nome || '-';
             if (item.parentesco) respTexto += ` (${item.parentesco})`;
