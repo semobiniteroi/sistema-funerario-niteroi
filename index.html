@@ -79,14 +79,32 @@
                 <div class="form-grid">
                     <div class="input-group span-1">
                         <label>Hora Sepultamento</label>
-                        <input type="time" id="hora" required step="1800">
+                        <select id="hora" required>
+                            </select>
                     </div>
-                    <div class="input-group span-3">
+                    <div class="input-group span-2">
                         <label>Nome do Responsável</label>
                         <input type="text" id="resp_nome" placeholder="Nome do familiar ou empresa" required>
                     </div>
-                    
                     <div class="input-group span-1">
+                        <label>Grau Parentesco</label>
+                        <input type="text" id="parentesco" list="lista-parentesco" placeholder="Selecione ou digite...">
+                        <datalist id="lista-parentesco">
+                            <option value="CÔNJUGE">
+                            <option value="FILHO(A)">
+                            <option value="PAI/MÃE">
+                            <option value="IRMÃO(Ã)">
+                            <option value="NETO(A)">
+                            <option value="SOBRINHO(A)">
+                            <option value="GENRO/NORA">
+                            <option value="CUNHADO(A)">
+                            <option value="TIO(A)">
+                            <option value="PRIMO(A)">
+                            <option value="OUTRO">
+                        </datalist>
+                    </div>
+                    
+                    <div class="input-group span-2">
                         <label>Funerária</label>
                         <input type="text" id="funeraria" list="lista-funerarias" placeholder="Selecione..." required>
                         <datalist id="lista-funerarias">
@@ -123,6 +141,14 @@
                     </div>
                     
                     <div class="input-group span-1">
+                        <label>Classificação</label>
+                        <select id="classificacao_obito">
+                            <option value="ADULTO">ADULTO</option>
+                            <option value="ANJO">ANJO (Criança/Natimorto)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group span-1">
                         <label>Tamanho Urna</label>
                         <select id="combo_urna">
                             <option value="">Selecione...</option>
@@ -133,9 +159,9 @@
                         </select>
                     </div>
                     
-                    <div class="input-group span-4">
+                    <div class="input-group span-2">
                         <label>Tipo da Urna (Material/Modelo)</label>
-                        <input type="text" id="tipo_urna_detalhe" list="lista-tipos-urna" placeholder="Ex: Madeira, Sextavada, Zinco...">
+                        <input type="text" id="tipo_urna_detalhe" list="lista-tipos-urna" placeholder="Ex: Madeira, Sextavada...">
                         <datalist id="lista-tipos-urna">
                             <option value="MADEIRA PADRÃO">
                             <option value="SEXTAVADA">
@@ -147,12 +173,22 @@
                     </div>
 
                     <div class="input-group span-4">
+                        <label>Serviços Adicionais / Opcionais</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="chk_tanato"> Tanatopraxia</label>
+                            <label><input type="checkbox" id="chk_invol"> Invol</label>
+                            <label><input type="checkbox" id="chk_translado"> Translado</label>
+                            <label><input type="checkbox" id="chk_urna_opc"> Urna</label>
+                        </div>
+                    </div>
+
+                    <div class="input-group span-4">
                         <label>Nome do Falecido</label>
                         <input type="text" id="nome" required style="font-weight: 600;">
                     </div>
                     
                     <div class="input-group span-4">
-                        <label>Causa da Morte (Selecione para adicionar várias)</label>
+                        <label>Causa da Morte</label>
                         <div style="display: flex; gap: 10px;">
                             <select id="seletor_causas" style="width: 40%; border: 1px solid #3699ff;">
                                 <option value="">+ Adicionar Causa...</option>
@@ -176,7 +212,7 @@
                         </div>
                     </div>
 
-                    <div class="input-group span-2">
+                    <div class="input-group span-1">
                         <label>Tipo Sepultura</label>
                         <select id="tipo_sepultura" required>
                             <option value="">Selecione...</option>
@@ -194,11 +230,17 @@
                         <label>QD</label>
                         <input type="text" id="qd" required>
                     </div>
+                    
+                    <div class="input-group span-1 hidden" id="div-motivo-sepultura">
+                        <label style="color:red;">Motivo Troca</label>
+                        <input type="text" id="motivo_troca_sepultura" placeholder="Explique a mudança...">
+                    </div>
 
                     <div class="input-group span-2">
-                        <label>Hospital</label>
+                        <label>Hospital / Local</label>
                         <input type="text" id="hospital" list="lista-hospitais" placeholder="Selecione..." required>
                         <datalist id="lista-hospitais">
+                            <option value="DOMICÍLIO">
                             <option value="OUTRO HOSPITAL (DIGITE O NOME)">
                             <option value="HMCT (CARLOS TORTELLY)">
                             <option value="HEAL (AZEVEDO LIMA)">
@@ -219,11 +261,53 @@
                             <option value="PRONTO SOCORRO CENTRAL (SG)">
                             <option value="HOSP. SÃO GONÇALO">
                             <option value="HOSP. FRANCISCANO (NS. GRAÇAS)">
-                            <option value="DOMICÍLIO">
                             <option value="IML - NITERÓI">
                             <option value="IML - SÃO GONÇALO">
                         </datalist>
                     </div>
+
+                    <div class="input-group span-2 hidden" id="div-local-domicilio" style="flex-direction: row; gap: 5px;">
+                        <div style="flex: 1;">
+                            <label>UF</label>
+                            <select id="estado_obito">
+                                <option value="">UF</option>
+                                <option value="RJ">RJ</option>
+                                <option value="SP">SP</option>
+                                <option value="MG">MG</option>
+                                <option value="ES">ES</option>
+                                <option value="BA">BA</option>
+                                <option value="AC">AC</option>
+                                <option value="AL">AL</option>
+                                <option value="AP">AP</option>
+                                <option value="AM">AM</option>
+                                <option value="CE">CE</option>
+                                <option value="DF">DF</option>
+                                <option value="GO">GO</option>
+                                <option value="MA">MA</option>
+                                <option value="MT">MT</option>
+                                <option value="MS">MS</option>
+                                <option value="PA">PA</option>
+                                <option value="PB">PB</option>
+                                <option value="PR">PR</option>
+                                <option value="PE">PE</option>
+                                <option value="PI">PI</option>
+                                <option value="RN">RN</option>
+                                <option value="RS">RS</option>
+                                <option value="RO">RO</option>
+                                <option value="RR">RR</option>
+                                <option value="SC">SC</option>
+                                <option value="SE">SE</option>
+                                <option value="TO">TO</option>
+                            </select>
+                        </div>
+                        <div style="flex: 2;">
+                            <label>Cidade</label>
+                            <select id="cidade_obito" disabled>
+                                <option value="">Selecione a UF primeiro</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="input-group span-2">
                         <label>Capela</label>
                         <input type="text" id="cap" list="lista-capelas" placeholder="Selecione..." required>
@@ -273,7 +357,7 @@
             <div style="padding: 30px;">
                 <div class="form-grid">
                     <div class="input-group span-1"><label>Hora</label><div class="view-field" id="view_hora"></div></div>
-                    <div class="input-group span-3"><label>Responsável</label><div class="view-field" id="view_resp_nome"></div></div>
+                    <div class="input-group span-3"><label>Responsável / Parentesco</label><div class="view-field" id="view_resp_completo"></div></div>
 
                     <div class="input-group span-3"><label>Funerária</label><div class="view-field" id="view_funeraria"></div></div>
                     <div class="input-group span-1"><label>Isenção/Req.</label><div class="view-field" id="view_isencao_completa"></div></div>
@@ -281,20 +365,25 @@
                     <div class="input-group span-2"><label>Tamanho Urna</label><div class="view-field" id="view_combo_urna"></div></div>
                     <div class="input-group span-2"><label>Tipo/Material</label><div class="view-field" id="view_tipo_urna_detalhe"></div></div>
 
-                    <div class="input-group span-4"><label>Falecido</label><div class="view-field" id="view_nome" style="font-weight: 700;"></div></div>
+                    <div class="input-group span-4">
+                        <label>Serviços Adicionais</label>
+                        <div class="view-field" id="view_servicos_adicionais"></div>
+                    </div>
+
+                    <div class="input-group span-4"><label>Falecido (Tipo)</label><div class="view-field" id="view_nome" style="font-weight: 700;"></div></div>
                     <div class="input-group span-4"><label>Causa Morte</label><div class="view-field" id="view_causa"></div></div>
 
                     <div class="input-group span-2"><label>Tipo</label><div class="view-field" id="view_tipo_sepultura"></div></div>
                     <div class="input-group span-1"><label>Nº Sepul</label><div class="view-field" id="view_sepul"></div></div>
                     <div class="input-group span-1"><label>QD</label><div class="view-field" id="view_qd"></div></div>
 
-                    <div class="input-group span-2"><label>Hospital</label><div class="view-field" id="view_hospital"></div></div>
+                    <div class="input-group span-2"><label>Hospital / Local</label><div class="view-field" id="view_hospital_completo"></div></div>
                     <div class="input-group span-2"><label>Capela</label><div class="view-field" id="view_cap"></div></div>
 
                     <div class="input-group span-2"><label>Data Falec.</label><div class="view-field" id="view_data_obito"></div></div>
                     <div class="input-group span-2"><label>Hora Falec.</label><div class="view-field" id="view_hora_obito"></div></div>
 
-                    <div class="input-group span-4"><label>Observações</label><div class="view-field" id="view_urna_info" style="min-height: 60px;"></div></div>
+                    <div class="input-group span-4"><label>Observações / Motivo Troca</label><div class="view-field" id="view_urna_info" style="min-height: 60px;"></div></div>
                 </div>
             </div>
 
