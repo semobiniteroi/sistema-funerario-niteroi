@@ -39,18 +39,14 @@ body {
 }
 
 .logo-area { display: flex; align-items: center; gap: 15px; }
-
-/* ALTERAÇÃO: Ajuste de tamanho para a nova logomarca (mais larga) */
 .logo-area img { 
     height: auto; 
-    max-height: 70px; /* Altura máxima boa para o header */
-    max-width: 250px; /* Garante que não fique gigante em telas pequenas */
+    max-height: 70px; 
+    max-width: 250px;
     object-fit: contain;
 }
 
 .titulo-area { text-align: left; }
-/* H2 e H3 ajustados, mas H2 está oculto no HTML agora */
-.titulo-area h2 { color: var(--text-dark); margin: 0; font-size: 18px; font-weight: 700; }
 .titulo-area h3 { margin: 2px 0; font-size: 12px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; }
 
 .info-area { display: flex; align-items: center; gap: 20px; }
@@ -130,19 +126,64 @@ input, textarea, select { padding: 10px 15px; border: 1px solid #e4e6ef; border-
     .controles { justify-content: center; }
 }
 
-/* Impressão */
+/* --- MODO IMPRESSÃO (Retrato e Otimizado) --- */
 @media print {
-    body { background-color: white; font-size: 10px; }
-    .main-content { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
-    .header-prefeitura { box-shadow: none; border: 2px solid #000; padding: 5px; margin-bottom: 5px; }
+    @page { 
+        size: portrait; /* Força Retrato */
+        margin: 5mm; 
+    }
+
+    body { 
+        background-color: white; 
+        font-size: 8px; /* Fonte reduzida para caber */
+        margin: 0;
+        padding: 0;
+    }
+
+    .main-content { max-width: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    
+    .header-prefeitura { 
+        box-shadow: none; 
+        border: 2px solid #000; 
+        padding: 5px; 
+        margin-bottom: 5px;
+        flex-direction: row !important;
+        justify-content: space-between;
+    }
+    
+    .logo-area img { max-height: 40px !important; }
+    
     .controles, .btn-icon, .t-acoes, .badge-covid { display: none !important; }
+    
     th:last-child, td:last-child { display: none !important; }
-    .tabela-container { box-shadow: none; border: 2px solid #000; overflow: visible !important; display: block !important; padding: 0; }
-    table { width: 100% !important; border-collapse: collapse !important; }
-    th, td { border: 1px solid #000 !important; padding: 4px !important; color: black !important; font-size: 9px !important; }
-    th { background-color: #ddd !important; }
-    #filtro-local, #filtro-data { border: none; appearance: none; padding: 0; color: black !important; }
-    .texto-vermelho { color: red !important; }
-    .logo-area img { max-height: 50px !important; } /* Ajuste logo na impressão */
-    @page { size: landscape; margin: 5mm; }
+    
+    .tabela-container { 
+        box-shadow: none; 
+        border: 2px solid #000; 
+        overflow: visible !important; 
+        display: block !important; 
+        padding: 0;
+        border-radius: 0;
+    }
+    
+    table { 
+        width: 100% !important; 
+        border-collapse: collapse !important; 
+    }
+    
+    th, td { 
+        border: 1px solid #000 !important; 
+        padding: 3px 2px !important; 
+        color: black !important; 
+        font-size: 8px !important;
+        white-space: normal !important;
+    }
+    
+    th { background-color: #ddd !important; -webkit-print-color-adjust: exact; }
+    
+    #filtro-local, #filtro-data { 
+        border: none; appearance: none; padding: 0; color: black !important; font-size: 10px !important; 
+    }
+    
+    .texto-vermelho { color: red !important; -webkit-print-color-adjust: exact; }
 }

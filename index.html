@@ -12,7 +12,6 @@
     <header class="header-prefeitura">
         <div class="logo-area">
             <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" alt="Prefeitura de Niterói" id="logo-principal">
-            
             <div class="titulo-area">
                 <h3 style="margin-left: 10px; border-left: 1px solid #ccc; padding-left: 10px;">Serviços Funerários</h3>
             </div>
@@ -40,12 +39,8 @@
 
     <div class="main-content">
         <div class="controles">
-            <button onclick="window.print()" class="btn-imprimir">
-                Imprimir
-            </button>
-            <button onclick="abrirModal()" class="btn-novo">
-                + Novo Atendimento
-            </button>
+            <button onclick="window.print()" class="btn-imprimir">Imprimir</button>
+            <button onclick="abrirModal()" class="btn-novo">+ Novo Atendimento</button>
         </div>
 
         <div class="tabela-container">
@@ -61,8 +56,8 @@
                         <th>QD</th>
                         <th>Hospital</th>
                         <th>Cap</th>
-                        <th style="min-width: 120px;">Falecimento</th>
-                        <th style="text-align: right; min-width: 100px;">Ações</th>
+                        <th style="min-width: 130px;">Falecimento / Tempo</th>
+                        <th style="text-align: right; min-width: 80px;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabela-corpo">
@@ -112,8 +107,8 @@
                         <label>Isenção?</label>
                         <select id="isencao" required>
                             <option value="NAO">NÃO (PAGO)</option>
-                            <option value="SIM">SIM (GRATUIDADE)</option>
-                            <option value="50">SIM (50%)</option>
+                            <option value="SIM">SIM (100% GRATUIDADE)</option>
+                            <option value="50">SIM (50% DESCONTO)</option>
                         </select>
                     </div>
                     <div class="input-group span-1">
@@ -126,8 +121,9 @@
                             <option value="OUTRO (DIGITE)">
                         </datalist>
                     </div>
+                    
                     <div class="input-group span-1">
-                        <label>Modelo Urna</label>
+                        <label>Tamanho Urna</label>
                         <select id="combo_urna">
                             <option value="">Selecione...</option>
                             <option value="NORMAL">Normal</option>
@@ -136,6 +132,19 @@
                             <option value="3G">3G</option>
                         </select>
                     </div>
+                    
+                    <div class="input-group span-4">
+                        <label>Tipo da Urna (Material/Modelo)</label>
+                        <input type="text" id="tipo_urna_detalhe" list="lista-tipos-urna" placeholder="Ex: Madeira, Sextavada, Zinco...">
+                        <datalist id="lista-tipos-urna">
+                            <option value="MADEIRA PADRÃO">
+                            <option value="SEXTAVADA">
+                            <option value="ZINCO">
+                            <option value="BIO (ECOLÓGICA)">
+                            <option value="LUXO">
+                            <option value="IML / RABECÃO">
+                        </datalist>
+                    </div>
 
                     <div class="input-group span-4">
                         <label>Nome do Falecido</label>
@@ -143,30 +152,28 @@
                     </div>
                     
                     <div class="input-group span-4">
-                        <label>Causa da Morte</label>
-                        <input type="text" id="causa" placeholder="Selecione ou digite..." list="lista-causas" required>
-                        <datalist id="lista-causas">
-                            <option value="OUTRA CAUSA (DIGITE O NOME)">
-                            <option value="CHOQUE SÉPTICO">
-                            <option value="INSUFICIÊNCIA RESPIRATÓRIA AGUDA">
-                            <option value="INSUFICIÊNCIA RENAL AGUDA">
-                            <option value="NEOPLASIA MALIGNA DE MAMA">
-                            <option value="NEOPLASIA MALIGNA DE PRÓSTATA">
-                            <option value="NEOPLASIA MALIGNA DE PULMÃO">
-                            <option value="NEOPLASIA MALIGNA DE CÓLON">
-                            <option value="INFARTO AGUDO DO MIOCÁRDIO (IAM)">
-                            <option value="ACIDENTE VASCULAR CEREBRAL (AVC)">
-                            <option value="PNEUMONIA NÃO ESPECIFICADA">
-                            <option value="SEPSE">
-                            <option value="FALÊNCIA MÚLTIPLA DE ÓRGÃOS">
-                            <option value="SENILIDADE">
-                            <option value="COVID-19">
-                            <option value="TRAUMATISMO CRANIANO">
-                            <option value="AFOGAMENTO">
-                            <option value="HIPERTENSÃO ARTERIAL">
-                            <option value="IAM/BAV DE PRIMEIRO GRAU">
-                            <option value="MORTE SEM ASSISTÊNCIA">
-                        </datalist>
+                        <label>Causa da Morte (Selecione para adicionar várias)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="seletor_causas" style="width: 40%; border: 1px solid #3699ff;">
+                                <option value="">+ Adicionar Causa...</option>
+                                <option value="CHOQUE SÉPTICO">CHOQUE SÉPTICO</option>
+                                <option value="INSUFICIÊNCIA RESPIRATÓRIA">INSUFICIÊNCIA RESPIRATÓRIA</option>
+                                <option value="INSUFICIÊNCIA RENAL">INSUFICIÊNCIA RENAL</option>
+                                <option value="NEOPLASIA MALIGNA">NEOPLASIA MALIGNA</option>
+                                <option value="INFARTO AGUDO DO MIOCÁRDIO">INFARTO (IAM)</option>
+                                <option value="AVC">AVC</option>
+                                <option value="PNEUMONIA">PNEUMONIA</option>
+                                <option value="SEPSE">SEPSE</option>
+                                <option value="FALÊNCIA MÚLTIPLA DE ÓRGÃOS">FALÊNCIA MÚLTIPLA</option>
+                                <option value="SENILIDADE">SENILIDADE</option>
+                                <option value="COVID-19">COVID-19</option>
+                                <option value="TRAUMATISMO CRANIANO">TRAUMATISMO CRANIANO</option>
+                                <option value="AFOGAMENTO">AFOGAMENTO</option>
+                                <option value="HIPERTENSÃO">HIPERTENSÃO</option>
+                                <option value="INDETERMINADA">INDETERMINADA</option>
+                            </select>
+                            <input type="text" id="causa" placeholder="Causas aparecerão aqui..." required style="width: 60%;">
+                        </div>
                     </div>
 
                     <div class="input-group span-2">
@@ -221,6 +228,7 @@
                         <label>Capela</label>
                         <input type="text" id="cap" list="lista-capelas" placeholder="Selecione..." required>
                         <datalist id="lista-capelas">
+                            <option value="SEM VELÓRIO / DIRETO">
                             <option value="CAPELA A">
                             <option value="CAPELA B">
                             <option value="CAPELA C">
@@ -270,7 +278,8 @@
                     <div class="input-group span-3"><label>Funerária</label><div class="view-field" id="view_funeraria"></div></div>
                     <div class="input-group span-1"><label>Isenção/Req.</label><div class="view-field" id="view_isencao_completa"></div></div>
 
-                    <div class="input-group span-4"><label>Modelo Urna</label><div class="view-field" id="view_combo_urna"></div></div>
+                    <div class="input-group span-2"><label>Tamanho Urna</label><div class="view-field" id="view_combo_urna"></div></div>
+                    <div class="input-group span-2"><label>Tipo/Material</label><div class="view-field" id="view_tipo_urna_detalhe"></div></div>
 
                     <div class="input-group span-4"><label>Falecido</label><div class="view-field" id="view_nome" style="font-weight: 700;"></div></div>
                     <div class="input-group span-4"><label>Causa Morte</label><div class="view-field" id="view_causa"></div></div>

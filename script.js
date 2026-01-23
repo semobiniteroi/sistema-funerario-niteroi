@@ -1,4 +1,4 @@
-// --- FIREBASE CONFIGURATION (Your Keys) ---
+// --- CONFIGURAÇÃO DO FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyB6pkQZNuLiYidKqstJdMXRl2OYW4JWmfs",
   authDomain: "funeraria-niteroi.firebaseapp.com",
@@ -13,7 +13,7 @@ const db = firebase.firestore();
 
 let unsubscribe = null;
 
-// Urn Dimensions Map
+// Mapa de Dimensões das Urnas
 const dimensoesUrna = {
     'NORMAL': 'COMP: 2.00<br>ALT: 0.41<br>LARG: 0.70',
     'G': 'COMP: 2.00<br>ALT: 0.45<br>LARG: 0.80',
@@ -38,6 +38,25 @@ document.addEventListener('DOMContentLoaded', () => {
     inputLocal.addEventListener('change', (e) => {
         atualizarListener(inputData.value, e.target.value);
     });
+
+    // --- CORREÇÃO DA FUNÇÃO ADICIONAR CAUSA ---
+    // Adicionado o listener aqui para garantir que funcione
+    const seletorCausas = document.getElementById('seletor_causas');
+    if (seletorCausas) {
+        seletorCausas.addEventListener('change', function() {
+            const inputCausa = document.getElementById("causa");
+            const valorSelecionado = this.value;
+
+            if (valorSelecionado) {
+                if (inputCausa.value) {
+                    inputCausa.value += " / " + valorSelecionado;
+                } else {
+                    inputCausa.value = valorSelecionado;
+                }
+                this.value = ""; // Reseta o seletor
+            }
+        });
+    }
 });
 
 function atualizarListener(dataSelecionada, localSelecionado) {
@@ -57,9 +76,6 @@ function atualizarListener(dataSelecionada, localSelecionado) {
               let dado = doc.data();
               dado.id = doc.id;
               
-              // --- FIX IS HERE ---
-              // If the record has NO location (it's old), we assume it is "CEMITÉRIO DO MARUÍ".
-              // This makes the old data appear when "MARUÍ" is selected.
               const localDoRegistro = dado.local || "CEMITÉRIO DO MARUÍ";
 
               if (localDoRegistro === localSelecionado) {
@@ -95,17 +111,16 @@ function renderizarTabela(lista) {
         tr.onclick = () => visualizar(item.id);
         tr.title = "Clique para ver detalhes";
 
-        // --- COLUMN 1: RESPONSIBLE / URN ---
+        // --- COLUNA 1: RESPONSÁVEL / URNA ---
         let displayResponsavel = "";
         
-        // Priority: Exemption / Funeral Home / Responsible
         if (item.isencao === "50") {
-            displayResponsavel += `ACOLHIMENTO 50% TX`;
-            if(item.requisito) displayResponsavel += `<br>${item.requisito.toUpperCase()}`;
+            displayResponsavel += `ACOLHIMENTO <span style="font-weight:900;">50% DE ISENÇÃO</span>`;
+            if(item.requisito) displayResponsavel += `<br>REQ: ${item.requisito.toUpperCase()}`;
             displayResponsavel += `<br>`;
         } else if (item.isencao === "SIM") {
-            displayResponsavel += `ACOLHIMENTO 100% TX`;
-            if(item.requisito) displayResponsavel += `<br>${item.requisito.toUpperCase()}`;
+            displayResponsavel += `ACOLHIMENTO <span style="font-weight:900;">100% DE ISENÇÃO</span>`;
+            if(item.requisito) displayResponsavel += `<br>REQ: ${item.requisito.toUpperCase()}`;
             displayResponsavel += `<br>`;
         } else {
             if (item.funeraria) {
@@ -115,9 +130,12 @@ function renderizarTabela(lista) {
             }
         }
 
-        // Urn Data
+        if (item.tipo_urna_detalhe) {
+            displayResponsavel += `<span style="font-weight:bold;">${item.tipo_urna_detalhe.toUpperCase()}</span><br>`;
+        }
+
         if (item.combo_urna && dimensoesUrna[item.combo_urna]) {
-            displayResponsavel += `URNA<br>${dimensoesUrna[item.combo_urna]}<br>`;
+            displayResponsavel += `URNA ${item.combo_urna}<br>${dimensoesUrna[item.combo_urna]}<br>`;
         } else if (item.combo_urna) {
             displayResponsavel += `URNA ${item.combo_urna}<br>`;
         }
@@ -126,24 +144,36 @@ function renderizarTabela(lista) {
             displayResponsavel += `<span style="font-weight:normal; font-size:11px;">${item.urna_info.toUpperCase()}</span>`;
         }
 
-        // --- COLUMN 3: NAME / CAUSE ---
+        // --- COLUNA 3: NOME / CAUSA ---
         const conteudoNome = `<div style="font-weight:700; font-size:12px;">${item.nome.toUpperCase()}</div>
                               <div class="texto-vermelho" style="font-size:11px; margin-top:2px;">
                                 (${item.causa ? item.causa.toUpperCase() : 'CAUSA NÃO INFORMADA'})
                               </div>`;
         
-        // --- COLUMN DEATH (Vertical) ---
+        // --- COLUNA FALECIMENTO ---
         let displayFalecimento = '';
-        if (item.data_obito) {
+        if (item.data_obito && item.data_ficha) {
             const partes = item.data_obito.split('-');
             const dataFormatada = `${partes[2]}/${partes[1]}`; 
-            // Format: DAY: dd/mm AT: hh:mm
+            
+            let textoTempo = "";
+            if (item.hora_obito && item.hora) {
+                const inicio = new Date(`${item.data_obito}T${item.hora_obito}`);
+                const fim = new Date(`${item.data_ficha}T${item.hora}`);
+                
+                if (!isNaN(inicio) && !isNaN(fim)) {
+                    const diffMs = fim - inicio;
+                    const diffHrs = Math.floor(diffMs / 3600000);
+                    const diffMins = Math.round(((diffMs % 3600000) / 60000));
+                    textoTempo = `<br><span style="font-weight:bold; font-size:10px;">INTERVALO: ${diffHrs}H ${diffMins}M</span>`;
+                }
+            }
+
             displayFalecimento = `
-                <div style="line-height:1.5;">
-                    <span class="texto-vermelho">DIA:</span><br>
-                    ${dataFormatada}<br>
-                    <span class="texto-vermelho">AS:</span><br>
-                    ${item.hora_obito || '--:--'}
+                <div style="line-height:1.3;">
+                    <span class="texto-vermelho">DIA:</span> ${dataFormatada}<br>
+                    <span class="texto-vermelho">AS:</span> ${item.hora_obito || '--:--'}
+                    ${textoTempo}
                 </div>
             `;
         } else if (item.falecimento) {
@@ -176,7 +206,7 @@ function renderizarTabela(lista) {
     });
 }
 
-// --- MODALS ---
+// --- MODAIS ---
 
 const modal = document.getElementById('modal');
 const modalVisualizar = document.getElementById('modal-visualizar');
@@ -188,7 +218,9 @@ function abrirModal() {
     document.getElementById('tipo_sepultura').value = "";
     document.getElementById('isencao').value = "NAO"; 
     document.getElementById('combo_urna').value = ""; 
+    document.getElementById('tipo_urna_detalhe').value = "";
     document.getElementById('requisito').value = "";
+    document.getElementById('seletor_causas').value = "";
     modal.style.display = 'block';
 }
 
@@ -205,13 +237,14 @@ window.visualizar = function(id) {
             document.getElementById('view_funeraria').innerText = item.funeraria || '-';
             
             let textoIsencao = "NÃO (Pago)";
-            if (item.isencao === "SIM") textoIsencao = "SIM (Gratuidade)";
-            if (item.isencao === "50") textoIsencao = "SIM (50%)";
+            if (item.isencao === "SIM") textoIsencao = "SIM (100% Isenção)";
+            if (item.isencao === "50") textoIsencao = "SIM (50% Isenção)";
             if (item.requisito) textoIsencao += ` - ${item.requisito}`;
             
             document.getElementById('view_isencao_completa').innerText = textoIsencao;
             document.getElementById('view_urna_info').innerText = item.urna_info || '-';
             document.getElementById('view_combo_urna').innerText = item.combo_urna || '-';
+            document.getElementById('view_tipo_urna_detalhe').innerText = item.tipo_urna_detalhe || '-';
             
             document.getElementById('view_nome').innerText = item.nome || '-';
             document.getElementById('view_causa').innerText = item.causa || '-';
@@ -252,6 +285,7 @@ window.editar = function(id) {
             document.getElementById('resp_nome').value = item.resp_nome || '';
             document.getElementById('urna_info').value = item.urna_info || item.responsavel || '';
             document.getElementById('combo_urna').value = item.combo_urna || ""; 
+            document.getElementById('tipo_urna_detalhe').value = item.tipo_urna_detalhe || "";
             document.getElementById('funeraria').value = item.funeraria || '';
             document.getElementById('isencao').value = item.isencao || 'NAO';
             document.getElementById('requisito').value = item.requisito || '';
@@ -290,6 +324,7 @@ form.onsubmit = (e) => {
         resp_nome: document.getElementById('resp_nome').value,
         urna_info: document.getElementById('urna_info').value,
         combo_urna: document.getElementById('combo_urna').value, 
+        tipo_urna_detalhe: document.getElementById('tipo_urna_detalhe').value,
         funeraria: document.getElementById('funeraria').value,
         isencao: document.getElementById('isencao').value,
         requisito: document.getElementById('requisito').value, 
