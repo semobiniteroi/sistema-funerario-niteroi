@@ -11,12 +11,16 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// VARIÁVEIS GLOBAIS
 let unsubscribe = null;
 let statsUnsubscribe = null;
+let equipeUnsubscribe = null;
+let logsUnsubscribe = null;
 let sepulturaOriginal = ""; 
 let dadosAtendimentoAtual = null;
 let dadosEstatisticasExportacao = [];
-let chartInstance = null;
+let chartInstances = {};
+let usuarioLogado = null; 
 
 const dimensoesUrna = {
     'NORMAL': 'COMP: 2.00<br>ALT: 0.41<br>LARG: 0.70',
@@ -26,402 +30,337 @@ const dimensoesUrna = {
     'PERPETUA': ''
 };
 
-// --- NOVA FUNÇÃO DE BUSCA GLOBAL ---
-window.realizarBusca = function() {
-    const input = document.getElementById('input-busca');
-    const termo = input.value.trim().toUpperCase();
+// --- UTILITÁRIO: GERAR PROTOCOLO ---
+function gerarProtocolo() {
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const hora = String(agora.getHours()).padStart(2, '0');
+    const min = String(agora.getMinutes()).padStart(2, '0');
+    return `${ano}${mes}${dia}-${hora}${min}`;
+}
 
-    if (!termo) {
-        alert("Digite um nome para buscar.");
+// --- LOGIN DO SISTEMA ---
+window.fazerLogin = function() {
+    const userIn = document.getElementById('login-usuario').value.trim();
+    const passIn = document.getElementById('login-senha').value.trim();
+    const erro = document.getElementById('msg-erro-login');
+
+    if (passIn === "2026") {
+        usuarioLogado = { nome: "Administrador (Master)", login: "admin" };
+        liberarAcesso();
         return;
     }
 
-    if (unsubscribe) unsubscribe();
-
-    const tbody = document.getElementById('tabela-corpo');
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 20px;">Buscando em todo o histórico...</td></tr>';
-
-    db.collection("atendimentos")
-        .orderBy("nome")
-        .startAt(termo)
-        .endAt(termo + "\uf8ff")
-        .limit(50)
+    db.collection("equipe")
+        .where("login", "==", userIn)
+        .where("senha", "==", passIn)
         .get()
         .then((querySnapshot) => {
-            let lista = [];
-            querySnapshot.forEach((doc) => {
-                let d = doc.data();
-                d.id = doc.id;
-                lista.push(d);
-            });
-
-            if (lista.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding: 20px;">Nenhum registro encontrado para "${termo}".</td></tr>`;
+            if (!querySnapshot.empty) {
+                const doc = querySnapshot.docs[0];
+                usuarioLogado = doc.data();
+                liberarAcesso();
             } else {
-                renderizarTabela(lista);
+                erro.style.display = 'block';
+                erro.innerText = "Usuário ou senha incorretos.";
             }
         })
-        .catch((error) => {
-            console.error("Erro na busca:", error);
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:red;">Erro ao buscar dados.</td></tr>';
+        .catch((e) => {
+            console.error("Erro login:", e);
+            erro.style.display = 'block';
+            erro.innerText = "Erro de conexão.";
         });
 }
 
-// --- FUNÇÃO GERAR ETIQUETA ---
-window.gerarEtiqueta = function() {
-    if (!dadosAtendimentoAtual) return;
-    const d = dadosAtendimentoAtual;
-    const fmtData = (dataStr) => { if (!dataStr) return ""; const p = dataStr.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
-
-    const htmlEtiqueta = `
-    <html><head><title>Etiqueta Capela</title><style>
-        body { font-family: 'Arial', sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .container { border: 5px solid #000; padding: 20px; height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .header { font-size: 20px; text-transform: uppercase; margin-bottom: 30px; font-weight: bold; }
-        .label { font-size: 24px; color: #555; margin-bottom: 5px; text-transform: uppercase; }
-        .value-name { font-size: 60px; font-weight: 900; text-transform: uppercase; line-height: 1.1; margin-bottom: 40px; }
-        .value-time { font-size: 50px; font-weight: 800; margin-bottom: 40px; }
-        .value-location { font-size: 35px; font-weight: bold; text-transform: uppercase; }
-        @media print { @page { size: landscape; margin: 0; } .container { border: none; height: 100vh; } }
-    </style></head><body>
-        <div class="container">
-            <div class="header">
-                <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height: 80px;"><br>
-                Identificação de Velório
-            </div>
-            <div class="label">Falecido(a)</div><div class="value-name">${d.nome}</div>
-            <div class="label">Horário de Sepultamento</div><div class="value-time">${fmtData(d.data_ficha)} às ${d.hora}</div>
-            <div class="label">Local</div><div class="value-location">${d.cap} <br> ${d.local || "CEMITÉRIO DO MARUÍ"}</div>
-        </div>
-        <script>window.onload = function() { window.print(); }</script></body></html>`;
-    const win = window.open('', '_blank'); win.document.write(htmlEtiqueta); win.document.close();
+function liberarAcesso() {
+    document.getElementById('tela-bloqueio').style.display = 'none';
+    document.getElementById('msg-erro-login').style.display = 'none';
+    document.getElementById('user-display').innerText = `Olá, ${usuarioLogado.nome.split(' ')[0]}`;
+    sessionStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado));
+    
+    // Atualiza tabela ao logar
+    const hj = new Date().toISOString().split('T')[0];
+    const il = document.getElementById('filtro-local');
+    if(il) atualizarListener(hj, il.value);
 }
 
-// --- FUNÇÃO ENVIAR WHATSAPP (CORRIGIDA) ---
-window.enviarWhatsapp = function() {
-    if (!dadosAtendimentoAtual) return;
-    
-    // Remove tudo que não é número
-    const tel = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : '';
-    const coords = dadosAtendimentoAtual.geo_coords;
-    
-    if (!tel) { alert("Telefone não cadastrado para este atendimento."); return; }
-    if (!coords) { alert("Geolocalização da sepultura não cadastrada."); return; }
-    
-    // Monta a mensagem
-    const msg = `Olá, segue a localização da sepultura de *${dadosAtendimentoAtual.nome}*: https://www.google.com/maps/search/?api=1&query=${coords}`;
-    
-    // Link API universal (tenta abrir app, senão web)
-    const url = `https://api.whatsapp.com/send?phone=55${tel}&text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+window.fazerLogout = function() {
+    sessionStorage.removeItem('usuarioLogado');
+    window.location.reload();
 }
 
-// --- FUNÇÃO ENVIAR SMS (GRATUITA VIA PROTOCOLO) ---
-window.enviarSMS = function() {
-    if (!dadosAtendimentoAtual) return;
-    
-    const tel = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : '';
-    const coords = dadosAtendimentoAtual.geo_coords;
-    
-    if (!tel) { alert("Telefone não cadastrado."); return; }
-    if (!coords) { alert("Geolocalização não cadastrada."); return; }
-    
-    const msg = `Localização sepultura ${dadosAtendimentoAtual.nome}: https://www.google.com/maps/search/?api=1&query=${coords}`;
-    
-    // Detecta sistema para usar o separador correto
-    const ua = navigator.userAgent.toLowerCase();
-    let separator = '?';
-    if (ua.indexOf('iphone') > -1 || ua.indexOf('ipad') > -1) { separator = '&'; }
-    
-    window.location.href = `sms:55${tel}${separator}body=${encodeURIComponent(msg)}`;
+window.checarLoginEnter = function(e) { if(e.key==='Enter') window.fazerLogin(); }
+
+window.bloquearTela = function() {
+    document.getElementById('tela-bloqueio').style.display = 'flex';
 }
 
-// --- ESTATÍSTICAS ---
-window.abrirModalEstatisticas = function() { document.getElementById('modal-estatisticas').style.display = 'block'; carregarEstatisticas(7); }
-window.fecharModalEstatisticas = function() { document.getElementById('modal-estatisticas').style.display = 'none'; if (statsUnsubscribe) statsUnsubscribe(); }
+// --- ADMINISTRAÇÃO ---
+window.abrirAdmin = function() {
+    document.getElementById('modal-admin').style.display = 'block';
+    abrirAba('tab-equipe');
+}
 
-window.carregarEstatisticas = function(dias) {
-    const loading = document.getElementById('loading-stats');
-    const divLista = document.getElementById('lista-estatisticas');
-    divLista.innerHTML = ''; loading.style.display = 'block';
-    if (statsUnsubscribe) statsUnsubscribe();
+window.fecharModalAdmin = function() {
+    document.getElementById('modal-admin').style.display = 'none';
+    if(equipeUnsubscribe) equipeUnsubscribe();
+    if(statsUnsubscribe) statsUnsubscribe();
+    if(logsUnsubscribe) logsUnsubscribe();
+}
 
-    const dataInicio = new Date();
-    dataInicio.setDate(dataInicio.getDate() - dias);
-    const dataInicioString = dataInicio.toISOString().split('T')[0];
+window.abrirAba = function(tabId) {
+    const panes = document.getElementsByClassName('tab-pane');
+    for(let p of panes) p.classList.remove('active');
+    const btns = document.getElementsByClassName('tab-btn');
+    for(let b of btns) b.classList.remove('active');
 
-    statsUnsubscribe = db.collection("atendimentos").where("data_ficha", ">=", dataInicioString).onSnapshot((snapshot) => {
-        loading.style.display = 'none';
-        let contagemCausas = {}; let totalMortes = 0;
-        snapshot.forEach(doc => {
-            const dados = doc.data();
-            if (dados.causa) {
-                const partes = dados.causa.split('/');
-                partes.forEach(parte => {
-                    const causaLimpa = parte.trim().toUpperCase();
-                    if (causaLimpa) contagemCausas[causaLimpa] = (contagemCausas[causaLimpa] || 0) + 1;
-                });
-                totalMortes++;
+    document.getElementById(tabId).classList.add('active');
+    if(tabId === 'tab-equipe') { btns[0].classList.add('active'); listarEquipe(); }
+    if(tabId === 'tab-stats') { btns[1].classList.add('active'); carregarEstatisticas(7); }
+    if(tabId === 'tab-logs') { btns[2].classList.add('active'); carregarLogs(); }
+}
+
+window.listarEquipe = function() {
+    const lista = document.getElementById('lista-equipe');
+    lista.innerHTML = 'Carregando...';
+    equipeUnsubscribe = db.collection("equipe").orderBy("nome").onSnapshot((snapshot) => {
+        lista.innerHTML = '';
+        snapshot.forEach((doc) => {
+            const user = doc.data();
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div>
+                    <strong>${user.nome}</strong><br>
+                    <span style="font-size:10px; color:#777;">Login: ${user.login || '-'}</span>
+                </div>
+                <button class="btn-remove-user" onclick="excluirFuncionario('${doc.id}')">🗑️</button>
+            `;
+            lista.appendChild(li);
+        });
+    });
+}
+
+window.adicionarFuncionario = function() {
+    const nome = document.getElementById('novo-nome').value.trim().toUpperCase();
+    const login = document.getElementById('novo-login').value.trim();
+    const senha = document.getElementById('nova-senha').value.trim();
+
+    if(nome && login && senha) {
+        db.collection("equipe").add({ nome: nome, login: login, senha: senha })
+            .then(() => { 
+                document.getElementById('novo-nome').value = '';
+                document.getElementById('novo-login').value = '';
+                document.getElementById('nova-senha').value = '';
+                alert("Usuário cadastrado!");
+            })
+            .catch((e) => alert("Erro: " + e));
+    } else {
+        alert("Preencha todos os campos.");
+    }
+}
+
+window.excluirFuncionario = function(id) {
+    if(confirm("Remover este usuário?")) db.collection("equipe").doc(id).delete();
+}
+
+// --- ESTATÍSTICAS E EXPORTAÇÃO EXCEL ---
+window.baixarRelatorioCompleto = function() {
+    if(!confirm("Deseja baixar o relatório completo de todos os atendimentos? Isso pode levar alguns segundos.")) return;
+
+    db.collection("atendimentos").get().then((querySnapshot) => {
+        let dados = [];
+        querySnapshot.forEach((doc) => {
+            let d = doc.data();
+            let dataExibicao = d.data_ficha ? d.data_ficha.split('-').reverse().join('/') : '-';
+            
+            let ano = "", mes = "";
+            if (d.data_ficha) {
+                let partes = d.data_ficha.split('-');
+                ano = partes[0];
+                mes = partes[1];
             }
-        });
-        const ranking = Object.entries(contagemCausas).sort((a, b) => b[1] - a[1]);
-        dadosEstatisticasExportacao = ranking.map(([causa, qtd]) => ({ "Causa da Morte": causa, "Quantidade": qtd, "Porcentagem": ((qtd / totalMortes) * 100).toFixed(2) + '%' }));
-        const labels = ranking.map(r => r[0]); const dataValues = ranking.map(r => r[1]);
-        renderizarGrafico(labels, dataValues);
-        if (ranking.length === 0) { divLista.innerHTML = '<p style="text-align:center; padding:20px;">Nenhum dado neste período.</p>'; return; }
-        let htmlTable = `<div style="margin-bottom:10px; font-weight:bold; color:#555;">Total: ${totalMortes} registros</div><table class="table-stats"><thead><tr><th>Causa da Morte</th><th width="80">Qtd</th></tr></thead><tbody>`;
-        ranking.forEach(([causa, qtd]) => { htmlTable += `<tr><td>${causa}</td><td style="text-align:center;">${qtd}</td></tr>`; });
-        htmlTable += `</tbody></table>`;
-        divLista.innerHTML = htmlTable;
-    }, (error) => { console.error("Erro stats:", error); loading.innerText = "Erro ao carregar."; });
-}
 
-function renderizarGrafico(labels, dataValues) {
-    const ctx = document.getElementById('grafico-causas').getContext('2d');
-    if (chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels.slice(0, 10), datasets: [{ label: 'Ocorrências', data: dataValues.slice(0, 10), backgroundColor: '#3699ff', borderColor: '#187de4', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { font: { size: 10 } } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Top 10 Causas de Morte' } } } });
+            dados.push([
+                dataExibicao,
+                d.hora || "",
+                mes,
+                ano,
+                (d.nome || "").toUpperCase(),
+                (d.causa || "").toUpperCase(),
+                (d.resp_nome || "").toUpperCase(),
+                d.telefone || "",
+                (d.funeraria || "").toUpperCase(),
+                (d.local || "").toUpperCase(),
+                d.sepul || "",
+                d.protocolo || "",
+                (d.atendente_sistema || "").toUpperCase()
+            ]);
+        });
+
+        // Ordenação
+        dados.sort((a,b) => {
+             if (a[3] < b[3]) return 1;
+             if (a[3] > b[3]) return -1;
+             if (a[2] < b[2]) return 1;
+             if (a[2] > b[2]) return -1;
+             return 0;
+        });
+
+        // Cabeçalho Explícito
+        const headers = ["Data", "Hora", "Mês", "Ano", "Falecido", "Causa Morte", "Responsável", "Telefone", "Funerária", "Local", "Sepultura", "Protocolo", "Atendente"];
+        
+        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dados]);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Relatório Geral");
+        XLSX.writeFile(workbook, "Relatorio_Completo_Atendimentos.xlsx");
+
+    }).catch((e) => alert("Erro ao gerar relatório: " + e));
 }
 
 window.baixarExcel = function() {
     if (dadosEstatisticasExportacao.length === 0) { alert("Sem dados."); return; }
-    const worksheet = XLSX.utils.json_to_sheet(dadosEstatisticasExportacao);
+    
+    const cabecalho = ["Causa da Morte", "Quantidade", "Porcentagem"];
+    const linhas = dadosEstatisticasExportacao.map(item => [
+        item["Causa da Morte"], 
+        item["Quantidade"], 
+        item["Porcentagem"]
+    ]);
+    
+    const worksheet = XLSX.utils.aoa_to_sheet([cabecalho, ...linhas]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Estatísticas");
     XLSX.writeFile(workbook, "Relatorio_Causas_Morte.xlsx");
 }
 
-window.baixarPDF = function() {
-    if (dadosEstatisticasExportacao.length === 0) { alert("Sem dados."); return; }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.text("Relatório de Causas de Morte", 14, 15);
-    const tableColumn = ["Causa da Morte", "Quantidade", "Porcentagem"];
-    const tableRows = dadosEstatisticasExportacao.map(item => [item["Causa da Morte"], item["Quantidade"], item["Porcentagem"]]);
-    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
-    doc.save("Relatorio_Causas_Morte.pdf");
-}
-
-// --- FUNÇÃO GERAR COMPROVANTE (COM LOGO) ---
-window.gerarComprovante = function() {
-    if (!dadosAtendimentoAtual) return;
-    const d = dadosAtendimentoAtual;
-    const chk = (cond) => cond ? '( X )' : '(  )';
-    const fmtData = (dataStr) => { if (!dataStr) return ""; const p = dataStr.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
-    const dataHoje = new Date();
-    const dataAtualFmt = `${dataHoje.getDate().toString().padStart(2,'0')}/${(dataHoje.getMonth()+1).toString().padStart(2,'0')}/${dataHoje.getFullYear()}`;
-    const horaAtualFmt = `${dataHoje.getHours().toString().padStart(2,'0')}:${dataHoje.getMinutes().toString().padStart(2,'0')}`;
-
-    const htmlComprovante = `
-    <html><head><title>Comprovante de Atendimento</title><style>body { font-family: "Courier New", Courier, monospace; font-size: 12px; margin: 20px; } .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; } .titulo { font-weight: bold; font-size: 16px; margin: 10px 0; text-align: center; } .linha { margin: 5px 0; display: block; line-height: 1.5; } .campo { font-weight: bold; } .box { border: 1px solid #000; padding: 10px; margin: 10px 0; } .assinaturas { margin-top: 50px; display: flex; justify-content: space-between; } .assinatura-box { text-align: center; border-top: 1px solid #000; width: 45%; padding-top: 5px; } .obs-box { border: 1px solid #000; padding: 5px; font-size: 11px; margin-top: 10px; } @media print { @page { size: portrait; margin: 10mm; } .no-print { display: none; } }</style></head><body><div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height: 70px; max-width: 300px; margin-bottom: 10px;"><p style="margin: 0; font-weight: bold;">ACOLHIMENTO - SERVIÇOS FUNERÁRIOS</p></div><div class="titulo">COMPROVANTE DE ATENDIMENTO</div><div class="box"><span class="linha"><span class="campo">FALECIDO:</span> ${d.nome.toUpperCase()}</span><span class="linha"><span class="campo">FUNERÁRIA:</span> ${d.funeraria.toUpperCase()}</span><span class="linha"><span class="campo">DATA ATENDIMENTO:</span> ${dataAtualFmt} <span class="campo">HORA:</span> ${horaAtualFmt}</span></div><div class="box"><span class="linha"><span class="campo">SEPULTAMENTO:</span> ${fmtData(d.data_ficha)} <span class="campo">HORA:</span> ${d.hora}</span><span class="linha"><span class="campo">CEMITÉRIO:</span> ${chk(d.local.includes('MARUÍ'))} MARUÍ ${chk(d.local.includes('SÃO FRANCISCO'))} SÃO FRANCISCO ${chk(d.local.includes('ITAIPU'))} ITAIPU</span><span class="linha"><span class="campo">SEPULTURA:</span> ${d.sepul} <span class="campo">QUADRA:</span> ${d.qd} <span class="campo">CAPELA:</span> ${d.cap}</span><span class="linha"><span class="campo">DATA FALECIMENTO:</span> ${fmtData(d.data_obito)} <span class="campo">HORA:</span> ${d.hora_obito}</span></div><div class="box"><div class="linha"><span class="campo">ESTADO CIVIL:</span> ( ) SOLTEIRO ( ) CASADO ( ) VÍUVO ( ) UNIÃO ESTÁVEL ( ) DIVORCIADO</div><div class="linha" style="margin-top: 10px; font-weight:bold;">TIPO DE SEPULTURA:</div><div class="linha">${chk(d.tipo_sepultura === 'GAVETA' && d.classificacao_obito === 'ADULTO')} Gaveta Adulto ${chk(d.tipo_sepultura === 'CARNEIRO' && d.classificacao_obito === 'ADULTO')} Carneira Adulto ${chk(d.tipo_sepultura === 'COVA RASA' && d.classificacao_obito === 'ADULTO')} Cova Rasa Adulto</div><div class="linha">${chk(d.tipo_sepultura === 'GAVETA' && d.classificacao_obito === 'ANJO')} Gaveta Anjo ${chk(d.tipo_sepultura === 'CARNEIRO' && d.classificacao_obito === 'ANJO')} Carneira Anjo ${chk(d.tipo_sepultura === 'PERPETUA')} Perpétuo</div><div class="linha" style="margin-top: 10px;"><span class="campo">TANATOPRAXIA:</span> ${chk(d.tanato === 'SIM')} SIM ${chk(d.tanato !== 'SIM')} NÃO</div></div><div class="obs-box"><strong>OBSERVAÇÕES:</strong><br>1. PASSANDO DAS 36 HORAS DO FALECIMENTO SOMENTE COM TANATOPRAXIA.<br>2. VELÓRIO COM DURAÇÃO DE DUAS HORAS ANTES DO SEPULTAMENTO.<br>3. EM CASO DE ATRASO DO SERVIÇO FUNERÁRIO NÃO SERÁ ESTENDIDO O HORÁRIO ESTABELECIDO.<br>4. TAXAS MUNICIPAIS E INVOL DEVEM SER PAGOS COM DUAS HORAS DE ANTECEDÊNCIA.</div><div class="assinaturas"><div class="assinatura-box">Assinatura Funcionário (Acolhimento)</div><div class="assinatura-box">Assinatura Responsável / Família<br><span style="font-size:10px;">${d.resp_nome.toUpperCase()}</span></div></div><div class="obs-box" style="margin-top: 20px;"><strong>COMUNICADO:</strong><br>Somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação: GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL), TAXAS MUNICIPAIS PAGAS e INVOL.</div><script>window.onload = function() { window.print(); }</script></body></html>`;
-    const win = window.open('', '_blank'); win.document.write(htmlComprovante); win.document.close();
-}
-
-window.alternarDesign = function() {
-    document.body.classList.toggle('design-classico');
-    const isClassic = document.body.classList.contains('design-classico');
-    localStorage.setItem('designMode', isClassic ? 'classico' : 'moderno');
-}
-
-window.imprimirRelatorio = function(modo) {
-    const oldStyle = document.getElementById('print-style');
-    if (oldStyle) oldStyle.remove();
-    const style = document.createElement('style');
-    style.id = 'print-style';
-    style.innerHTML = `@page { size: ${modo}; margin: 5mm; }`;
-    document.head.appendChild(style);
-    setTimeout(() => { window.print(); }, 200);
-}
-
-function carregarCidades(uf, cidadeSelecionada = "") {
-    const selectCidade = document.getElementById('cidade_obito');
-    if(!uf) {
-        selectCidade.innerHTML = '<option value="">Selecione a UF primeiro</option>';
-        selectCidade.disabled = true;
-        return;
-    }
-    selectCidade.innerHTML = '<option value="">Carregando...</option>';
-    selectCidade.disabled = true;
-
-    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`)
-        .then(response => response.json())
-        .then(cidades => {
-            selectCidade.innerHTML = '<option value="">Selecione...</option>';
-            cidades.sort((a, b) => a.nome.localeCompare(b.nome));
-            cidades.forEach(cidade => {
-                const opt = document.createElement('option');
-                opt.value = cidade.nome.toUpperCase(); 
-                opt.text = cidade.nome.toUpperCase();
-                if (cidade.nome.toUpperCase() === cidadeSelecionada) opt.selected = true;
-                selectCidade.appendChild(opt);
+window.carregarLogs = function() {
+    const tbody = document.getElementById('tabela-logs');
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Carregando registros...</td></tr>';
+    
+    logsUnsubscribe = db.collection("atendimentos")
+        .limit(50) 
+        .get()
+        .then((snapshot) => {
+            let logs = [];
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                logs.push(d);
             });
-            selectCidade.disabled = false;
-        })
-        .catch(err => {
-            console.error(err);
-            selectCidade.innerHTML = '<option value="">Erro ao carregar</option>';
+            logs.sort((a,b) => (a.data_ficha < b.data_ficha ? 1 : -1));
+
+            tbody.innerHTML = '';
+            if(logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Nenhum registro.</td></tr>';
+                return;
+            }
+
+            logs.forEach(log => {
+                const tr = document.createElement('tr');
+                const dataF = log.data_ficha ? log.data_ficha.split('-').reverse().join('/') : '-';
+                const resp = log.atendente_sistema || '<span style="color:#ccc;">Não registrado</span>';
+                
+                tr.innerHTML = `
+                    <td style="font-weight:bold;">${dataF}</td>
+                    <td>${log.nome}</td>
+                    <td style="color:${log.atendente_sistema ? '#333' : '#ccc'}">${resp}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         });
+}
+
+// --- FUNÇÕES GERAIS ---
+window.abrirModal = function() {
+    const f = document.getElementById('form-atendimento'); f.reset();
+    document.getElementById('docId').value = '';
+    document.getElementById('do_24h').value = "NAO"; 
+    document.getElementById('hora').value = ""; 
+    document.getElementById('chk_tanato').checked = false;
+    document.getElementById('chk_invol').checked = false;
+    document.getElementById('chk_translado').checked = false;
+    document.getElementById('chk_urna_opc').checked = false;
+    document.getElementById('div-local-domicilio').classList.add('hidden');
+    document.getElementById('div-motivo-sepultura').classList.add('hidden');
+    document.getElementById('estado_obito').value = "";
+    document.getElementById('cidade_obito').innerHTML = '<option value="">Selecione a UF primeiro</option>';
+    document.getElementById('cidade_obito').disabled = true;
+    
+    if(usuarioLogado) {
+        document.getElementById('atendente_sistema').value = usuarioLogado.nome;
+    }
+
+    sepulturaOriginal = ""; 
+    document.getElementById('modal').style.display = 'block';
+}
+
+window.fecharModal = function() { document.getElementById('modal').style.display = 'none'; }
+window.fecharModalVisualizar = function() { document.getElementById('modal-visualizar').style.display = 'none'; }
+window.abrirModalEstatisticas = function() {
+    document.getElementById('modal-estatisticas').style.display = 'block';
+    carregarEstatisticas(7); // Carrega padrão 7 dias
+}
+window.fecharModalEstatisticas = function() {
+    document.getElementById('modal-estatisticas').style.display = 'none';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (localStorage.getItem('designMode') === 'classico') {
-        document.body.classList.add('design-classico');
+    const sessao = sessionStorage.getItem('usuarioLogado');
+    if (sessao) {
+        usuarioLogado = JSON.parse(sessao);
+        document.getElementById('tela-bloqueio').style.display = 'none';
+        document.getElementById('user-display').innerText = `Olá, ${usuarioLogado.nome.split(' ')[0]}`;
     }
 
-    const selectHora = document.getElementById('hora');
-    selectHora.innerHTML = '<option value="">--:--</option>';
-    for (let h = 0; h < 24; h++) {
-        for (let m = 0; m < 60; m += 30) {
-            const val = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-            const opt = document.createElement('option');
-            opt.value = val; opt.text = val;
-            selectHora.appendChild(opt);
-        }
-    }
+    if (localStorage.getItem('designMode') === 'classico') { document.body.classList.add('design-classico'); }
+    
+    const selectHora = document.getElementById('hora'); selectHora.innerHTML = '<option value="">--:--</option>';
+    for (let h = 0; h < 24; h++) { for (let m = 0; m < 60; m += 30) { const val = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; const opt = document.createElement('option'); opt.value = val; opt.text = val; selectHora.appendChild(opt); } }
 
     const hoje = new Date().toISOString().split('T')[0];
-    const inputData = document.getElementById('filtro-data');
-    const inputLocal = document.getElementById('filtro-local');
-    
-    inputData.value = hoje;
-    atualizarListener(hoje, inputLocal.value);
-
+    const inputData = document.getElementById('filtro-data'); const inputLocal = document.getElementById('filtro-local');
+    inputData.value = hoje; atualizarListener(hoje, inputLocal.value);
     inputData.addEventListener('change', (e) => atualizarListener(e.target.value, inputLocal.value));
     inputLocal.addEventListener('change', (e) => atualizarListener(inputData.value, e.target.value));
 
-    // Nova Busca Global
     const inputBusca = document.getElementById('input-busca');
-    if(inputBusca) {
-        inputBusca.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                window.realizarBusca();
-            }
-        });
-        inputBusca.addEventListener('input', function() {
-            if (this.value.trim() === "") {
-                atualizarListener(inputData.value, inputLocal.value);
-            }
-        });
-    }
+    if(inputBusca) { inputBusca.addEventListener('keypress', function (e) { if (e.key === 'Enter') window.realizarBusca(); }); inputBusca.addEventListener('input', function() { if (this.value.trim() === "") atualizarListener(inputData.value, inputLocal.value); }); }
 
-    // --- LISTENER DO SELETOR DE CAUSAS (COM ALERTA AMPLIADO) ---
     const seletorCausas = document.getElementById('seletor_causas');
-    if (seletorCausas) {
-        seletorCausas.addEventListener('change', function() {
-            const inputCausa = document.getElementById("causa");
-            if (this.value) {
-                // Alerta de Doença Contagiosa
-                const val = this.value.toUpperCase();
-                const doencasContagiosas = ['COVID', 'MENINGITE', 'TUBERCULOSE', 'H1N1', 'HEPATITE', 'HIV', 'SIDA', 'INFLUENZA', 'SARAMPO', 'FEBRE AMARELA', 'LEPTOSPIROSE', 'SEPCEMIA'];
-                const ehContagioso = doencasContagiosas.some(doenca => val.includes(doenca));
-                if(ehContagioso) {
-                    alert("⚠️ ATENÇÃO: DOENÇA INFECTOCONTAGIOSA SELECIONADA!\n\nProtocolo Sugerido:\n- Urna Lacrada\n- Restrição de Velório\n- Uso obrigatório de EPIs");
-                }
-                inputCausa.value = inputCausa.value ? inputCausa.value + " / " + this.value : this.value;
-                this.value = ""; 
-            }
-        });
-    }
+    if (seletorCausas) { seletorCausas.addEventListener('change', function() { const inputCausa = document.getElementById("causa"); if (this.value) { const val = this.value.toUpperCase(); const doencasContagiosas = ['COVID', 'MENINGITE', 'TUBERCULOSE', 'H1N1', 'HEPATITE', 'HIV', 'SIDA', 'INFLUENZA', 'SARAMPO', 'FEBRE AMARELA', 'LEPTOSPIROSE', 'SEPCEMIA']; const ehContagioso = doencasContagiosas.some(doenca => val.includes(doenca)); if(ehContagioso) { alert("⚠️ ATENÇÃO: DOENÇA INFECTOCONTAGIOSA SELECIONADA!\n\nProtocolo Sugerido:\n- Urna Lacrada\n- Restrição de Velório\n- Uso obrigatório de EPIs"); } inputCausa.value = inputCausa.value ? inputCausa.value + " / " + this.value : this.value; this.value = ""; } }); }
 
-    const inputHospital = document.getElementById('hospital');
-    const divDomicilio = document.getElementById('div-local-domicilio');
-    inputHospital.addEventListener('input', function() {
-        const val = this.value.toUpperCase();
-        if (val.includes('DOMICÍLIO') || val.includes('DOMICILIO')) {
-            divDomicilio.classList.remove('hidden');
-        } else {
-            divDomicilio.classList.add('hidden');
-            document.getElementById('estado_obito').value = "";
-            document.getElementById('cidade_obito').innerHTML = '<option value="">Selecione a UF primeiro</option>';
-            document.getElementById('cidade_obito').disabled = true;
-        }
-    });
-
-    document.getElementById('estado_obito').addEventListener('change', function() {
-        carregarCidades(this.value);
-    });
-
-    const inputSepul = document.getElementById('sepul');
-    const divMotivo = document.getElementById('div-motivo-sepultura');
-    inputSepul.addEventListener('input', function() {
-        if (sepulturaOriginal && this.value !== sepulturaOriginal) {
-            divMotivo.classList.remove('hidden');
-        } else {
-            divMotivo.classList.add('hidden');
-            document.getElementById('motivo_troca_sepultura').value = "";
-        }
-    });
+    const inputHospital = document.getElementById('hospital'); const divDomicilio = document.getElementById('div-local-domicilio');
+    inputHospital.addEventListener('input', function() { const val = this.value.toUpperCase(); if (val.includes('DOMICÍLIO') || val.includes('DOMICILIO')) { divDomicilio.classList.remove('hidden'); } else { divDomicilio.classList.add('hidden'); document.getElementById('estado_obito').value = ""; document.getElementById('cidade_obito').innerHTML = '<option value="">Selecione a UF primeiro</option>'; document.getElementById('cidade_obito').disabled = true; } });
+    document.getElementById('estado_obito').addEventListener('change', function() { carregarCidades(this.value); });
+    const inputSepul = document.getElementById('sepul'); const divMotivo = document.getElementById('div-motivo-sepultura');
+    inputSepul.addEventListener('input', function() { if (sepulturaOriginal && this.value !== sepulturaOriginal) { divMotivo.classList.remove('hidden'); } else { divMotivo.classList.add('hidden'); document.getElementById('motivo_troca_sepultura').value = ""; } });
 });
 
-// --- NOVA FUNÇÃO DE BUSCA GLOBAL ---
 window.realizarBusca = function() {
-    const input = document.getElementById('input-busca');
-    const termo = input.value.trim().toUpperCase();
-
-    if (!termo) {
-        alert("Digite um nome para buscar.");
-        return;
-    }
-
+    const input = document.getElementById('input-busca'); const termo = input.value.trim().toUpperCase();
+    if (!termo) { alert("Digite um nome ou protocolo."); return; }
     if (unsubscribe) unsubscribe();
-
-    const tbody = document.getElementById('tabela-corpo');
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 20px;">Buscando em todo o histórico...</td></tr>';
-
-    db.collection("atendimentos")
-        .orderBy("nome")
-        .startAt(termo)
-        .endAt(termo + "\uf8ff")
-        .limit(50)
-        .get()
-        .then((querySnapshot) => {
-            let lista = [];
-            querySnapshot.forEach((doc) => {
-                let d = doc.data();
-                d.id = doc.id;
-                lista.push(d);
-            });
-
-            if (lista.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding: 20px;">Nenhum registro encontrado para "${termo}".</td></tr>`;
-            } else {
+    const tbody = document.getElementById('tabela-corpo'); tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 20px;">Buscando...</td></tr>';
+    
+    if (termo.match(/[0-9]/)) {
+        db.collection("atendimentos").where("protocolo", "==", termo).get().then((snapshot) => {
+            if (!snapshot.empty) {
+                let lista = []; snapshot.forEach((doc) => { let d = doc.data(); d.id = doc.id; lista.push(d); });
                 renderizarTabela(lista);
-            }
-        })
-        .catch((error) => {
-            console.error("Erro na busca:", error);
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:red;">Erro ao buscar dados.</td></tr>';
+            } else { buscarPorNome(termo); }
         });
+    } else { buscarPorNome(termo); }
 }
 
-function atualizarListener(dataSelecionada, localSelecionado) {
-    if (unsubscribe) unsubscribe();
-    const tbody = document.getElementById('tabela-corpo');
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 20px;">Carregando dados...</td></tr>';
-
-    unsubscribe = db.collection("atendimentos")
-      .where("data_ficha", "==", dataSelecionada) 
-      .onSnapshot((snapshot) => {
-          let listaAtendimentos = [];
-          snapshot.forEach(doc => {
-              let dado = doc.data();
-              dado.id = doc.id;
-              const localDoRegistro = dado.local || "CEMITÉRIO DO MARUÍ";
-              if (localDoRegistro === localSelecionado) {
-                  listaAtendimentos.push(dado);
-              }
-          });
-          listaAtendimentos.sort((a, b) => {
-              if (a.hora < b.hora) return -1;
-              if (a.hora > b.hora) return 1;
-              return 0;
-          });
-          renderizarTabela(listaAtendimentos);
-      }, (error) => {
-          console.error("Erro ao ler dados:", error);
-          tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:red;">Erro ao carregar dados.</td></tr>';
-      });
+function buscarPorNome(termo) {
+    db.collection("atendimentos").orderBy("nome").startAt(termo).endAt(termo + "\uf8ff").limit(50).get().then((querySnapshot) => {
+        let lista = []; querySnapshot.forEach((doc) => { let d = doc.data(); d.id = doc.id; lista.push(d); });
+        if (lista.length === 0) { document.getElementById('tabela-corpo').innerHTML = `<tr><td colspan="11" style="text-align:center; padding: 20px;">Nenhum registro encontrado.</td></tr>`; } else { renderizarTabela(lista); }
+    }).catch((e) => { console.error(e); document.getElementById('tabela-corpo').innerHTML = '<tr><td colspan="11" style="text-align:center;">Erro na busca.</td></tr>'; });
 }
 
+// --- RENDERIZAÇÃO DA TABELA (RESTAURADA E ROBUSTA) ---
 function renderizarTabela(lista) {
     const tbody = document.getElementById('tabela-corpo');
     tbody.innerHTML = ''; 
@@ -435,68 +374,30 @@ function renderizarTabela(lista) {
         const tr = document.createElement('tr');
         tr.onclick = () => window.visualizar(item.id);
         
-        // Verifica se é contagioso para aplicar estilo na linha (Lista Expandida)
+        // Verifica contagioso
         const doencasContagiosas = ['COVID', 'MENINGITE', 'TUBERCULOSE', 'H1N1', 'HEPATITE', 'HIV', 'SIDA', 'INFLUENZA', 'SARAMPO', 'FEBRE AMARELA', 'LEPTOSPIROSE', 'SEPCEMIA'];
         let isContagioso = false;
         if(item.causa) {
             const causaUpper = item.causa.toUpperCase();
             isContagioso = doencasContagiosas.some(doenca => causaUpper.includes(doenca));
         }
+        if (isContagioso) { tr.classList.add('alerta-doenca'); }
 
-        if (isContagioso) {
-            tr.classList.add('alerta-doenca');
-        }
-
-        let displayResponsavel = "";
-        if (item.isencao === "50") {
-            displayResponsavel += `ACOLHIMENTO <span style="font-weight:900;">50% DE ISENÇÃO</span>`;
-            if(item.requisito) displayResponsavel += `<br>REQ: ${item.requisito.toUpperCase()}`;
-            displayResponsavel += `<br>`;
-        } else if (item.isencao === "SIM") {
-            displayResponsavel += `ACOLHIMENTO <span style="font-weight:900;">100% DE ISENÇÃO</span>`;
-            if(item.requisito) displayResponsavel += `<br>REQ: ${item.requisito.toUpperCase()}`;
-            displayResponsavel += `<br>`;
-        } else {
-            if (item.funeraria) {
-                displayResponsavel += `${item.funeraria.toUpperCase()}<br>`;
-            } else if (item.resp_nome) {
-                displayResponsavel += `${item.resp_nome.toUpperCase()}<br>`;
-            }
-        }
-
-        if (item.tipo_urna_detalhe) {
-            displayResponsavel += `<span style="font-weight:bold;">${item.tipo_urna_detalhe.toUpperCase()}</span><br>`;
-        }
-
-        if (item.combo_urna && dimensoesUrna[item.combo_urna]) {
-            displayResponsavel += `URNA ${item.combo_urna}<br>${dimensoesUrna[item.combo_urna]}<br>`;
-        } else if (item.combo_urna) {
-            displayResponsavel += `URNA ${item.combo_urna}<br>`;
-        }
-
-        let servicosExtras = [];
-        if (item.tanato === 'SIM') servicosExtras.push('TANATOPRAXIA');
-        if (item.invol === 'SIM') servicosExtras.push('INVOL');
-        if (item.translado === 'SIM') servicosExtras.push('TRANSLADO');
-        if (item.urna_opc === 'SIM') servicosExtras.push('URNA');
-
-        if (servicosExtras.length > 0) {
-            displayResponsavel += `<div style="margin-top:2px; font-weight:bold; font-size:10px;">SERVIÇOS: ${servicosExtras.join(', ')}</div>`;
-        }
-
-        if (item.urna_info) {
-            displayResponsavel += `<span style="font-weight:normal; font-size:11px;">${item.urna_info.toUpperCase()}</span>`;
-        }
-
-        // Ícone de alerta se for contagioso
+        // Icone alerta
         const iconAlert = isContagioso ? '<span class="icone-alerta" title="Doença Contagiosa">⚠️</span>' : '';
+        
+        // Botão GPS
+        let btnMap = '';
+        if (item.geo_coords && item.geo_coords.includes(',')) {
+             btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://www.google.com/maps/search/?api=1&query=${item.geo_coords}', '_blank')" title="Ver Localização">📍</button>`;
+        }
 
-        const conteudoNome = `<div style="font-weight:700; font-size:12px;">${iconAlert}${item.nome.toUpperCase()}</div>
-                              <div class="texto-vermelho" style="font-size:11px; margin-top:2px;">
-                                (${item.causa ? item.causa.toUpperCase() : 'CAUSA NÃO INFORMADA'})
-                              </div>
+        // Nome formatado
+        const conteudoNome = `<div style="font-weight:700; font-size:12px;">${iconAlert}${item.nome ? item.nome.toUpperCase() : 'NOME NÃO INFORMADO'}</div>
+                              <div class="texto-vermelho" style="font-size:11px; margin-top:2px;">(${item.causa ? item.causa.toUpperCase() : 'CAUSA NÃO INFORMADA'})</div>
                               ${item.classificacao_obito === 'ANJO' ? '<span style="font-size:10px; color:blue;">(ANJO)</span>' : ''}`;
         
+        // Falecimento
         let displayFalecimento = '';
         if (item.data_obito && item.data_ficha) {
             const partes = item.data_obito.split('-');
@@ -518,11 +419,25 @@ function renderizarTabela(lista) {
             displayFalecimento = `<div>${item.falecimento}</div>`;
         }
 
-        // Botão do Google Maps (se houver coordenadas)
-        let btnMap = '';
-        if (item.geo_coords && item.geo_coords.includes(',')) {
-             btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://www.google.com/maps/search/?api=1&query=${item.geo_coords}', '_blank')" title="Ver Localização">📍</button>`;
+        // Funerária ou Responsável
+        let displayResponsavel = "";
+        if (item.isencao === "50") { displayResponsavel += `ACOLHIMENTO <span style="font-weight:900;">50% DE ISENÇÃO</span>`; if(item.requisito) displayResponsavel += `<br>REQ: ${item.requisito.toUpperCase()}`; displayResponsavel += `<br>`; } 
+        else if (item.isencao === "SIM") { displayResponsavel += `ACOLHIMENTO <span style="font-weight:900;">100% DE ISENÇÃO</span>`; if(item.requisito) displayResponsavel += `<br>REQ: ${item.requisito.toUpperCase()}`; displayResponsavel += `<br>`; } 
+        else { 
+            if (item.funeraria) { displayResponsavel += `${item.funeraria.toUpperCase()}<br>`; } 
+            else if (item.resp_nome) { displayResponsavel += `${item.resp_nome.toUpperCase()}<br>`; } 
+            else { displayResponsavel += 'S/D<br>'; } 
         }
+
+        if (item.tipo_urna_detalhe) { displayResponsavel += `<span style="font-weight:bold;">${item.tipo_urna_detalhe.toUpperCase()}</span><br>`; }
+        if (item.combo_urna && dimensoesUrna[item.combo_urna]) { displayResponsavel += `URNA ${item.combo_urna}<br>${dimensoesUrna[item.combo_urna]}<br>`; } else if (item.combo_urna) { displayResponsavel += `URNA ${item.combo_urna}<br>`; }
+        
+        let servicosExtras = [];
+        if (item.tanato === 'SIM') servicosExtras.push('TANATOPRAXIA');
+        if (item.invol === 'SIM') servicosExtras.push('INVOL');
+        if (item.translado === 'SIM') servicosExtras.push('TRANSLADO');
+        if (item.urna_opc === 'SIM') servicosExtras.push('URNA');
+        if (servicosExtras.length > 0) { displayResponsavel += `<div style="margin-top:2px; font-weight:bold; font-size:10px;">SERVIÇOS: ${servicosExtras.join(', ')}</div>`; }
 
         tr.innerHTML = `
             <td>${displayResponsavel}</td>
@@ -547,280 +462,208 @@ function renderizarTabela(lista) {
     });
 }
 
-// --- MODAIS GLOBAIS ---
-window.abrirModal = function() {
-    const f = document.getElementById('form-atendimento'); f.reset();
-    document.getElementById('docId').value = '';
-    document.getElementById('do_24h').value = "NAO"; 
-    document.getElementById('hora').value = ""; 
-    
-    document.getElementById('chk_tanato').checked = false;
-    document.getElementById('chk_invol').checked = false;
-    document.getElementById('chk_translado').checked = false;
-    document.getElementById('chk_urna_opc').checked = false;
-
-    document.getElementById('div-local-domicilio').classList.add('hidden');
-    document.getElementById('div-motivo-sepultura').classList.add('hidden');
-    
-    document.getElementById('estado_obito').value = "";
-    document.getElementById('cidade_obito').innerHTML = '<option value="">Selecione a UF primeiro</option>';
-    document.getElementById('cidade_obito').disabled = true;
-
-    sepulturaOriginal = ""; 
-
-    document.getElementById('modal').style.display = 'block';
-}
-
-window.fecharModal = function() { document.getElementById('modal').style.display = 'none'; }
-window.fecharModalVisualizar = function() { document.getElementById('modal-visualizar').style.display = 'none'; }
-
+// --- VISUALIZAR (COM TODOS OS CAMPOS RESTAURADOS) ---
 window.visualizar = function(id) {
-    if(!document.getElementById('modal-visualizar')) { alert("Erro de carregamento. Recarregue a página."); return; }
-    
+    if(!document.getElementById('modal-visualizar')) return;
     document.body.style.cursor = 'wait';
-
     db.collection("atendimentos").doc(id).get().then((doc) => {
         document.body.style.cursor = 'default';
         if (doc.exists) {
-            const item = doc.data();
-            dadosAtendimentoAtual = item;
-
-            const setText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text || '-'; };
-
-            setText('view_hora', item.hora);
-            let respTexto = item.resp_nome || '-';
-            if (item.parentesco) respTexto += ` (${item.parentesco})`;
-            setText('view_resp_completo', respTexto);
-            setText('view_funeraria', item.funeraria);
-            setText('view_telefone', item.telefone); // ADICIONADO AQUI
+            const i = doc.data();
+            dadosAtendimentoAtual = i;
             
-            let textoIsencao = "NÃO (Pago)";
-            if (item.isencao === "SIM") textoIsencao = "SIM (100% Isenção)";
-            if (item.isencao === "50") textoIsencao = "SIM (50% Isenção)";
-            if (item.requisito) textoIsencao += ` - ${item.requisito}`;
-            setText('view_isencao_completa', textoIsencao);
-
-            let infoUrna = item.urna_info || '-';
-            if(item.motivo_troca_sepultura) infoUrna += `\n[TROCA SEPULTURA: ${item.motivo_troca_sepultura}]`;
-            setText('view_urna_info', infoUrna);
-
-            setText('view_combo_urna', item.combo_urna);
-            setText('view_tipo_urna_detalhe', item.tipo_urna_detalhe);
+            const setText = (k, v) => { const el = document.getElementById(k); if(el) el.innerText = v || '-'; };
             
-            let servicosView = [];
-            if (item.tanato === 'SIM') servicosView.push('Tanatopraxia');
-            if (item.invol === 'SIM') servicosView.push('Invol');
-            if (item.translado === 'SIM') servicosView.push('Translado');
-            if (item.urna_opc === 'SIM') servicosView.push('Urna');
-            setText('view_servicos_adicionais', servicosView.length > 0 ? servicosView.join(', ') : '-');
-
-            let nomeView = item.nome || '-';
-            if (item.classificacao_obito === "ANJO") nomeView += " (ANJO)";
-            setText('view_nome', nomeView);
-            setText('view_causa', item.causa);
+            setText('view_protocolo', i.protocolo || '-');
+            setText('view_hora', i.hora);
+            let respTexto = i.resp_nome || '-'; if (i.parentesco) respTexto += ` (${i.parentesco})`; setText('view_resp_completo', respTexto);
+            setText('view_funeraria', i.funeraria);
+            setText('view_atendente', i.atendente_sistema || '-');
+            setText('view_telefone', i.telefone);
+            let textoIsencao = "NÃO (Pago)"; if (i.isencao === "SIM") textoIsencao = "SIM (100% Isenção)"; if (i.isencao === "50") textoIsencao = "SIM (50% Isenção)"; if (i.requisito) textoIsencao += ` - ${i.requisito}`; setText('view_isencao_completa', textoIsencao);
+            let infoUrna = i.urna_info || '-'; if(i.motivo_troca_sepultura) infoUrna += `\n[TROCA SEPULTURA: ${i.motivo_troca_sepultura}]`; setText('view_urna_info', infoUrna);
+            setText('view_combo_urna', i.combo_urna); setText('view_tipo_urna_detalhe', i.tipo_urna_detalhe);
+            let servicosView = []; if (i.tanato === 'SIM') servicosView.push('Tanatopraxia'); if (i.invol === 'SIM') servicosView.push('Invol'); if (i.translado === 'SIM') servicosView.push('Translado'); if (i.urna_opc === 'SIM') servicosView.push('Urna'); setText('view_servicos_adicionais', servicosView.length > 0 ? servicosView.join(', ') : '-');
+            let nomeView = i.nome || '-'; if (i.classificacao_obito === "ANJO") nomeView += " (ANJO)"; setText('view_nome', nomeView); setText('view_causa', i.causa);
+            const elDo24h = document.getElementById('view_do_24h'); if(elDo24h) { if (i.do_24h === 'SIM') elDo24h.innerText = "[LIBERAÇÃO < 24H]"; else elDo24h.innerText = ""; }
+            let tipo = ''; if (i.gav && i.gav.includes('X')) tipo = 'GAVETA'; else if (i.car && i.car.includes('X')) tipo = 'CARNEIRO'; else if (i.cova_rasa === 'X') tipo = 'COVA RASA'; else if (i.perpetua === 'X') tipo = 'PERPÉTUA'; setText('view_local_sepul', `Tipo: ${tipo} | Nº: ${i.sepul||'-'} | QD: ${i.qd||'-'}`);
             
-            const elDo24h = document.getElementById('view_do_24h');
-            if(elDo24h) {
-                if (item.do_24h === 'SIM') elDo24h.innerText = "[LIBERAÇÃO < 24H]";
-                else elDo24h.innerText = "";
-            }
+            setText('view_hospital_completo', i.hospital); setText('view_cap', i.cap);
+            let dataFormatada = i.data_obito; if (dataFormatada && dataFormatada.includes('-')) { const p = dataFormatada.split('-'); dataFormatada = `${p[2]}/${p[1]}/${p[0]}`; } setText('view_data_obito', dataFormatada); setText('view_hora_obito', i.hora_obito);
 
-            let tipo = '';
-            if (item.gav && item.gav.includes('X')) tipo = 'GAVETA';
-            else if (item.car && item.car.includes('X')) tipo = 'CARNEIRO';
-            else if (item.cova_rasa === 'X') tipo = 'COVA RASA';
-            else if (item.perpetua === 'X') tipo = 'PERPÉTUA';
-            setText('view_tipo_sepultura', tipo);
-            
-            setText('view_sepul', item.sepul);
-            setText('view_qd', item.qd);
-            
-            let hospitalView = item.hospital || '-';
-            if ((item.hospital && item.hospital.includes('DOMICÍLIO')) || (item.hospital && item.hospital.includes('DOMICILIO'))) {
-                hospitalView += ` (${item.cidade_obito || ''} - ${item.estado_obito || ''})`;
-            }
-            setText('view_hospital_completo', hospitalView);
-            setText('view_cap', item.cap);
-            
-            let dataFormatada = item.data_obito;
-            if (dataFormatada && dataFormatada.includes('-')) {
-                const p = dataFormatada.split('-');
-                dataFormatada = `${p[2]}/${p[1]}/${p[0]}`;
-            }
-            setText('view_data_obito', dataFormatada);
-            setText('view_hora_obito', item.hora_obito);
-
-            // MAPA NO MODAL
-            const mapContainer = document.getElementById('view_map_container');
-            const mapFrame = document.getElementById('mapa-frame');
-            const mapLink = document.getElementById('link-gps');
-            if (item.geo_coords && item.geo_coords.includes(',')) {
-                mapContainer.style.display = 'block';
-                mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://maps.google.com/maps?q=${item.geo_coords}&z=17&output=embed"></iframe>`;
-                mapLink.href = `https://www.google.com/maps/search/?api=1&query=${item.geo_coords}`;
-            } else {
-                mapContainer.style.display = 'none';
-                mapFrame.innerHTML = '';
-            }
-
+            const mapContainer = document.getElementById('view_map_container'); const mapFrame = document.getElementById('mapa-frame'); const mapLink = document.getElementById('link-gps');
+            if (i.geo_coords && i.geo_coords.includes(',')) { mapContainer.style.display = 'block'; mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://maps.google.com/maps?q=${i.geo_coords}&z=17&output=embed"></iframe>`; mapLink.href = `https://www.google.com/maps/search/?api=1&query=${i.geo_coords}`; } else { mapContainer.style.display = 'none'; mapFrame.innerHTML = ''; }
             document.getElementById('modal-visualizar').style.display = 'block';
-        } else {
-            alert("Atendimento não encontrado.");
         }
-    }).catch((error) => {
-        document.body.style.cursor = 'default';
-        console.error("Erro:", error);
-        alert("Erro ao abrir agendamento: " + error.message);
-    });
+    }).catch((error) => { document.body.style.cursor = 'default'; alert("Erro: " + error.message); });
 }
 
 window.editar = function(id) {
     db.collection("atendimentos").doc(id).get().then((doc) => {
         if (doc.exists) {
-            const item = doc.data();
-            document.getElementById('docId').value = doc.id;
-            
-            const selectHora = document.getElementById('hora');
-            const horaSalva = item.hora;
-            let optionExists = false;
-            for(let i=0; i<selectHora.options.length; i++){
-                if(selectHora.options[i].value == horaSalva) optionExists = true;
-            }
-            if(!optionExists && horaSalva) {
-                const opt = document.createElement('option');
-                opt.value = horaSalva;
-                opt.text = horaSalva;
-                selectHora.add(opt);
-            }
-            selectHora.value = horaSalva || "";
-
+            const item = doc.data(); document.getElementById('docId').value = doc.id;
+            document.getElementById('protocolo_hidden').value = item.protocolo || "";
+            const selectHora = document.getElementById('hora'); const horaSalva = item.hora; let optionExists = false; for(let i=0; i<selectHora.options.length; i++){ if(selectHora.options[i].value == horaSalva) optionExists = true; } if(!optionExists && horaSalva) { const opt = document.createElement('option'); opt.value = horaSalva; opt.text = horaSalva; selectHora.add(opt); } selectHora.value = horaSalva || "";
             const setVal = (k, v) => { const el=document.getElementById(k); if(el) el.value=v||''; };
-
-            setVal('nome', item.nome);
-            setVal('causa', item.causa);
-            setVal('resp_nome', item.resp_nome);
-            setVal('telefone', item.telefone); // ADICIONADO AQUI
-            setVal('parentesco', item.parentesco);
-            setVal('classificacao_obito', item.classificacao_obito || 'ADULTO');
-            setVal('do_24h', item.do_24h || 'NAO'); 
-
-            setVal('urna_info', item.urna_info);
-            setVal('combo_urna', item.combo_urna);
-            setVal('tipo_urna_detalhe', item.tipo_urna_detalhe);
-            setVal('funeraria', item.funeraria);
-            setVal('isencao', item.isencao || 'NAO');
-            setVal('requisito', item.requisito);
-            setVal('data_obito', item.data_obito);
-            setVal('hora_obito', item.hora_obito);
-            setVal('geo_coords', item.geo_coords);
-            
-            document.getElementById('chk_tanato').checked = (item.tanato === 'SIM');
-            document.getElementById('chk_invol').checked = (item.invol === 'SIM');
-            document.getElementById('chk_translado').checked = (item.translado === 'SIM');
-            document.getElementById('chk_urna_opc').checked = (item.urna_opc === 'SIM');
-
+            setVal('nome', item.nome); setVal('causa', item.causa); setVal('resp_nome', item.resp_nome); setVal('telefone', item.telefone); setVal('parentesco', item.parentesco);
+            setVal('atendente_sistema', item.atendente_sistema); // Carrega atendente
+            setVal('classificacao_obito', item.classificacao_obito || 'ADULTO'); setVal('do_24h', item.do_24h || 'NAO'); 
+            setVal('urna_info', item.urna_info); setVal('combo_urna', item.combo_urna); setVal('tipo_urna_detalhe', item.tipo_urna_detalhe);
+            setVal('funeraria', item.funeraria); setVal('isencao', item.isencao || 'NAO'); setVal('requisito', item.requisito);
+            setVal('data_obito', item.data_obito); setVal('hora_obito', item.hora_obito); setVal('geo_coords', item.geo_coords);
+            document.getElementById('chk_tanato').checked = (item.tanato === 'SIM'); document.getElementById('chk_invol').checked = (item.invol === 'SIM');
+            document.getElementById('chk_translado').checked = (item.translado === 'SIM'); document.getElementById('chk_urna_opc').checked = (item.urna_opc === 'SIM');
             const selectTipo = document.getElementById('tipo_sepultura');
-            if (item.gav && item.gav.includes('X')) selectTipo.value = 'GAVETA';
-            else if (item.car && item.car.includes('X')) selectTipo.value = 'CARNEIRO';
-            else if (item.cova_rasa === 'X') selectTipo.value = 'COVA RASA';
-            else if (item.perpetua === 'X') selectTipo.value = 'PERPETUA';
-            else selectTipo.value = '';
-
-            sepulturaOriginal = item.sepul; 
-            setVal('sepul', item.sepul);
-            setVal('motivo_troca_sepultura', item.motivo_troca_sepultura);
-            
-            setVal('qd', item.qd);
-            setVal('hospital', item.hospital);
-            setVal('estado_obito', item.estado_obito);
-            
-            if (item.estado_obito) {
-                carregarCidades(item.estado_obito, item.cidade_obito);
-            } else {
-                document.getElementById('cidade_obito').innerHTML = '<option value="">Selecione a UF primeiro</option>';
-                document.getElementById('cidade_obito').disabled = true;
-            }
-            
-            document.getElementById('hospital').dispatchEvent(new Event('input'));
-            document.getElementById('sepul').dispatchEvent(new Event('input'));
-
-            setVal('cap', item.cap);
-            
+            if (item.gav && item.gav.includes('X')) selectTipo.value = 'GAVETA'; else if (item.car && item.car.includes('X')) selectTipo.value = 'CARNEIRO'; else if (item.cova_rasa === 'X') selectTipo.value = 'COVA RASA'; else if (item.perpetua === 'X') selectTipo.value = 'PERPETUA'; else selectTipo.value = '';
+            sepulturaOriginal = item.sepul; setVal('sepul', item.sepul); setVal('motivo_troca_sepultura', item.motivo_troca_sepultura);
+            setVal('qd', item.qd); setVal('hospital', item.hospital); setVal('estado_obito', item.estado_obito);
+            if (item.estado_obito) { carregarCidades(item.estado_obito, item.cidade_obito); } else { document.getElementById('cidade_obito').innerHTML = '<option value="">Selecione a UF primeiro</option>'; document.getElementById('cidade_obito').disabled = true; }
+            document.getElementById('hospital').dispatchEvent(new Event('input')); document.getElementById('sepul').dispatchEvent(new Event('input')); setVal('cap', item.cap);
             document.getElementById('modal').style.display = 'block';
         }
     });
 }
 
-const form = document.getElementById('form-atendimento');
-form.onsubmit = (e) => {
-    e.preventDefault();
+window.carregarEstatisticas = function(dias) {
+    const loading = document.getElementById('loading-stats');
+    const divLista = document.getElementById('lista-estatisticas');
+    if(divLista) divLista.innerHTML = ''; 
+    if(loading) loading.style.display = 'block'; 
+    if (statsUnsubscribe) statsUnsubscribe();
     
-    const id = document.getElementById('docId').value;
-    const getVal = (k) => document.getElementById(k).value;
+    const di = new Date(); di.setDate(di.getDate() - dias);
+    const dis = di.toISOString().split('T')[0];
 
-    const dados = {
-        data_ficha: getVal('filtro-data'),
-        local: getVal('filtro-local'),
-        hora: getVal('hora'),
-        resp_nome: getVal('resp_nome'),
-        telefone: getVal('telefone'), // ADICIONADO AQUI
-        parentesco: getVal('parentesco'),
-        classificacao_obito: getVal('classificacao_obito'),
-        do_24h: getVal('do_24h'),
+    statsUnsubscribe = db.collection("atendimentos").where("data_ficha", ">=", dis).onSnapshot((snapshot) => {
+        if(loading) loading.style.display = 'none';
+        let cc = {}; let ca = {}; let tm = 0;
         
-        urna_info: getVal('urna_info'),
-        combo_urna: getVal('combo_urna'), 
-        tipo_urna_detalhe: getVal('tipo_urna_detalhe'),
-        funeraria: getVal('funeraria'),
-        isencao: getVal('isencao'),
-        requisito: getVal('requisito'), 
-        
-        tanato: document.getElementById('chk_tanato').checked ? 'SIM' : 'NAO',
-        invol: document.getElementById('chk_invol').checked ? 'SIM' : 'NAO',
-        translado: document.getElementById('chk_translado').checked ? 'SIM' : 'NAO',
-        urna_opc: document.getElementById('chk_urna_opc').checked ? 'SIM' : 'NAO',
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            if (d.causa) { d.causa.split(/[\/+,]/).forEach(p => { const c = p.trim().toUpperCase(); if(c) cc[c] = (cc[c] || 0) + 1; }); }
+            const at = d.atendente_sistema || "N/A";
+            ca[at] = (ca[at] || 0) + 1;
+            tm++;
+        });
 
-        nome: getVal('nome'),
-        causa: getVal('causa'),
-        gav: getVal('tipo_sepultura') === 'GAVETA' ? 'X' : '',
-        car: getVal('tipo_sepultura') === 'CARNEIRO' ? 'X' : '',
-        cova_rasa: getVal('tipo_sepultura') === 'COVA RASA' ? 'X' : '',
-        perpetua: getVal('tipo_sepultura') === 'PERPETUA' ? 'X' : '',
+        const r = Object.entries(cc).sort((a, b) => b[1] - a[1]);
+        const ra = Object.entries(ca).sort((a, b) => b[1] - a[1]);
         
-        sepul: getVal('sepul'),
-        motivo_troca_sepultura: getVal('motivo_troca_sepultura'), 
+        // Renderiza Gráficos (Usando Gerenciador de Instancias)
+        atualizarGrafico('grafico-causas', 'bar', r.map(x=>x[0]), r.map(x=>x[1]), 'Ocorrências');
+        atualizarGrafico('grafico-causas-modal', 'bar', r.map(x=>x[0]), r.map(x=>x[1]), 'Ocorrências');
+        atualizarGrafico('grafico-atendentes', 'pie', ra.map(x=>x[0]), ra.map(x=>x[1]), 'Atendimentos');
+        atualizarGrafico('grafico-atendentes-modal', 'pie', ra.map(x=>x[0]), ra.map(x=>x[1]), 'Atendimentos');
         
-        qd: getVal('qd'),
-        hospital: getVal('hospital'),
-        cidade_obito: getVal('cidade_obito'), 
-        estado_obito: getVal('estado_obito'), 
-        
-        cap: getVal('cap'),
-        data_obito: getVal('data_obito'),
-        hora_obito: getVal('hora_obito'),
-        geo_coords: getVal('geo_coords')
-    };
+        dadosEstatisticasExportacao = r.map(([c,q]) => ({"Causa da Morte": c, "Quantidade": q, "Porcentagem": ((q/tm)*100).toFixed(2)+'%' }));
 
-    if (id) {
-        db.collection("atendimentos").doc(id).update(dados)
-          .then(() => window.fecharModal())
-          .catch((error) => alert("Erro ao atualizar: " + error));
-    } else {
-        db.collection("atendimentos").add(dados)
-          .then(() => window.fecharModal())
-          .catch((error) => alert("Erro ao salvar: " + error));
-    }
-};
-
-window.excluir = function(id) {
-    if(confirm('Tem certeza?')) {
-        db.collection("atendimentos").doc(id).delete()
-          .catch((error) => alert("Erro ao excluir: " + error));
-    }
+        if(divLista) {
+             let html = `<div style="margin-bottom:10px;">Total: ${tm}</div><table class="table-stats"><thead><tr><th>Causa</th><th>Qtd</th></tr></thead><tbody>`;
+             r.forEach(([c,q]) => { html += `<tr><td>${c}</td><td>${q}</td></tr>`; });
+             html += '</tbody></table>';
+             divLista.innerHTML = html;
+        }
+    }, (error) => { console.error("Erro stats:", error); if(loading) loading.innerText = "Erro."; });
 }
 
-window.onclick = function(event) {
-    if (event.target == document.getElementById('modal')) window.fecharModal();
-    if (event.target == document.getElementById('modal-visualizar')) window.fecharModalVisualizar();
-    if (event.target == document.getElementById('modal-estatisticas')) window.fecharModalEstatisticas();
+// Nova função genérica para criar/atualizar gráficos sem erro de canvas
+function atualizarGrafico(canvasId, tipo, labels, data, labelData) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return; // Se o modal não estiver aberto, ignora
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Se já existe um gráfico nesse canvas, destrói
+    if (chartInstances[canvasId]) {
+        chartInstances[canvasId].destroy();
+    }
+    
+    // Cria novo
+    chartInstances[canvasId] = new Chart(ctx, {
+        type: tipo,
+        data: {
+            labels: labels.slice(0, 10),
+            datasets: [{
+                label: labelData,
+                data: data.slice(0, 10),
+                backgroundColor: ['#3699ff', '#1bc5bd', '#f64e60', '#ffa800', '#8950fc', '#ccc']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
 }
+
+window.baixarPDF = function() { if (dadosEstatisticasExportacao.length === 0) { alert("Sem dados."); return; } const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("Relatório de Causas de Morte", 14, 15); const tableColumn = ["Causa da Morte", "Quantidade", "Porcentagem"]; const tableRows = dadosEstatisticasExportacao.map(item => [item["Causa da Morte"], item["Quantidade"], item["Porcentagem"]]); doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 }); doc.save("Relatorio_Causas_Morte.pdf"); }
+window.gerarEtiqueta = function() {
+    if (!dadosAtendimentoAtual) return;
+    const d = dadosAtendimentoAtual;
+    const dataF = d.data_ficha ? d.data_ficha.split('-').reverse().join('/') : '';
+    
+    const h = `
+    <html><body style="font-family:Arial;text-align:center;padding:20px;">
+    <div style="border:4px solid #000;padding:20px;">
+        <h2>Identificação de Velório</h2>
+        <p style="font-size:20px;color:#555">Falecido(a)</p>
+        <h1 style="font-size:50px;margin:10px 0">${d.nome}</h1>
+        <p style="font-size:20px;color:#555">Sepultamento</p>
+        <h2 style="font-size:40px;margin:10px 0">${dataF} às ${d.hora}</h2>
+        <h3 style="font-size:30px;">${d.cap} - ${d.local || "CEMITÉRIO DO MARUÍ"}</h3>
+    </div>
+    <script>window.onload=function(){window.print()}</script>
+    </body></html>`;
+    
+    const w = window.open('','_blank','width=800,height=600');
+    if(w) { w.document.write(h); w.document.close(); } else { alert("Desbloqueie os pop-ups."); }
+}
+
+window.enviarWhatsapp=function(){if(!dadosAtendimentoAtual)return;const t=dadosAtendimentoAtual.telefone?dadosAtendimentoAtual.telefone.replace(/\D/g,''):'';const c=dadosAtendimentoAtual.geo_coords;if(!t){alert("Telefone não cadastrado.");return;}if(!c){alert("Geolocalização não cadastrada.");return;}const m=`Olá, segue a localização da sepultura de *${dadosAtendimentoAtual.nome}*: https://www.google.com/maps/search/?api=1&query=${c}`;const u=`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent(m)}`;window.open(u,'_blank');};
+window.enviarSMS=function(){if(!dadosAtendimentoAtual)return;const t=dadosAtendimentoAtual.telefone?dadosAtendimentoAtual.telefone.replace(/\D/g,''):'';const c=dadosAtendimentoAtual.geo_coords;if(!t){alert("Telefone não cadastrado.");return;}if(!c){alert("Geolocalização não cadastrada.");return;}const m=`Localização sepultura ${dadosAtendimentoAtual.nome}: https://www.google.com/maps/search/?api=1&query=${c}`;const u=navigator.userAgent.toLowerCase();let s=(u.indexOf('iphone')>-1||u.indexOf('ipad')>-1)?'&':'?';window.location.href=`sms:55${t}${s}body=${encodeURIComponent(m)}`;};
+
+// --- COMPROVANTE (COM PROTOCOLO E ATENDENTE) ---
+window.gerarComprovante = function() {
+    if (!dadosAtendimentoAtual) return;
+    const d = dadosAtendimentoAtual;
+
+    const chk = (cond) => cond ? '(X)' : '( )';
+    const fmtData = (dataStr) => { if (!dataStr) return ""; const p = dataStr.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+
+    const dataHoje = new Date();
+    const dataAtualFmt = `${dataHoje.getDate().toString().padStart(2,'0')}/${(dataHoje.getMonth()+1).toString().padStart(2,'0')}/${dataHoje.getFullYear()}`;
+    const horaAtualFmt = `${dataHoje.getHours().toString().padStart(2,'0')}:${dataHoje.getMinutes().toString().padStart(2,'0')}`;
+
+    const protocolo = d.protocolo || "S/N";
+    const isMarui = (d.local && d.local.includes("MARUÍ"));
+    const isSaoFrancisco = (d.local && d.local.includes("SÃO FRANCISCO"));
+    const isItaipu = (d.local && d.local.includes("ITAIPU"));
+    const comCapela = (d.cap && !d.cap.toUpperCase().includes("SEM"));
+    
+    const htmlComprovante = `
+    <html><head><title>Comprovante</title><style>@page{size:A4 portrait;margin:15mm}body{font-family:Arial,sans-serif;font-size:11px;margin:0;padding:10px;line-height:1.4}.header{text-align:center;margin-bottom:20px}.header h2{font-size:14px;text-decoration:underline;margin:0;font-weight:bold;text-transform:uppercase}.protocolo{position:absolute;top:10px;right:10px;font-size:12px;font-weight:bold;border:1px solid #000;padding:5px}.content{width:100%}.line{margin-bottom:8px}.bold{font-weight:bold}.section-title{font-weight:bold;margin-top:15px;margin-bottom:5px;text-transform:uppercase}.box-lateral{float:right;width:220px;border:1px solid #000;padding:5px;font-size:10px;font-weight:bold;margin-left:10px;margin-bottom:10px;text-align:left}.termo-texto{text-align:justify;margin-right:240px}.assinaturas{margin-top:40px;display:flex;justify-content:space-between;gap:20px}.assinatura-linha{border-top:1px solid #000;flex:1;text-align:center;padding-top:5px}.obs-box{margin-top:15px;font-weight:bold}.footer-info{margin-top:30px;border-top:1px solid #000;pt:10px}.aviso-final{margin-top:20px;font-weight:bold;text-align:justify;border:1px solid #000;padding:5px}</style></head><body>
+        <div class="protocolo">PROTOCOLO: ${protocolo}</div><div class="header"><h2>Comprovante de Atendimento</h2></div><div class="content">
+            <div class="line"><span class="bold">Nome do FALECIDO:</span> ${d.nome.toUpperCase()}</div>
+            <div class="line"><span class="bold">Funerária:</span> ${d.funeraria.toUpperCase()}</div>
+            <div class="line"><span class="bold">Atendente Responsável:</span> ${(d.atendente_sistema||'SISTEMA').toUpperCase()}<span style="margin-left:20px" class="bold">DATA DE HORARIO DE ATENDIMENTO:</span> ${dataAtualFmt} AS ${horaAtualFmt}</div>
+            <div class="line"><span class="bold">Data:</span> ${fmtData(d.data_ficha)} <span class="bold" style="margin-left:10px">Hora:</span> ${d.hora} <span class="bold" style="margin-left:10px">SEPULTURA:</span> ${d.sepul} <span class="bold" style="margin-left:10px">QUADRA:</span> ${d.qd} <span class="bold" style="margin-left:10px">RUA:</span> - <span class="bold" style="margin-left:10px">CAPELA:</span> ${d.cap}</div>
+            <div class="line"><span class="bold">COM CAPELA</span> ${chk(comCapela)} <span class="bold">SEM CAPELA</span> ${chk(!comCapela)} <span class="bold" style="margin-left:20px">DATA DO FALECIMENTO:</span> ${fmtData(d.data_obito)} AS ${d.hora_obito}</div>
+            <div class="line"><span class="bold">Cemitério:</span> (${isMarui?'X':' '}) MARUÍ (${isSaoFrancisco?'X':' '}) SÃO FRANCISCO XAVIER (${isItaipu?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div>
+            <div class="line">( ) SOLTEIRO ( ) CASADO ( ) VÍUVO ( ) UNIÃO ESTÁVEL ( ) DIVORCIADO ( ) IGNORADO</div>
+            <div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div>
+            <div class="line">${chk(d.tipo_sepultura==='GAVETA'&&d.classificacao_obito==='ADULTO')} Gaveta Adulto ${chk(d.tipo_sepultura==='CARNEIRO'&&d.classificacao_obito==='ADULTO')} Carneira Adulto ${chk(d.tipo_sepultura==='COVA RASA'&&d.classificacao_obito==='ADULTO')} Cova Rasa Adulto ${chk(d.tipo_sepultura==='GAVETA'&&d.classificacao_obito==='ANJO')} Gaveta Anjo</div>
+            <div class="line">${chk(d.tipo_sepultura==='CARNEIRO'&&d.classificacao_obito==='ANJO')} Carneira Anjo ${chk(d.tipo_sepultura==='COVA RASA'&&d.classificacao_obito==='ANJO')} Cova Rasa Anjo ${chk(d.tipo_sepultura==='PERPETUA')} Perpétuo ( ) L: F:</div>
+            <div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div><div class="assinaturas"><div class="assinatura-linha">Acolhimento / Atendente:<br><b>${d.atendente_sistema||''}</b></div><div class="assinatura-linha">Assinatura do responsável/família</div></div><div class="obs-box">OBS: PASSANDO DAS 36 HORAS DO FALECIMENTO SOMENTE COM TANATOPRAXIA.</div><div class="obs-box">OBS.: VELÓRIO COM DURAÇÃO DE DUAS HORAS ANTES DO SEPULTAMENTO. EM CASO DE ATRASO DO SERVIÇO FUNERÁRIO NÃO SERÁ ESTENDIDO O HORÁRIO ESTABELECIDO.</div><div style="margin-top:20px;overflow:auto"><div class="box-lateral">CAPELAS MUNICIPAIS E PARTICULARES:<br><br>PAGAMENTO E NOTA FISCAL DAS TAXAS MUNICIPAIS E INVOL COM DUAS HORAS ANTES DO SEPULTAMENTO<br><br>CIENTE: ___________________</div><div class="termo-texto"><div style="text-align:center;font-weight:bold;text-decoration:underline;margin-bottom:10px">TERMO DE COMPROMISSO CEMITÉRIOS MUNICIPAIS</div>Sendo o <span class="bold">FALECIDO CASADO</span>, o responsável perante, o Cemitério do MARUÍ, SÃO FRANCISCO E ITAIPU será obrigatoriamente o <span class="bold">CONJUGE</span>.<br>Sendo o <span class="bold">FALECIDO VIÚVO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU serão obrigatoriamente os <span class="bold">FILHOS</span>.<br>Sendo o <span class="bold">FALECIDO SOLTEIRO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU obrigatoriamente os <span class="bold">FILHOS, PAIS, IRMÃOS</span>.<br>Será exigida a apresentação de documentos de <span class="bold" style="text-decoration:underline">IDENTIDADE e CPF</span>.</div></div><div class="assinaturas" style="margin-top:30px"><div class="assinatura-linha" style="border:none"></div><div class="assinatura-linha">Assinatura funcionário/família</div></div><div class="footer-info">MARCADO: ________________________________ PERMISSIONÁRIO: __________________________________<br><br>TEL: ${d.telefone||'______________________'}</div><div class="aviso-final"><span style="text-decoration:underline">COMUNICADO AOS FAMILIARES DO FALECIDO E AS EMPRESAS FUNERÁRIAS RESPONSÁVEIS PELO SEPULTAMENTO.</span>Informamos que somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação dos seguintes documentos:<span class="bold">GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL PELO SERVIÇO), TAXAS MUNICIPAIS PAGAS e INVOL.</span></div></div><script>window.onload=function(){window.print()}</script></body></html>`;
+    const w = window.open('','_blank'); w.document.write(htmlComprovante); w.document.close();
+}
+
+window.alternarDesign=function(){document.body.classList.toggle('design-classico');localStorage.setItem('designMode',document.body.classList.contains('design-classico')?'classico':'moderno');};
+window.imprimirRelatorio=function(m){const s=document.createElement('style');s.id='print-style';s.innerHTML=`@page{size:${m};margin:5mm}`;document.head.appendChild(s);setTimeout(()=>window.print(),200);};
+function carregarCidades(u,s=""){const e=document.getElementById('cidade_obito');if(!u){e.innerHTML='<option value="">UF</option>';e.disabled=true;return;}e.innerHTML='<option>...</option>';e.disabled=true;fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${u}/municipios`).then(r=>r.json()).then(c=>{e.innerHTML='<option>Selecione</option>';c.sort((a,b)=>a.nome.localeCompare(b.nome));c.forEach(i=>{const o=document.createElement('option');o.value=i.nome.toUpperCase();o.text=i.nome.toUpperCase();if(i.nome.toUpperCase()===s)o.selected=true;e.appendChild(o);});e.disabled=false;});}
+function atualizarListener(d,l){if(unsubscribe)unsubscribe();const t=document.getElementById('tabela-corpo');t.innerHTML='<tr><td colspan="11" style="text-align:center">Carregando...</td></tr>';unsubscribe=db.collection("atendimentos").where("data_ficha","==",d).onSnapshot(s=>{let a=[];s.forEach(o=>{let i=o.data();i.id=o.id;if((i.local||"CEMITÉRIO DO MARUÍ")===l)a.push(i);});a.sort((x,y)=>(x.hora<y.hora?-1:1));renderizarTabela(a);});}
+window.pegarLocalizacaoGPS=function(){if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(p){const l=p.coords.latitude;const g=p.coords.longitude;const c=`${l}, ${g}`;document.getElementById('geo_coords').value=c;alert("Localização capturada: "+c);},function(e){alert("Erro ao obter localização: "+e.message);});}else{alert("Navegador não suporta GPS.");}};
+
+const form = document.getElementById('form-atendimento');
+form.onsubmit=(e)=>{e.preventDefault();const id=document.getElementById('docId').value;const g=(k)=>document.getElementById(k).value;const d={data_ficha:g('filtro-data'),local:g('filtro-local'),hora:g('hora'),atendente_sistema:g('atendente_sistema'),resp_nome:g('resp_nome'),telefone:g('telefone'),parentesco:g('parentesco'),classificacao_obito:g('classificacao_obito'),do_24h:g('do_24h'),urna_info:g('urna_info'),combo_urna:g('combo_urna'),tipo_urna_detalhe:g('tipo_urna_detalhe'),funeraria:g('funeraria'),isencao:g('isencao'),requisito:g('requisito'),tanato:document.getElementById('chk_tanato').checked?'SIM':'NAO',invol:document.getElementById('chk_invol').checked?'SIM':'NAO',translado:document.getElementById('chk_translado').checked?'SIM':'NAO',urna_opc:document.getElementById('chk_urna_opc').checked?'SIM':'NAO',nome:g('nome'),causa:g('causa'),gav:document.getElementById('tipo_sepultura').value==='GAVETA'?'X':'',car:document.getElementById('tipo_sepultura').value==='CARNEIRO'?'X':'',cova_rasa:document.getElementById('tipo_sepultura').value==='COVA RASA'?'X':'',perpetua:document.getElementById('tipo_sepultura').value==='PERPETUA'?'X':'',sepul:g('sepul'),motivo_troca_sepultura:g('motivo_troca_sepultura'),qd:g('qd'),hospital:g('hospital'),cidade_obito:g('cidade_obito'),estado_obito:g('estado_obito'),cap:g('cap'),data_obito:g('data_obito'),hora_obito:g('hora_obito'),geo_coords:g('geo_coords'),protocolo:document.getElementById('protocolo_hidden').value};if(!id&&!d.protocolo){d.protocolo=gerarProtocolo();}if(id){db.collection("atendimentos").doc(id).update(d).then(()=>window.fecharModal()).catch(e=>alert("Erro atualização: "+e));}else{db.collection("atendimentos").add(d).then(()=>window.fecharModal()).catch(e=>alert("Erro salvar: "+e));}};
+window.excluir=function(i){if(confirm('Tem certeza?'))db.collection("atendimentos").doc(i).delete();};
+window.onclick=function(e){const t=e.target;if(t==document.getElementById('modal'))window.fecharModal();if(t==document.getElementById('modal-visualizar'))window.fecharModalVisualizar();if(t==document.getElementById('modal-estatisticas'))window.fecharModalEstatisticas();if(t==document.getElementById('modal-equipe'))window.fecharModalEquipe();if(t==document.getElementById('modal-admin'))window.fecharModalAdmin();};
