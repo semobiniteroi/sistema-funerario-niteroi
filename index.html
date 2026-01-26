@@ -14,10 +14,8 @@
             <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" alt="Logo">
             <h3>Controle de Acesso</h3>
             <p>Identifique-se para continuar</p>
-            
             <input type="text" id="login-usuario" placeholder="Usuário" style="margin-bottom: 10px;">
             <input type="password" id="login-senha" placeholder="Senha" onkeypress="checarLoginEnter(event)">
-            
             <button onclick="fazerLogin()" class="btn-novo" style="width:100%; justify-content: center; margin-top: 15px;">🔓 Entrar</button>
             <p id="msg-erro-login" style="color: red; display: none; margin-top: 10px; font-weight:bold;">Dados incorretos!</p>
         </div>
@@ -30,35 +28,12 @@
                 <h3 style="margin-left: 10px; border-left: 2px solid #999; padding-left: 15px;">Serviços Funerários</h3>
             </div>
         </div>
-        
         <div class="info-area">
             <div class="controles-topo">
-                <div class="topo-box">
-                    <span class="topo-icon">📍</span>
-                    <div class="topo-content">
-                        <label>Cemitério</label>
-                        <select id="filtro-local">
-                            <option value="CEMITÉRIO DO MARUÍ">MARUÍ</option>
-                            <option value="CEMITÉRIO DE SÃO FRANCISCO">SÃO FRANCISCO</option>
-                            <option value="CEMITÉRIO DE ITAIPU">ITAIPU</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="topo-box">
-                    <span class="topo-icon">📅</span>
-                    <div class="topo-content">
-                        <label>Data</label>
-                        <input type="date" id="filtro-data">
-                    </div>
-                </div>
-
-                <div class="topo-box search-box">
-                    <input type="text" id="input-busca" placeholder="Buscar Nome ou Protocolo...">
-                    <button onclick="realizarBusca()" class="btn-search" title="Pesquisar">🔍</button>
-                </div>
+                <div class="topo-box"><span class="topo-icon">📍</span><div class="topo-content"><label>Cemitério</label><select id="filtro-local"><option value="CEMITÉRIO DO MARUÍ">MARUÍ</option><option value="CEMITÉRIO DE SÃO FRANCISCO">SÃO FRANCISCO</option><option value="CEMITÉRIO DE ITAIPU">ITAIPU</option></select></div></div>
+                <div class="topo-box"><span class="topo-icon">📅</span><div class="topo-content"><label>Data</label><input type="date" id="filtro-data"></div></div>
+                <div class="topo-box search-box"><input type="text" id="input-busca" placeholder="Buscar Nome ou Protocolo..."><button onclick="realizarBusca()" class="btn-search" title="Pesquisar">🔍</button></div>
             </div>
-
             <div class="user-controls">
                 <span id="user-display"></span>
                 <button onclick="abrirAdmin()" class="btn-header btn-admin" title="Painel Administrativo">⚙️ Admin</button>
@@ -75,24 +50,9 @@
             <button onclick="imprimirRelatorio('landscape')" class="btn-imprimir">🖨️ Paisagem</button>
             <button onclick="abrirModal()" class="btn-novo">+ Novo Atendimento</button>
         </div>
-
         <div class="tabela-container">
             <table>
-                <thead>
-                    <tr>
-                        <th style="min-width: 250px;">Responsável / Urna</th>
-                        <th>Hora</th>
-                        <th style="min-width: 220px;">Nome / Causa</th>
-                        <th>Gav</th>
-                        <th>Car</th>
-                        <th>Sepul</th>
-                        <th>QD</th>
-                        <th>Hospital</th>
-                        <th>Cap</th>
-                        <th>Falecimento</th>
-                        <th style="text-align: right; min-width: 120px;">Ações</th>
-                    </tr>
-                </thead>
+                <thead><tr><th style="min-width: 250px;">Responsável / Urna</th><th>Hora</th><th style="min-width: 220px;">Nome / Causa</th><th>Gav</th><th>Car</th><th>Sepul</th><th>QD</th><th>Hospital</th><th>Cap</th><th>Falecimento</th><th style="text-align: right; min-width: 120px;">Ações</th></tr></thead>
                 <tbody id="tabela-corpo"></tbody>
             </table>
         </div>
@@ -100,15 +60,9 @@
 
     <div id="modal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>Registro de Atendimento</h3>
-                <span class="close" onclick="fecharModal()">×</span>
-            </div>
-            
+            <div class="modal-header"><h3>Registro de Atendimento</h3><span class="close" onclick="fecharModal()">×</span></div>
             <form id="form-atendimento">
-                <input type="hidden" id="docId"> 
-                <input type="hidden" id="protocolo_hidden">
-                
+                <input type="hidden" id="docId"><input type="hidden" id="protocolo_hidden">
                 <div class="form-grid">
                     <div class="input-group span-1"><label>Hora Sepultamento</label><select id="hora" required></select></div>
                     <div class="input-group span-1"><label style="color:var(--primary-color);">Atendente Responsável</label><input type="text" id="atendente_sistema" readonly style="background-color: #e8e8e8; font-weight:bold; color:#555;"></div>
@@ -127,10 +81,10 @@
                     <div class="input-group span-1"><label>Tipo Sepultura</label><select id="tipo_sepultura" required><option value="">Selecione...</option><option value="GAVETA">Gaveta</option><option value="CARNEIRO">Carneiro</option><option value="PERPETUA">Perpétua</option><option value="COVA RASA">Cova Rasa</option></select></div>
                     <div class="input-group span-1"><label>Nº Sepul</label><input type="text" id="sepul" required></div>
                     <div class="input-group span-1"><label>QD</label><input type="text" id="qd" required></div>
-                    <div class="input-group span-1"><label>Geolocalização</label><div style="display:flex; gap:5px;"><input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps"><button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center;" title="GPS">📍</button><button type="button" onclick="window.open('https://www.google.com/maps','_blank')" class="btn-imprimir" style="width:40px; padding:0; justify-content:center;" title="Mapa">🗺️</button></div></div>
+                    <div class="input-group span-1"><label>GPS</label><div style="display:flex; gap:5px;"><input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps"><button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center;">📍</button><button type="button" onclick="window.open('https://www.google.com/maps','_blank')" class="btn-imprimir" style="width:40px; padding:0; justify-content:center;">🗺️</button></div></div>
                     <div class="input-group span-4 hidden" id="div-motivo-sepultura"><label style="color:red;">Motivo Troca</label><input type="text" id="motivo_troca_sepultura" placeholder="Explique a mudança..."></div>
                     <div class="input-group span-2"><label>Hospital / Local</label><input type="text" id="hospital" list="lista-hospitais" placeholder="Selecione..." required><datalist id="lista-hospitais"><option value="DOMICÍLIO"><option value="OUTRO HOSPITAL (DIGITE O NOME)"><option value="HMCT (CARLOS TORTELLY)"><option value="HEAL (AZEVEDO LIMA)"><option value="HUAP (ANTÔNIO PEDRO)"><option value="HOSP. ORÊNCIO DE FREITAS)"><option value="HOSP. PSIQUIÁTRICO JURUJUBA)"><option value="HOSP. OCEÂNICO)"><option value="HOSP. GETULINHO)"><option value="UPA MÁRIO MONTEIRO)"><option value="UPA FONSECA)"><option value="CHN (COMPLEXO HOSPITALAR)"><option value="HCN (CLÍNICAS DE NITERÓI)"><option value="HOSP. SANTA MARTHA)"><option value="HOSP. SÃO LUCAS)"><option value="HOSP. ICARAÍ)"><option value="HEAT (ALBERTO TORRES)"><option value="HOSP. LUIZ PALMIER)"><option value="PRONTO SOCORRO CENTRAL (SG)"><option value="HOSP. SÃO GONÇALO)"><option value="HOSP. FRANCISCANO (NS. GRAÇAS)"><option value="IML - NITERÓI)"><option value="IML - SÃO GONÇALO)"></datalist></div>
-                    <div class="input-group span-2 hidden" id="div-local-domicilio" style="flex-direction: row; gap: 5px;"><div style="flex: 1;"><label>UF</label><select id="estado_obito"><option value="">UF</option><option value="RJ">RJ</option></select></div><div style="flex: 2;"><label>Cidade</label><select id="cidade_obito" disabled><option value="">Selecione a UF</option></select></div></div>
+                    <div class="input-group span-2 hidden" id="div-local-domicilio" style="flex-direction: row; gap: 5px;"><div style="flex: 1;"><label>UF</label><select id="estado_obito"><option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></div><div style="flex: 2;"><label>Cidade</label><select id="cidade_obito" disabled><option value="">Selecione a UF</option></select></div></div>
                     <div class="input-group span-2"><label>Capela</label><input type="text" id="cap" list="lista-capelas" placeholder="Selecione..." required><datalist id="lista-capelas"><option value="SEM VELÓRIO / DIRETO"><option value="CAPELA A"><option value="CAPELA B"><option value="CAPELA C"><option value="CAPELA D"><option value="CAPELA E"><option value="CAPELA F"><option value="CAPELA G"><option value="CAPELA H"></datalist></div>
                     <div class="input-group span-2"><label>Data Falecimento</label><input type="date" id="data_obito" required></div>
                     <div class="input-group span-2"><label>Hora Falecimento</label><input type="time" id="hora_obito" required></div>
@@ -169,18 +123,7 @@
         </div>
     </div>
 
-    <div id="modal-admin" class="modal">
-        <div class="modal-content" style="max-width: 900px; height: 85vh; display: flex; flex-direction: column;">
-            <div class="modal-header"><h3>Painel Administrativo</h3><span class="close" onclick="fecharModalAdmin()">×</span></div>
-            <div class="tab-header"><button class="tab-btn active" onclick="abrirAba('tab-equipe')">👥 Equipe</button><button class="tab-btn" onclick="abrirAba('tab-stats')">📊 Estatísticas</button><button class="tab-btn" onclick="abrirAba('tab-logs')">🕵️ Auditoria</button></div>
-            <div class="tab-content-area" style="flex-grow: 1; overflow-y: auto; padding: 20px;">
-                <div id="tab-equipe" class="tab-pane active"><h4>Gerenciar Usuários</h4><div style="display:flex; flex-direction: column; gap:10px; margin-bottom:20px; background: #f9f9f9; padding:15px; border-radius:8px;"><strong style="color:var(--primary-color);">Novo Usuário:</strong><div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px;"><input type="text" id="novo-nome" placeholder="Nome Completo"><input type="text" id="novo-login" placeholder="Login"><input type="password" id="nova-senha" placeholder="Senha"><button onclick="adicionarFuncionario()" class="btn-novo" style="padding: 10px 20px;">+</button></div></div><ul id="lista-equipe" class="lista-simples"></ul></div>
-                <div id="tab-stats" class="tab-pane"><div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap;"><button onclick="baixarRelatorioCompleto()" class="btn-novo" style="background-color: #1e3a8a;">📊 Baixar Relatório Completo</button><div style="width: 1px; height: 25px; background: #ccc; margin: 0 10px;"></div><button onclick="carregarEstatisticas(30)" class="btn-imprimir">30 Dias</button><button onclick="baixarExcel()" class="btn-novo" style="background-color: #27ae60;">📥 Excel (Visual)</button></div><div id="loading-stats" style="text-align:center; display:none; color:#666;">Carregando dados...</div><div style="display: flex; flex-direction: column; gap: 30px;"><div class="grafico-container" style="height: 300px;"><h5 style="text-align:center; margin-bottom:10px;">Causas de Morte</h5><canvas id="grafico-causas"></canvas></div><div class="grafico-container" style="height: 300px;"><h5 style="text-align:center; margin-bottom:10px;">Atendimentos por Funcionário</h5><canvas id="grafico-atendentes"></canvas></div></div><div id="lista-estatisticas" style="margin-top: 20px;"></div></div>
-                <div id="tab-logs" class="tab-pane"><div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;"><h4>Registro de Atividades Recentes</h4><button onclick="carregarLogs()" class="btn-imprimir">🔄 Atualizar</button></div><table class="table-logs" style="width:100%; font-size:12px; border-collapse: collapse;"><thead><tr style="background:#eee; text-align:left;"><th style="padding:10px;">Data/Hora Registro</th><th style="padding:10px;">Falecido</th><th style="padding:10px;">Responsável (Atendente)</th></tr></thead><tbody id="tabela-logs"></tbody></table></div>
-            </div>
-        </div>
-    </div>
-
+    <div id="modal-admin" class="modal"><div class="modal-content" style="max-width: 900px; height: 85vh; display: flex; flex-direction: column;"><div class="modal-header"><h3>Painel Administrativo</h3><span class="close" onclick="fecharModalAdmin()">×</span></div><div class="tab-header"><button class="tab-btn active" onclick="abrirAba('tab-equipe')">👥 Equipe</button><button class="tab-btn" onclick="abrirAba('tab-stats')">📊 Estatísticas</button><button class="tab-btn" onclick="abrirAba('tab-logs')">🕵️ Auditoria</button></div><div class="tab-content-area" style="flex-grow: 1; overflow-y: auto; padding: 20px;"><div id="tab-equipe" class="tab-pane active"><h4>Gerenciar Usuários</h4><div style="display:flex; flex-direction: column; gap:10px; margin-bottom:20px; background: #f9f9f9; padding:15px; border-radius:8px;"><strong style="color:var(--primary-color);">Novo Usuário:</strong><div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px;"><input type="text" id="novo-nome" placeholder="Nome Completo"><input type="text" id="novo-login" placeholder="Login"><input type="password" id="nova-senha" placeholder="Senha"><button onclick="adicionarFuncionario()" class="btn-novo" style="padding: 10px 20px;">+</button></div></div><ul id="lista-equipe" class="lista-simples"></ul></div><div id="tab-stats" class="tab-pane"><div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap;"><button onclick="baixarRelatorioCompleto()" class="btn-novo" style="background-color: #1e3a8a;">📊 Baixar Relatório Completo</button><div style="width: 1px; height: 25px; background: #ccc; margin: 0 10px;"></div><button onclick="carregarEstatisticas(30)" class="btn-imprimir">30 Dias</button><button onclick="baixarExcel()" class="btn-novo" style="background-color: #27ae60;">📥 Excel (Visual)</button></div><div id="loading-stats" style="text-align:center; display:none; color:#666;">Carregando dados...</div><div style="display: flex; flex-direction: column; gap: 30px;"><div class="grafico-container" style="height: 300px;"><h5 style="text-align:center; margin-bottom:10px;">Causas de Morte</h5><canvas id="grafico-causas"></canvas></div><div class="grafico-container" style="height: 300px;"><h5 style="text-align:center; margin-bottom:10px;">Atendimentos por Funcionário</h5><canvas id="grafico-atendentes"></canvas></div></div><div id="lista-estatisticas" style="margin-top: 20px;"></div></div><div id="tab-logs" class="tab-pane"><div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;"><h4>Registro de Atividades Recentes</h4><button onclick="carregarLogs()" class="btn-imprimir">🔄 Atualizar</button></div><table class="table-logs" style="width:100%; font-size:12px; border-collapse: collapse;"><thead><tr style="background:#eee; text-align:left;"><th style="padding:10px;">Data/Hora Registro</th><th style="padding:10px;">Falecido</th><th style="padding:10px;">Responsável (Atendente)</th></tr></thead><tbody id="tabela-logs"></tbody></table></div></div></div></div>
     <div id="modal-estatisticas" class="modal"><div class="modal-content" style="max-width: 800px;"><div class="modal-header"><h3>Relatórios Rápidos</h3><span class="close" onclick="fecharModalEstatisticas()">×</span></div><div style="padding: 20px;"><div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap;"><button onclick="carregarEstatisticas(7)" class="btn-imprimir">7 Dias</button><button onclick="carregarEstatisticas(14)" class="btn-imprimir">14 Dias</button><button onclick="carregarEstatisticas(30)" class="btn-imprimir">30 Dias</button></div><div class="grafico-container" style="height: 250px;"><canvas id="grafico-causas-modal"></canvas></div><div class="grafico-container" style="height: 250px; margin-top:20px;"><canvas id="grafico-atendentes-modal"></canvas></div></div></div></div>
 
     <footer style="text-align: center; padding: 20px; color: #888; font-size: 11px; margin-top: 30px; border-top: 1px solid #eee;">© 2026 Controle Funerário Niterói. Todos os direitos reservados.</footer>
