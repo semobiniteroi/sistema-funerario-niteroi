@@ -28,6 +28,7 @@
                 <h3 style="margin-left: 10px; border-left: 2px solid #999; padding-left: 15px;">Serviços Funerários</h3>
             </div>
         </div>
+        
         <div class="info-area">
             <div class="controles-topo">
                 <div class="topo-box"><span class="topo-icon">📍</span><div class="topo-content"><label>Cemitério</label><select id="filtro-local"><option value="CEMITÉRIO DO MARUÍ">MARUÍ</option><option value="CEMITÉRIO DE SÃO FRANCISCO">SÃO FRANCISCO</option><option value="CEMITÉRIO DE ITAIPU">ITAIPU</option></select></div></div>
@@ -50,6 +51,7 @@
             <button onclick="imprimirRelatorio('landscape')" class="btn-imprimir">🖨️ Paisagem</button>
             <button onclick="abrirModal()" class="btn-novo">+ Novo Atendimento</button>
         </div>
+
         <div class="tabela-container">
             <table>
                 <thead><tr><th style="min-width: 250px;">Responsável / Urna</th><th>Hora</th><th style="min-width: 220px;">Nome / Causa</th><th>Gav</th><th>Car</th><th>Sepul</th><th>QD</th><th>Hospital</th><th>Cap</th><th>Falecimento</th><th style="text-align: right; min-width: 120px;">Ações</th></tr></thead>
@@ -69,16 +71,51 @@
                     <div class="input-group span-2"><label>Nome do Responsável (Família)</label><input type="text" id="resp_nome" placeholder="Nome do familiar ou empresa" required></div>
                     <div class="input-group span-1"><label>Telefone Responsável</label><input type="text" id="telefone" placeholder="(21) 99999-9999"></div>
                     <div class="input-group span-1"><label>Grau Parentesco</label><input type="text" id="parentesco" list="lista-parentesco" placeholder="Selecione..."><datalist id="lista-parentesco"><option value="CÔNJUGE"><option value="FILHO(A)"><option value="PAI/MÃE"><option value="IRMÃO(Ã)"><option value="NETO(A)"><option value="SOBRINHO(A)"><option value="GENRO/NORA"><option value="CUNHADO(A)"><option value="TIO(A)"><option value="PRIMO(A)"><option value="OUTRO"></datalist></div>
+                    
+                    <div class="input-group span-2"><label>Estado Civil (Falecido)</label><select id="estado_civil"><option value="">Selecione...</option><option value="SOLTEIRO">SOLTEIRO</option><option value="CASADO">CASADO</option><option value="VIUVO">VIÚVO</option><option value="UNIAO_ESTAVEL">UNIÃO ESTÁVEL</option><option value="DIVORCIADO">DIVORCIADO</option><option value="IGNORADO">IGNORADO</option></select></div>
+
                     <div class="input-group span-2"><label>Funerária</label><input type="text" id="funeraria" list="lista-funerarias" placeholder="Selecione..." required><datalist id="lista-funerarias"><option value="RIO PAX NITERÓI"><option value="FUNERÁRIA SANTA ROSA"><option value="FUNERÁRIA NITERÓI"><option value="FUNERÁRIA SÃO FRANCISCO"><option value="FUNERÁRIA MENINO DEUS"><option value="SAF (ASSISTÊNCIA FAMILIAR)"><option value="PLASIR"><option value="SOCIAL"><option value="DOM BOSCO"><option value="MAVERICK"><option value="PRÓPRIA FAMÍLIA"></datalist></div>
+
+                    <div class="input-group span-2"><label>Rep. Funerária (Se houver)</label><input type="text" id="func_funeraria" placeholder="Nome do funcionário da funerária"></div>
+
                     <div class="input-group span-1"><label>Isenção?</label><select id="isencao" required><option value="NAO">NÃO (PAGO)</option><option value="SIM">SIM (100% GRATUIDADE)</option><option value="50">SIM (50% DESCONTO)</option></select></div>
                     <div class="input-group span-1"><label>Requisito Isenção</label><input type="text" id="requisito" list="lista-requisitos" placeholder="Motivo..."><datalist id="lista-requisitos"><option value="CADUNICO"><option value="MOEDA ARARIBOIA"><option value="FUNCIONÁRIO PMN"><option value="OUTRO (DIGITE)"></datalist></div>
+                    
                     <div class="input-group span-1"><label>Classificação</label><select id="classificacao_obito"><option value="ADULTO">ADULTO</option><option value="ANJO">ANJO (Criança/Natimorto)</option></select></div>
+                    
+                    <div class="input-group span-3" style="border: 1px dashed #bbb; padding: 5px; border-radius: 5px; background: #fafafa;">
+                        <label style="color:#c0392b; font-weight:bold;">Situação: Membros</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="display:flex; align-items:center; gap:5px;">
+                                <input type="checkbox" id="chk_membro" style="width:auto;">
+                                <label for="chk_membro" style="margin:0; cursor:pointer;">Sepultamento de Membro</label>
+                            </div>
+                            <select id="tipo_membro_select" disabled style="flex:1;">
+                                <option value="">Selecione o membro...</option>
+                                <option value="MEMBRO SUPERIOR DIREITO">MEMBRO SUPERIOR DIREITO</option>
+                                <option value="MEMBRO SUPERIOR ESQUERDO">MEMBRO SUPERIOR ESQUERDO</option>
+                                <option value="MEMBRO INFERIOR DIREITO">MEMBRO INFERIOR DIREITO</option>
+                                <option value="MEMBRO INFERIOR ESQUERDO">MEMBRO INFERIOR ESQUERDO</option>
+                                <option value="OUTROS">OUTROS</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="input-group span-1"><label>Tamanho Urna</label><select id="combo_urna"><option value="">Selecione...</option><option value="NORMAL">Normal</option><option value="G">G</option><option value="GG">GG</option><option value="3G">3G</option></select></div>
                     <div class="input-group span-2"><label>Tipo da Urna (Material/Modelo)</label><input type="text" id="tipo_urna_detalhe" list="lista-tipos-urna" placeholder="Ex: Madeira, Sextavada..."><datalist id="lista-tipos-urna"><option value="MADEIRA PADRÃO"><option value="SEXTAVADA"><option value="ZINCO"><option value="BIO (ECOLÓGICA)"><option value="LUXO"><option value="IML / RABECÃO"></datalist></div>
                     <div class="input-group span-2"><label>Serviços Adicionais</label><div class="checkbox-group"><label><input type="checkbox" id="chk_tanato"> Tanatopraxia</label><label><input type="checkbox" id="chk_invol"> Invol</label><label><input type="checkbox" id="chk_translado"> Translado</label><label><input type="checkbox" id="chk_urna_opc"> Urna</label></div></div>
                     <div class="input-group span-4"><label>Nome do Falecido</label><input type="text" id="nome" required style="font-weight: 600;"></div>
                     <div class="input-group span-4"><label>Causa da Morte</label><div style="display: flex; gap: 10px;"><select id="seletor_causas" style="width: 40%; border: 1px solid #3699ff;"><option value="">+ Adicionar Causa...</option><optgroup label="Doenças Infecciosas / Risco"><option value="COVID-19">COVID-19</option><option value="TUBERCULOSE">TUBERCULOSE</option><option value="MENINGITE">MENINGITE</option><option value="HEPATITE B">HEPATITE B</option><option value="HEPATITE C">HEPATITE C</option><option value="HIV/AIDS">HIV/AIDS</option><option value="H1N1 (INFLUENZA)">H1N1 (INFLUENZA)</option><option value="LEPTOSPIROSE">LEPTOSPIROSE</option><option value="SARAMPO">SARAMPO</option><option value="FEBRE AMARELA">FEBRE AMARELA</option><option value="SEPSE / SEPTICEMIA">SEPSE / SEPTICEMIA</option></optgroup><optgroup label="Causas Comuns"><option value="CHOQUE SÉPTICO">CHOQUE SÉPTICO</option><option value="INSUFICIÊNCIA RESPIRATÓRIA">INSUFICIÊNCIA RESPIRATÓRIA</option><option value="INSUFICIÊNCIA RENAL AGUDA">INSUFICIÊNCIA RENAL AGUDA</option><option value="NEOPLASIA MALIGNA">NEOPLASIA MALIGNA</option><option value="INFARTO AGUDO DO MIOCÁRDIO">INFARTO (IAM)</option><option value="AVC">AVC (ACIDENTE VASCULAR)</option><option value="PNEUMONIA">PNEUMONIA</option><option value="FALÊNCIA MÚLTIPLA DE ÓRGÃOS">FALÊNCIA MÚLTIPLA</option><option value="SENILIDADE">SENILIDADE</option><option value="HIPERTENSÃO ARTERIAL">HIPERTENSÃO ARTERIAL</option><option value="DIABETES MELLITUS">DIABETES MELLITUS</option><option value="PARADA CARDIORRESPIRATÓRIA">PARADA CARDIORRESPIRATÓRIA</option><option value="CIRROSE HEPÁTICA">CIRROSE HEPÁTICA</option><option value="DOENÇA DE ALZHEIMER">DOENÇA DE ALZHEIMER</option></optgroup><optgroup label="Causas Externas"><option value="TRAUMATISMO CRANIANO">TRAUMATISMO CRANIANO</option><option value="AFOGAMENTO">AFOGAMENTO</option><option value="ACIDENTE DE TRÂNSITO">ACIDENTE DE TRÂNSITO</option><option value="HOMICÍDIO (PAF)">HOMICÍDIO (PAF)</option><option value="SUICÍDIO">SUICÍDIO</option><option value="CAUSA INDETERMINADA">CAUSA INDETERMINADA</option></optgroup></select><input type="text" id="causa" placeholder="Causas aparecerão aqui..." required style="width: 60%;"></div></div>
-                    <div class="input-group span-1"><label>Tipo Sepultura</label><select id="tipo_sepultura" required><option value="">Selecione...</option><option value="GAVETA">Gaveta</option><option value="CARNEIRO">Carneiro</option><option value="PERPETUA">Perpétua</option><option value="COVA RASA">Cova Rasa</option></select></div>
+                    
+                    <div class="input-group span-1"><label>Tipo Sepultura</label><select id="tipo_sepultura" required><option value="">Selecione...</option><option value="GAVETA">Gaveta</option><option value="CARNEIRO">Carneiro</option><option value="PERPETUA">Perpétua</option><option value="COVA RASA">Cova Rasa</option><option value="MEMBRO">Membro Amputado</option></select></div>
+                    
+                    <div class="input-group span-2 hidden" id="div-perpetua" style="flex-direction: row; gap: 10px;">
+                         <div style="flex:1;"><label>Livro</label><input type="text" id="livro_perpetua" placeholder="Nº Livro"></div>
+                         <div style="flex:1;"><label>Folha</label><input type="text" id="folha_perpetua" placeholder="Nº Folha"></div>
+                    </div>
+
+                    <div class="input-group span-2 hidden" id="div-membro"><input type="hidden" id="membro_amputado"></div>
+
                     <div class="input-group span-1"><label>Nº Sepul</label><input type="text" id="sepul" required></div>
                     <div class="input-group span-1"><label>QD</label><input type="text" id="qd" required></div>
                     <div class="input-group span-1"><label>GPS</label><div style="display:flex; gap:5px;"><input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps"><button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center;">📍</button><button type="button" onclick="window.open('https://www.google.com/maps','_blank')" class="btn-imprimir" style="width:40px; padding:0; justify-content:center;">🗺️</button></div></div>
@@ -130,7 +167,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
