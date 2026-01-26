@@ -14,8 +14,10 @@
             <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" alt="Logo">
             <h3>Controle de Acesso</h3>
             <p>Identifique-se para continuar</p>
+            
             <input type="text" id="login-usuario" placeholder="Usuário" style="margin-bottom: 10px;">
             <input type="password" id="login-senha" placeholder="Senha" onkeypress="checarLoginEnter(event)">
+            
             <button onclick="fazerLogin()" class="btn-novo" style="width:100%; justify-content: center; margin-top: 15px;">🔓 Entrar</button>
             <p id="msg-erro-login" style="color: red; display: none; margin-top: 10px; font-weight:bold;">Dados incorretos!</p>
         </div>
@@ -91,8 +93,7 @@
                         <th style="text-align: right; min-width: 120px;">Ações</th>
                     </tr>
                 </thead>
-                <tbody id="tabela-corpo">
-                    </tbody>
+                <tbody id="tabela-corpo"></tbody>
             </table>
         </div>
     </div>
@@ -109,453 +110,87 @@
                 <input type="hidden" id="protocolo_hidden">
                 
                 <div class="form-grid">
-                    <div class="input-group span-1">
-                        <label>Hora Sepultamento</label>
-                        <select id="hora" required></select>
-                    </div>
-                    
-                    <div class="input-group span-1">
-                        <label style="color:var(--primary-color);">Atendente Responsável</label>
-                        <input type="text" id="atendente_sistema" readonly style="background-color: #e8e8e8; font-weight:bold; color:#555;">
-                    </div>
-
-                    <div class="input-group span-2">
-                        <label>Nome do Responsável (Família)</label>
-                        <input type="text" id="resp_nome" placeholder="Nome do familiar ou empresa" required>
-                    </div>
-                    
-                    <div class="input-group span-1">
-                        <label>Telefone Responsável</label>
-                        <input type="text" id="telefone" placeholder="(21) 99999-9999">
-                    </div>
-                    <div class="input-group span-1">
-                        <label>Grau Parentesco</label>
-                        <input type="text" id="parentesco" list="lista-parentesco" placeholder="Selecione...">
-                        <datalist id="lista-parentesco">
-                            <option value="CÔNJUGE"></option>
-                            <option value="FILHO(A)"></option>
-                            <option value="PAI/MÃE"></option>
-                            <option value="IRMÃO(Ã)"></option>
-                            <option value="NETO(A)"></option>
-                            <option value="SOBRINHO(A)"></option>
-                            <option value="GENRO/NORA"></option>
-                            <option value="CUNHADO(A)"></option>
-                            <option value="TIO(A)"></option>
-                            <option value="PRIMO(A)"></option>
-                            <option value="OUTRO"></option>
-                        </datalist>
-                    </div>
-                    
-                    <div class="input-group span-2">
-                        <label>Funerária</label>
-                        <input type="text" id="funeraria" list="lista-funerarias" placeholder="Selecione..." required>
-                        <datalist id="lista-funerarias">
-                            <option value="RIO PAX NITERÓI"></option>
-                            <option value="FUNERÁRIA SANTA ROSA"></option>
-                            <option value="FUNERÁRIA NITERÓI"></option>
-                            <option value="FUNERÁRIA SÃO FRANCISCO"></option>
-                            <option value="FUNERÁRIA MENINO DEUS"></option>
-                            <option value="SAF (ASSISTÊNCIA FAMILIAR)"></option>
-                            <option value="PLASIR"></option>
-                            <option value="SOCIAL"></option>
-                            <option value="DOM BOSCO"></option>
-                            <option value="MAVERICK"></option>
-                            <option value="PRÓPRIA FAMÍLIA"></option>
-                        </datalist>
-                    </div>
-
-                    <div class="input-group span-1">
-                        <label>Isenção?</label>
-                        <select id="isencao" required>
-                            <option value="NAO">NÃO (PAGO)</option>
-                            <option value="SIM">SIM (100% GRATUIDADE)</option>
-                            <option value="50">SIM (50% DESCONTO)</option>
-                        </select>
-                    </div>
-                    <div class="input-group span-1">
-                        <label>Requisito Isenção</label>
-                        <input type="text" id="requisito" list="lista-requisitos" placeholder="Motivo...">
-                        <datalist id="lista-requisitos">
-                            <option value="CADUNICO"></option>
-                            <option value="MOEDA ARARIBOIA"></option>
-                            <option value="FUNCIONÁRIO PMN"></option>
-                            <option value="OUTRO (DIGITE)"></option>
-                        </datalist>
-                    </div>
-                    
-                    <div class="input-group span-1">
-                        <label>Classificação</label>
-                        <select id="classificacao_obito">
-                            <option value="ADULTO">ADULTO</option>
-                            <option value="ANJO">ANJO (Criança/Natimorto)</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group span-1">
-                        <label>Tamanho Urna</label>
-                        <select id="combo_urna">
-                            <option value="">Selecione...</option>
-                            <option value="NORMAL">Normal</option>
-                            <option value="G">G</option>
-                            <option value="GG">GG</option>
-                            <option value="3G">3G</option>
-                        </select>
-                    </div>
-                    
-                    <div class="input-group span-2">
-                        <label>Tipo da Urna (Material/Modelo)</label>
-                        <input type="text" id="tipo_urna_detalhe" list="lista-tipos-urna" placeholder="Ex: Madeira, Sextavada...">
-                        <datalist id="lista-tipos-urna">
-                            <option value="MADEIRA PADRÃO"></option>
-                            <option value="SEXTAVADA"></option>
-                            <option value="ZINCO"></option>
-                            <option value="BIO (ECOLÓGICA)"></option>
-                            <option value="LUXO"></option>
-                            <option value="IML / RABECÃO"></option>
-                        </datalist>
-                    </div>
-
-                    <div class="input-group span-2">
-                        <label>Serviços Adicionais / Opcionais</label>
-                        <div class="checkbox-group">
-                            <label><input type="checkbox" id="chk_tanato"> Tanatopraxia</label>
-                            <label><input type="checkbox" id="chk_invol"> Invol</label>
-                            <label><input type="checkbox" id="chk_translado"> Translado</label>
-                            <label><input type="checkbox" id="chk_urna_opc"> Urna</label>
-                        </div>
-                    </div>
-
-                    <div class="input-group span-4">
-                        <label>Nome do Falecido</label>
-                        <input type="text" id="nome" required style="font-weight: 600;">
-                    </div>
-                    
-                    <div class="input-group span-4">
-                        <label>Causa da Morte</label>
-                        <div style="display: flex; gap: 10px;">
-                            <select id="seletor_causas" style="width: 40%; border: 1px solid #3699ff;">
-                                <option value="">+ Adicionar Causa...</option>
-                                <optgroup label="Doenças Infecciosas / Risco">
-                                    <option value="COVID-19">COVID-19</option><option value="TUBERCULOSE">TUBERCULOSE</option><option value="MENINGITE">MENINGITE</option>
-                                    <option value="HEPATITE B">HEPATITE B</option><option value="HEPATITE C">HEPATITE C</option><option value="HIV/AIDS">HIV/AIDS</option>
-                                    <option value="H1N1 (INFLUENZA)">H1N1 (INFLUENZA)</option><option value="LEPTOSPIROSE">LEPTOSPIROSE</option>
-                                    <option value="SARAMPO">SARAMPO</option><option value="FEBRE AMARELA">FEBRE AMARELA</option><option value="SEPSE / SEPTICEMIA">SEPSE / SEPTICEMIA</option>
-                                </optgroup>
-                                <optgroup label="Causas Comuns">
-                                    <option value="CHOQUE SÉPTICO">CHOQUE SÉPTICO</option><option value="INSUFICIÊNCIA RESPIRATÓRIA">INSUFICIÊNCIA RESPIRATÓRIA</option>
-                                    <option value="INSUFICIÊNCIA RENAL AGUDA">INSUFICIÊNCIA RENAL AGUDA</option><option value="NEOPLASIA MALIGNA">NEOPLASIA MALIGNA</option>
-                                    <option value="INFARTO AGUDO DO MIOCÁRDIO">INFARTO (IAM)</option><option value="AVC">AVC (ACIDENTE VASCULAR)</option>
-                                    <option value="PNEUMONIA">PNEUMONIA</option><option value="FALÊNCIA MÚLTIPLA DE ÓRGÃOS">FALÊNCIA MÚLTIPLA</option>
-                                    <option value="SENILIDADE">SENILIDADE</option><option value="HIPERTENSÃO ARTERIAL">HIPERTENSÃO ARTERIAL</option>
-                                    <option value="DIABETES MELLITUS">DIABETES MELLITUS</option><option value="PARADA CARDIORRESPIRATÓRIA">PARADA CARDIORRESPIRATÓRIA</option><option value="CIRROSE HEPÁTICA">CIRROSE HEPÁTICA</option><option value="DOENÇA DE ALZHEIMER">DOENÇA DE ALZHEIMER</option>
-                                </optgroup>
-                                <optgroup label="Causas Externas">
-                                    <option value="TRAUMATISMO CRANIANO">TRAUMATISMO CRANIANO</option><option value="AFOGAMENTO">AFOGAMENTO</option><option value="ACIDENTE DE TRÂNSITO">ACIDENTE DE TRÂNSITO</option><option value="HOMICÍDIO (PAF)">HOMICÍDIO (PAF)</option><option value="SUICÍDIO">SUICÍDIO</option><option value="CAUSA INDETERMINADA">CAUSA INDETERMINADA</option>
-                                </optgroup>
-                            </select>
-                            <input type="text" id="causa" placeholder="Causas aparecerão aqui..." required style="width: 60%;">
-                        </div>
-                    </div>
-
-                    <div class="input-group span-1">
-                        <label>Tipo Sepultura</label>
-                        <select id="tipo_sepultura" required>
-                            <option value="">Selecione...</option>
-                            <option value="GAVETA">Gaveta</option>
-                            <option value="CARNEIRO">Carneiro</option>
-                            <option value="PERPETUA">Perpétua</option>
-                            <option value="COVA RASA">Cova Rasa</option>
-                        </select>
-                    </div>
-                    <div class="input-group span-1">
-                        <label>Nº Sepul</label>
-                        <input type="text" id="sepul" required>
-                    </div>
-                    <div class="input-group span-1">
-                        <label>QD</label>
-                        <input type="text" id="qd" required>
-                    </div>
-                    
-                    <div class="input-group span-1">
-                        <label>Geolocalização</label>
-                        <div style="display:flex; gap:5px;">
-                            <input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps">
-                            <button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center;" title="GPS">📍</button>
-                            <button type="button" onclick="window.open('https://www.google.com/maps','_blank')" class="btn-imprimir" style="width:40px; padding:0; justify-content:center;" title="Mapa">🗺️</button>
-                        </div>
-                    </div>
-                    
-                    <div class="input-group span-4 hidden" id="div-motivo-sepultura">
-                        <label style="color:red;">Motivo Troca</label>
-                        <input type="text" id="motivo_troca_sepultura" placeholder="Explique a mudança...">
-                    </div>
-
-                    <div class="input-group span-2">
-                        <label>Hospital / Local</label>
-                        <input type="text" id="hospital" list="lista-hospitais" placeholder="Selecione..." required>
-                        <datalist id="lista-hospitais">
-                            <option value="DOMICÍLIO"></option>
-                            <option value="OUTRO HOSPITAL (DIGITE O NOME)"></option>
-                            <option value="HMCT (CARLOS TORTELLY)"></option>
-                            <option value="HEAL (AZEVEDO LIMA)"></option>
-                            <option value="HUAP (ANTÔNIO PEDRO)"></option>
-                            <option value="HOSP. ORÊNCIO DE FREITAS)"></option>
-                            <option value="HOSP. PSIQUIÁTRICO JURUJUBA)"></option>
-                            <option value="HOSP. OCEÂNICO)"></option>
-                            <option value="HOSP. GETULINHO)"></option>
-                            <option value="UPA MÁRIO MONTEIRO)"></option>
-                            <option value="UPA FONSECA)"></option>
-                            <option value="CHN (COMPLEXO HOSPITALAR)"></option>
-                            <option value="HCN (CLÍNICAS DE NITERÓI)"></option>
-                            <option value="HOSP. SANTA MARTHA)"></option>
-                            <option value="HOSP. SÃO LUCAS)"></option>
-                            <option value="HOSP. ICARAÍ)"></option>
-                            <option value="HEAT (ALBERTO TORRES)"></option>
-                            <option value="HOSP. LUIZ PALMIER)"></option>
-                            <option value="PRONTO SOCORRO CENTRAL (SG)"></option>
-                            <option value="HOSP. SÃO GONÇALO)"></option>
-                            <option value="HOSP. FRANCISCANO (NS. GRAÇAS)"></option>
-                            <option value="IML - NITERÓI)"></option>
-                            <option value="IML - SÃO GONÇALO)"></option>
-                        </datalist>
-                    </div>
-
-                    <div class="input-group span-2 hidden" id="div-local-domicilio" style="flex-direction: row; gap: 5px;">
-                        <div style="flex: 1;">
-                            <label>UF</label>
-                            <select id="estado_obito"><option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select>
-                        </div>
-                        <div style="flex: 2;">
-                            <label>Cidade</label>
-                            <select id="cidade_obito" disabled><option value="">Selecione a UF</option></select>
-                        </div>
-                    </div>
-
-                    <div class="input-group span-2">
-                        <label>Capela</label>
-                        <input type="text" id="cap" list="lista-capelas" placeholder="Selecione..." required>
-                        <datalist id="lista-capelas">
-                            <option value="SEM VELÓRIO / DIRETO"></option>
-                            <option value="CAPELA A"></option>
-                            <option value="CAPELA B"></option>
-                            <option value="CAPELA C"></option>
-                            <option value="CAPELA D"></option>
-                            <option value="CAPELA E"></option>
-                            <option value="CAPELA F"></option>
-                            <option value="CAPELA G"></option>
-                            <option value="CAPELA H"></option>
-                        </datalist>
-                    </div>
-
-                    <div class="input-group span-2">
-                        <label>Data Falecimento</label>
-                        <input type="date" id="data_obito" required>
-                    </div>
-                    <div class="input-group span-2">
-                        <label>Hora Falecimento</label>
-                        <input type="time" id="hora_obito" required>
-                    </div>
-
-                    <div class="input-group span-1">
-                        <label>Sepult. < 24h?</label>
-                        <select id="do_24h">
-                            <option value="NAO">NÃO</option>
-                            <option value="SIM">SIM (Liberado)</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group span-3">
-                        <label>Observações</label>
-                        <textarea id="urna_info" rows="2" placeholder="Observações gerais..." required></textarea>
-                    </div>
+                    <div class="input-group span-1"><label>Hora Sepultamento</label><select id="hora" required></select></div>
+                    <div class="input-group span-1"><label style="color:var(--primary-color);">Atendente Responsável</label><input type="text" id="atendente_sistema" readonly style="background-color: #e8e8e8; font-weight:bold; color:#555;"></div>
+                    <div class="input-group span-2"><label>Nome do Responsável (Família)</label><input type="text" id="resp_nome" placeholder="Nome do familiar ou empresa" required></div>
+                    <div class="input-group span-1"><label>Telefone Responsável</label><input type="text" id="telefone" placeholder="(21) 99999-9999"></div>
+                    <div class="input-group span-1"><label>Grau Parentesco</label><input type="text" id="parentesco" list="lista-parentesco" placeholder="Selecione..."><datalist id="lista-parentesco"><option value="CÔNJUGE"><option value="FILHO(A)"><option value="PAI/MÃE"><option value="IRMÃO(Ã)"><option value="NETO(A)"><option value="SOBRINHO(A)"><option value="GENRO/NORA"><option value="CUNHADO(A)"><option value="TIO(A)"><option value="PRIMO(A)"><option value="OUTRO"></datalist></div>
+                    <div class="input-group span-2"><label>Funerária</label><input type="text" id="funeraria" list="lista-funerarias" placeholder="Selecione..." required><datalist id="lista-funerarias"><option value="RIO PAX NITERÓI"><option value="FUNERÁRIA SANTA ROSA"><option value="FUNERÁRIA NITERÓI"><option value="FUNERÁRIA SÃO FRANCISCO"><option value="FUNERÁRIA MENINO DEUS"><option value="SAF (ASSISTÊNCIA FAMILIAR)"><option value="PLASIR"><option value="SOCIAL"><option value="DOM BOSCO"><option value="MAVERICK"><option value="PRÓPRIA FAMÍLIA"></datalist></div>
+                    <div class="input-group span-1"><label>Isenção?</label><select id="isencao" required><option value="NAO">NÃO (PAGO)</option><option value="SIM">SIM (100% GRATUIDADE)</option><option value="50">SIM (50% DESCONTO)</option></select></div>
+                    <div class="input-group span-1"><label>Requisito Isenção</label><input type="text" id="requisito" list="lista-requisitos" placeholder="Motivo..."><datalist id="lista-requisitos"><option value="CADUNICO"><option value="MOEDA ARARIBOIA"><option value="FUNCIONÁRIO PMN"><option value="OUTRO (DIGITE)"></datalist></div>
+                    <div class="input-group span-1"><label>Classificação</label><select id="classificacao_obito"><option value="ADULTO">ADULTO</option><option value="ANJO">ANJO (Criança/Natimorto)</option></select></div>
+                    <div class="input-group span-1"><label>Tamanho Urna</label><select id="combo_urna"><option value="">Selecione...</option><option value="NORMAL">Normal</option><option value="G">G</option><option value="GG">GG</option><option value="3G">3G</option></select></div>
+                    <div class="input-group span-2"><label>Tipo da Urna (Material/Modelo)</label><input type="text" id="tipo_urna_detalhe" list="lista-tipos-urna" placeholder="Ex: Madeira, Sextavada..."><datalist id="lista-tipos-urna"><option value="MADEIRA PADRÃO"><option value="SEXTAVADA"><option value="ZINCO"><option value="BIO (ECOLÓGICA)"><option value="LUXO"><option value="IML / RABECÃO"></datalist></div>
+                    <div class="input-group span-2"><label>Serviços Adicionais</label><div class="checkbox-group"><label><input type="checkbox" id="chk_tanato"> Tanatopraxia</label><label><input type="checkbox" id="chk_invol"> Invol</label><label><input type="checkbox" id="chk_translado"> Translado</label><label><input type="checkbox" id="chk_urna_opc"> Urna</label></div></div>
+                    <div class="input-group span-4"><label>Nome do Falecido</label><input type="text" id="nome" required style="font-weight: 600;"></div>
+                    <div class="input-group span-4"><label>Causa da Morte</label><div style="display: flex; gap: 10px;"><select id="seletor_causas" style="width: 40%; border: 1px solid #3699ff;"><option value="">+ Adicionar Causa...</option><optgroup label="Doenças Infecciosas / Risco"><option value="COVID-19">COVID-19</option><option value="TUBERCULOSE">TUBERCULOSE</option><option value="MENINGITE">MENINGITE</option><option value="HEPATITE B">HEPATITE B</option><option value="HEPATITE C">HEPATITE C</option><option value="HIV/AIDS">HIV/AIDS</option><option value="H1N1 (INFLUENZA)">H1N1 (INFLUENZA)</option><option value="LEPTOSPIROSE">LEPTOSPIROSE</option><option value="SARAMPO">SARAMPO</option><option value="FEBRE AMARELA">FEBRE AMARELA</option><option value="SEPSE / SEPTICEMIA">SEPSE / SEPTICEMIA</option></optgroup><optgroup label="Causas Comuns"><option value="CHOQUE SÉPTICO">CHOQUE SÉPTICO</option><option value="INSUFICIÊNCIA RESPIRATÓRIA">INSUFICIÊNCIA RESPIRATÓRIA</option><option value="INSUFICIÊNCIA RENAL AGUDA">INSUFICIÊNCIA RENAL AGUDA</option><option value="NEOPLASIA MALIGNA">NEOPLASIA MALIGNA</option><option value="INFARTO AGUDO DO MIOCÁRDIO">INFARTO (IAM)</option><option value="AVC">AVC (ACIDENTE VASCULAR)</option><option value="PNEUMONIA">PNEUMONIA</option><option value="FALÊNCIA MÚLTIPLA DE ÓRGÃOS">FALÊNCIA MÚLTIPLA</option><option value="SENILIDADE">SENILIDADE</option><option value="HIPERTENSÃO ARTERIAL">HIPERTENSÃO ARTERIAL</option><option value="DIABETES MELLITUS">DIABETES MELLITUS</option><option value="PARADA CARDIORRESPIRATÓRIA">PARADA CARDIORRESPIRATÓRIA</option><option value="CIRROSE HEPÁTICA">CIRROSE HEPÁTICA</option><option value="DOENÇA DE ALZHEIMER">DOENÇA DE ALZHEIMER</option></optgroup><optgroup label="Causas Externas"><option value="TRAUMATISMO CRANIANO">TRAUMATISMO CRANIANO</option><option value="AFOGAMENTO">AFOGAMENTO</option><option value="ACIDENTE DE TRÂNSITO">ACIDENTE DE TRÂNSITO</option><option value="HOMICÍDIO (PAF)">HOMICÍDIO (PAF)</option><option value="SUICÍDIO">SUICÍDIO</option><option value="CAUSA INDETERMINADA">CAUSA INDETERMINADA</option></optgroup></select><input type="text" id="causa" placeholder="Causas aparecerão aqui..." required style="width: 60%;"></div></div>
+                    <div class="input-group span-1"><label>Tipo Sepultura</label><select id="tipo_sepultura" required><option value="">Selecione...</option><option value="GAVETA">Gaveta</option><option value="CARNEIRO">Carneiro</option><option value="PERPETUA">Perpétua</option><option value="COVA RASA">Cova Rasa</option></select></div>
+                    <div class="input-group span-1"><label>Nº Sepul</label><input type="text" id="sepul" required></div>
+                    <div class="input-group span-1"><label>QD</label><input type="text" id="qd" required></div>
+                    <div class="input-group span-1"><label>Geolocalização</label><div style="display:flex; gap:5px;"><input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps"><button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center;" title="GPS">📍</button><button type="button" onclick="window.open('https://www.google.com/maps','_blank')" class="btn-imprimir" style="width:40px; padding:0; justify-content:center;" title="Mapa">🗺️</button></div></div>
+                    <div class="input-group span-4 hidden" id="div-motivo-sepultura"><label style="color:red;">Motivo Troca</label><input type="text" id="motivo_troca_sepultura" placeholder="Explique a mudança..."></div>
+                    <div class="input-group span-2"><label>Hospital / Local</label><input type="text" id="hospital" list="lista-hospitais" placeholder="Selecione..." required><datalist id="lista-hospitais"><option value="DOMICÍLIO"><option value="OUTRO HOSPITAL (DIGITE O NOME)"><option value="HMCT (CARLOS TORTELLY)"><option value="HEAL (AZEVEDO LIMA)"><option value="HUAP (ANTÔNIO PEDRO)"><option value="HOSP. ORÊNCIO DE FREITAS)"><option value="HOSP. PSIQUIÁTRICO JURUJUBA)"><option value="HOSP. OCEÂNICO)"><option value="HOSP. GETULINHO)"><option value="UPA MÁRIO MONTEIRO)"><option value="UPA FONSECA)"><option value="CHN (COMPLEXO HOSPITALAR)"><option value="HCN (CLÍNICAS DE NITERÓI)"><option value="HOSP. SANTA MARTHA)"><option value="HOSP. SÃO LUCAS)"><option value="HOSP. ICARAÍ)"><option value="HEAT (ALBERTO TORRES)"><option value="HOSP. LUIZ PALMIER)"><option value="PRONTO SOCORRO CENTRAL (SG)"><option value="HOSP. SÃO GONÇALO)"><option value="HOSP. FRANCISCANO (NS. GRAÇAS)"><option value="IML - NITERÓI)"><option value="IML - SÃO GONÇALO)"></datalist></div>
+                    <div class="input-group span-2 hidden" id="div-local-domicilio" style="flex-direction: row; gap: 5px;"><div style="flex: 1;"><label>UF</label><select id="estado_obito"><option value="">UF</option><option value="RJ">RJ</option></select></div><div style="flex: 2;"><label>Cidade</label><select id="cidade_obito" disabled><option value="">Selecione a UF</option></select></div></div>
+                    <div class="input-group span-2"><label>Capela</label><input type="text" id="cap" list="lista-capelas" placeholder="Selecione..." required><datalist id="lista-capelas"><option value="SEM VELÓRIO / DIRETO"><option value="CAPELA A"><option value="CAPELA B"><option value="CAPELA C"><option value="CAPELA D"><option value="CAPELA E"><option value="CAPELA F"><option value="CAPELA G"><option value="CAPELA H"></datalist></div>
+                    <div class="input-group span-2"><label>Data Falecimento</label><input type="date" id="data_obito" required></div>
+                    <div class="input-group span-2"><label>Hora Falecimento</label><input type="time" id="hora_obito" required></div>
+                    <div class="input-group span-1"><label>Sepult. < 24h?</label><select id="do_24h"><option value="NAO">NÃO</option><option value="SIM">SIM (Liberado)</option></select></div>
+                    <div class="input-group span-3"><label>Observações</label><textarea id="urna_info" rows="2" placeholder="Observações gerais..." required></textarea></div>
                 </div>
-
-                <div class="modal-footer-custom">
-                     <div class="footer-group">
-                         <button type="button" class="btn-modal btn-cancelar" onclick="fecharModal()">Cancelar</button>
-                     </div>
-                     <div class="footer-group">
-                         <button type="submit" class="btn-modal btn-salvar">Salvar Dados</button>
-                     </div>
-                </div>
+                <div class="modal-footer-custom"><div class="footer-group"><button type="button" class="btn-modal btn-cancelar" onclick="fecharModal()">Cancelar</button></div><div class="footer-group"><button type="submit" class="btn-modal btn-salvar">Salvar Dados</button></div></div>
             </form>
         </div>
     </div>
 
     <div id="modal-visualizar" class="modal">
         <div class="modal-content" style="max-width: 700px; background: #fff;">
-            <div class="modal-header">
-                <h3>Ficha de Atendimento</h3>
-                <span class="close" onclick="fecharModalVisualizar()">×</span>
-            </div>
-            
+            <div class="modal-header"><h3>Ficha de Atendimento</h3><span class="close" onclick="fecharModalVisualizar()">×</span></div>
             <div class="ficha-visualizacao">
-                <div class="ficha-header">
-                    <h2>Prefeitura Municipal de Niterói</h2>
-                    <p>Coordenadoria Municipal de Serviços Funerários</p>
-                </div>
-                
+                <div class="ficha-header"><h2>Prefeitura Municipal de Niterói</h2><p>Coordenadoria Municipal de Serviços Funerários</p></div>
                 <div class="ficha-linha"><span class="ficha-label">Protocolo:</span><span class="ficha-valor" id="view_protocolo" style="font-family:'Courier New'; letter-spacing:1px; font-size:16px;"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Atendente:</span><span class="ficha-valor" id="view_atendente" style="color:var(--primary-color); font-weight:bold;"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Horário Sepul.:</span><span class="ficha-valor" id="view_hora"></span></div>
-                
                 <div class="ficha-linha"><span class="ficha-label">Falecido(a):</span><span class="ficha-valor" id="view_nome"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Causa da Morte:</span><span class="ficha-valor" id="view_causa"></span></div>
-                
                 <div class="ficha-linha"><span class="ficha-label">Responsável:</span><span class="ficha-valor" id="view_resp_completo"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Telefone:</span><span class="ficha-valor" id="view_telefone"></span></div>
-                
                 <div class="ficha-linha"><span class="ficha-label">Funerária:</span><span class="ficha-valor" id="view_funeraria"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Acolhimento:</span><span class="ficha-valor" id="view_isencao_completa"></span></div>
-                
                 <div class="ficha-linha"><span class="ficha-label">Dados da Urna:</span><span class="ficha-valor"><span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Serviços Extras:</span><span class="ficha-valor" id="view_servicos_adicionais"></span></div>
-                
                 <div class="ficha-linha"><span class="ficha-label">Local Sepul.:</span><span class="ficha-valor" id="view_local_sepul"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Local Óbito:</span><span class="ficha-valor" id="view_hospital_completo"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Velório:</span><span class="ficha-valor" id="view_cap"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Data/Hora Óbito:</span><span class="ficha-valor"><span id="view_data_obito"></span> às <span id="view_hora_obito"></span><span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span></span></div>
-                
                 <div class="ficha-linha" style="border-bottom: none;"><span class="ficha-label">Observações:</span><span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span></div>
-                
-                <div id="view_map_container" style="display:none; margin-top: 20px;">
-                    <div class="ficha-linha" style="border-bottom:none; margin-bottom:5px;">
-                        <span class="ficha-label">Localização:</span>
-                    </div>
-                    <div id="mapa-frame" style="width:100%; height:250px; border:1px solid #ccc; border-radius:6px; overflow:hidden;"></div>
-                    <div style="text-align:right; margin-top:5px;">
-                        <a id="link-gps" href="#" target="_blank" style="font-size:12px; font-weight:bold; color:var(--primary-color); text-decoration:none;">📍 Abrir no Google Maps</a>
-                    </div>
-                </div>
+                <div id="view_map_container" style="display:none; margin-top: 20px;"><div class="ficha-linha" style="border-bottom:none; margin-bottom:5px;"><span class="ficha-label">Localização:</span></div><div id="mapa-frame" style="width:100%; height:250px; border:1px solid #ccc; border-radius:6px; overflow:hidden;"></div><div style="text-align:right; margin-top:5px;"><a id="link-gps" href="#" target="_blank" style="font-size:12px; font-weight:bold; color:var(--primary-color); text-decoration:none;">📍 Abrir no Google Maps</a></div></div>
             </div>
-
-            <div class="modal-footer-custom">
-                <div class="footer-group">
-                    <button type="button" class="btn-modal btn-extra" onclick="gerarComprovante()">📄 Comprovante</button>
-                    <button type="button" class="btn-modal btn-etiqueta" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
-                </div>
-                <div class="footer-group">
-                    <button type="button" class="btn-modal btn-whatsapp" onclick="enviarWhatsapp()">📱 WhatsApp</button>
-                    <button type="button" class="btn-modal btn-sms" onclick="enviarSMS()">💬 SMS</button>
-                    <button type="button" class="btn-modal btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button>
-                </div>
-            </div>
+            <div class="modal-footer-custom"><div class="footer-group"><button type="button" class="btn-modal btn-extra" onclick="gerarComprovante()">📄 Comprovante</button><button type="button" class="btn-modal btn-etiqueta" onclick="gerarEtiqueta()">🏷️ Etiqueta</button></div><div class="footer-group"><button type="button" class="btn-modal btn-whatsapp" onclick="enviarWhatsapp()">📱 WhatsApp</button><button type="button" class="btn-modal btn-sms" onclick="enviarSMS()">💬 SMS</button><button type="button" class="btn-modal btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button></div></div>
         </div>
     </div>
 
     <div id="modal-admin" class="modal">
         <div class="modal-content" style="max-width: 900px; height: 85vh; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <h3>Painel Administrativo</h3>
-                <span class="close" onclick="fecharModalAdmin()">×</span>
-            </div>
-            
-            <div class="tab-header">
-                <button class="tab-btn active" onclick="abrirAba('tab-equipe')">👥 Equipe</button>
-                <button class="tab-btn" onclick="abrirAba('tab-stats')">📊 Estatísticas</button>
-                <button class="tab-btn" onclick="abrirAba('tab-logs')">🕵️ Auditoria</button>
-            </div>
-
+            <div class="modal-header"><h3>Painel Administrativo</h3><span class="close" onclick="fecharModalAdmin()">×</span></div>
+            <div class="tab-header"><button class="tab-btn active" onclick="abrirAba('tab-equipe')">👥 Equipe</button><button class="tab-btn" onclick="abrirAba('tab-stats')">📊 Estatísticas</button><button class="tab-btn" onclick="abrirAba('tab-logs')">🕵️ Auditoria</button></div>
             <div class="tab-content-area" style="flex-grow: 1; overflow-y: auto; padding: 20px;">
-                
-                <div id="tab-equipe" class="tab-pane active">
-                    <h4>Gerenciar Usuários</h4>
-                    <div style="display:flex; flex-direction: column; gap:10px; margin-bottom:20px; background: #f9f9f9; padding:15px; border-radius:8px;">
-                        <strong style="color:var(--primary-color);">Novo Usuário:</strong>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px;">
-                            <input type="text" id="novo-nome" placeholder="Nome Completo">
-                            <input type="text" id="novo-login" placeholder="Login">
-                            <input type="password" id="nova-senha" placeholder="Senha">
-                            <button onclick="adicionarFuncionario()" class="btn-novo" style="padding: 10px 20px;">+</button>
-                        </div>
-                    </div>
-                    <ul id="lista-equipe" class="lista-simples"></ul>
-                </div>
-
-                <div id="tab-stats" class="tab-pane">
-                    <div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap;">
-                        <button onclick="baixarRelatorioCompleto()" class="btn-novo" style="background-color: #1e3a8a;">📊 Baixar Relatório Completo</button>
-                        <div style="width: 1px; height: 25px; background: #ccc; margin: 0 10px;"></div>
-                        <button onclick="carregarEstatisticas(30)" class="btn-imprimir">30 Dias</button>
-                        <button onclick="baixarExcel()" class="btn-novo" style="background-color: #27ae60;">📥 Excel (Visual)</button>
-                    </div>
-
-                    <div id="loading-stats" style="text-align:center; display:none; color:#666;">
-                        Carregando dados...
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 30px;">
-                        <div class="grafico-container" style="height: 300px;">
-                            <h5 style="text-align:center; margin-bottom:10px;">Causas de Morte</h5>
-                            <canvas id="grafico-causas"></canvas>
-                        </div>
-                        <div class="grafico-container" style="height: 300px;">
-                            <h5 style="text-align:center; margin-bottom:10px;">Atendimentos por Funcionário</h5>
-                            <canvas id="grafico-atendentes"></canvas>
-                        </div>
-                    </div>
-
-                    <div id="lista-estatisticas" style="margin-top: 20px;"></div>
-                </div>
-
-                <div id="tab-logs" class="tab-pane">
-                    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;">
-                        <h4>Registro de Atividades Recentes</h4>
-                        <button onclick="carregarLogs()" class="btn-imprimir">🔄 Atualizar</button>
-                    </div>
-                    <table class="table-logs" style="width:100%; font-size:12px; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background:#eee; text-align:left;">
-                                <th style="padding:10px;">Data/Hora Registro</th>
-                                <th style="padding:10px;">Falecido</th>
-                                <th style="padding:10px;">Responsável (Atendente)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-logs">
-                            </tbody>
-                    </table>
-                </div>
-
+                <div id="tab-equipe" class="tab-pane active"><h4>Gerenciar Usuários</h4><div style="display:flex; flex-direction: column; gap:10px; margin-bottom:20px; background: #f9f9f9; padding:15px; border-radius:8px;"><strong style="color:var(--primary-color);">Novo Usuário:</strong><div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px;"><input type="text" id="novo-nome" placeholder="Nome Completo"><input type="text" id="novo-login" placeholder="Login"><input type="password" id="nova-senha" placeholder="Senha"><button onclick="adicionarFuncionario()" class="btn-novo" style="padding: 10px 20px;">+</button></div></div><ul id="lista-equipe" class="lista-simples"></ul></div>
+                <div id="tab-stats" class="tab-pane"><div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap;"><button onclick="baixarRelatorioCompleto()" class="btn-novo" style="background-color: #1e3a8a;">📊 Baixar Relatório Completo</button><div style="width: 1px; height: 25px; background: #ccc; margin: 0 10px;"></div><button onclick="carregarEstatisticas(30)" class="btn-imprimir">30 Dias</button><button onclick="baixarExcel()" class="btn-novo" style="background-color: #27ae60;">📥 Excel (Visual)</button></div><div id="loading-stats" style="text-align:center; display:none; color:#666;">Carregando dados...</div><div style="display: flex; flex-direction: column; gap: 30px;"><div class="grafico-container" style="height: 300px;"><h5 style="text-align:center; margin-bottom:10px;">Causas de Morte</h5><canvas id="grafico-causas"></canvas></div><div class="grafico-container" style="height: 300px;"><h5 style="text-align:center; margin-bottom:10px;">Atendimentos por Funcionário</h5><canvas id="grafico-atendentes"></canvas></div></div><div id="lista-estatisticas" style="margin-top: 20px;"></div></div>
+                <div id="tab-logs" class="tab-pane"><div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;"><h4>Registro de Atividades Recentes</h4><button onclick="carregarLogs()" class="btn-imprimir">🔄 Atualizar</button></div><table class="table-logs" style="width:100%; font-size:12px; border-collapse: collapse;"><thead><tr style="background:#eee; text-align:left;"><th style="padding:10px;">Data/Hora Registro</th><th style="padding:10px;">Falecido</th><th style="padding:10px;">Responsável (Atendente)</th></tr></thead><tbody id="tabela-logs"></tbody></table></div>
             </div>
         </div>
     </div>
 
-    <div id="modal-estatisticas" class="modal">
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <h3>Relatórios Rápidos</h3>
-                <span class="close" onclick="fecharModalEstatisticas()">×</span>
-            </div>
-            <div style="padding: 20px;">
-                <div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap;">
-                    <button onclick="carregarEstatisticas(7)" class="btn-imprimir">7 Dias</button>
-                    <button onclick="carregarEstatisticas(14)" class="btn-imprimir">14 Dias</button>
-                    <button onclick="carregarEstatisticas(30)" class="btn-imprimir">30 Dias</button>
-                </div>
+    <div id="modal-estatisticas" class="modal"><div class="modal-content" style="max-width: 800px;"><div class="modal-header"><h3>Relatórios Rápidos</h3><span class="close" onclick="fecharModalEstatisticas()">×</span></div><div style="padding: 20px;"><div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap;"><button onclick="carregarEstatisticas(7)" class="btn-imprimir">7 Dias</button><button onclick="carregarEstatisticas(14)" class="btn-imprimir">14 Dias</button><button onclick="carregarEstatisticas(30)" class="btn-imprimir">30 Dias</button></div><div class="grafico-container" style="height: 250px;"><canvas id="grafico-causas-modal"></canvas></div><div class="grafico-container" style="height: 250px; margin-top:20px;"><canvas id="grafico-atendentes-modal"></canvas></div></div></div></div>
 
-                <div class="grafico-container" style="height: 250px;">
-                    <canvas id="grafico-causas-modal"></canvas>
-                </div>
-                
-                <div class="grafico-container" style="height: 250px; margin-top:20px;">
-                    <canvas id="grafico-atendentes-modal"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <footer style="text-align: center; padding: 20px; color: #888; font-size: 11px; margin-top: 30px; border-top: 1px solid #eee;">
-        © 2026 Controle Funerário Niterói. Todos os direitos reservados.
-    </footer>
+    <footer style="text-align: center; padding: 20px; color: #888; font-size: 11px; margin-top: 30px; border-top: 1px solid #eee;">© 2026 Controle Funerário Niterói. Todos os direitos reservados.</footer>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
     <script src="script.js"></script>
 </body>
 </html>
