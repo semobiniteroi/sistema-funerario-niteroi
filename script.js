@@ -29,7 +29,7 @@ let logsUnsubscribe = null;
 let sepulturaOriginal = ""; 
 let dadosAtendimentoAtual = null;
 let dadosEstatisticasExportacao = [];
-let chartInstances = {};
+let chartInstances = {}; 
 let usuarioLogado = null; 
 
 const dimensoesUrna = {
@@ -58,6 +58,21 @@ function pegarDataAtualLocal() {
     const mes = String(agora.getMonth() + 1).padStart(2, '0');
     const dia = String(agora.getDate()).padStart(2, '0');
     return `${ano}-${mes}-${dia}`;
+}
+
+// --- FUNÇÃO AUXILIAR: MUDAR LABEL QD/RUA ---
+function atualizarLabelQuadra(local) {
+    const inputQd = document.getElementById('qd');
+    if (inputQd) {
+        const label = inputQd.previousElementSibling;
+        if (label) {
+            if (local && local.includes('MARUÍ')) {
+                label.innerText = 'QD';
+            } else {
+                label.innerText = 'RUA';
+            }
+        }
+    }
 }
 
 // --- LOGIN DO SISTEMA ---
@@ -114,7 +129,10 @@ function liberarAcesso() {
     
     const hj = pegarDataAtualLocal();
     const il = document.getElementById('filtro-local');
-    if(il) atualizarListener(hj, il.value);
+    if(il) {
+        atualizarListener(hj, il.value);
+        atualizarLabelQuadra(il.value);
+    }
 }
 
 window.fazerLogout = function() {
@@ -147,13 +165,10 @@ window.fecharModalAdmin = function() {
 window.abrirAba = function(tabId) {
     const panes = document.getElementsByClassName('tab-pane');
     for(let p of panes) p.classList.remove('active');
-    
     const btns = document.getElementsByClassName('tab-btn');
     for(let b of btns) b.classList.remove('active');
 
-    const tab = document.getElementById(tabId);
-    if(tab) tab.classList.add('active');
-    
+    document.getElementById(tabId).classList.add('active');
     if(tabId === 'tab-equipe') { if(btns[0]) btns[0].classList.add('active'); listarEquipe(); }
     if(tabId === 'tab-stats') { if(btns[1]) btns[1].classList.add('active'); carregarEstatisticas(7); }
     if(tabId === 'tab-logs') { if(btns[2]) btns[2].classList.add('active'); carregarLogs(); }
@@ -167,13 +182,17 @@ window.listarEquipe = function() {
         lista.innerHTML = '';
         snapshot.forEach((doc) => {
             const user = doc.data();
+            const emailExibir = user.email ? user.email : '<span style="color:#999; font-style:italic;">Sem e-mail</span>';
             const li = document.createElement('li');
             li.innerHTML = `
                 <div>
-                    <strong>${user.nome}</strong><br>
+                    <strong>${user.nome}</strong> (${emailExibir})<br>
                     <span style="font-size:10px; color:#777;">Login: ${user.login || '-'}</span>
                 </div>
-                <button class="btn-remove-user" onclick="excluirFuncionario('${doc.id}')">🗑️</button>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-icon btn-editar-circle" onclick="prepararEdicao('${doc.id}', '${user.nome}', '${user.login}', '${user.email || ''}', '${user.senha}')">✏️</button>
+                    <button class="btn-remove-user" onclick="excluirFuncionario('${doc.id}')">🗑️</button>
+                </div>
             `;
             lista.appendChild(li);
         });
@@ -184,25 +203,59 @@ window.adicionarFuncionario = function() {
     if(!db) return;
     const nome = document.getElementById('novo-nome').value.trim().toUpperCase();
     const login = document.getElementById('novo-login').value.trim();
+    const email = document.getElementById('novo-email').value.trim();
     const senha = document.getElementById('nova-senha').value.trim();
 
     if(nome && login && senha) {
-        db.collection("equipe").add({ nome: nome, login: login, senha: senha })
-            .then(() => { 
-                document.getElementById('novo-nome').value = '';
-                document.getElementById('novo-login').value = '';
-                document.getElementById('nova-senha').value = '';
-                alert("Usuário cadastrado!");
-            })
-            .catch((e) => alert("Erro: " + e));
+        db.collection("equipe").add({ nome: nome, login: login, email: email, senha: senha })
+        .then(() => { 
+            document.getElementById('novo-nome').value = '';
+            document.getElementById('novo-login').value = '';
+            document.getElementById('novo-email').value = '';
+            document.getElementById('nova-senha').value = '';
+            alert("Usuário cadastrado!");
+        })
+        .catch((e) => alert("Erro: " + e));
     } else {
-        alert("Preencha todos os campos.");
+        alert("Preencha Nome, Login e Senha.");
     }
 }
 
 window.excluirFuncionario = function(id) {
     if(!db) return;
     if(confirm("Remover este usuário?")) db.collection("equipe").doc(id).delete();
+}
+
+window.prepararEdicao = function(id, nome, login, email, senha) {
+    document.getElementById('edit-id').value = id;
+    document.getElementById('edit-nome').value = nome;
+    document.getElementById('edit-login').value = login;
+    document.getElementById('edit-email').value = email;
+    document.getElementById('edit-senha').value = senha;
+    document.getElementById('box-novo-usuario').classList.add('hidden');
+    document.getElementById('div-editar-usuario').classList.remove('hidden');
+}
+
+window.cancelarEdicao = function() {
+    document.getElementById('box-novo-usuario').classList.remove('hidden');
+    document.getElementById('div-editar-usuario').classList.add('hidden');
+    document.getElementById('edit-id').value = '';
+    document.getElementById('edit-nome').value = '';
+    document.getElementById('edit-login').value = '';
+    document.getElementById('edit-email').value = '';
+    document.getElementById('edit-senha').value = '';
+}
+
+window.salvarEdicaoUsuario = function() {
+    const id = document.getElementById('edit-id').value;
+    const nome = document.getElementById('edit-nome').value.trim().toUpperCase();
+    const email = document.getElementById('edit-email').value.trim();
+    const senha = document.getElementById('edit-senha').value.trim();
+    if(!id || !nome || !senha) { alert("Nome e Senha são obrigatórios."); return; }
+    db.collection("equipe").doc(id).update({ nome: nome, email: email, senha: senha }).then(() => {
+        alert("Usuário atualizado com sucesso!");
+        cancelarEdicao();
+    }).catch((e) => { alert("Erro ao atualizar: " + e); });
 }
 
 // --- ESTATÍSTICAS E EXPORTAÇÃO EXCEL ---
@@ -224,13 +277,11 @@ window.baixarRelatorioCompleto = function() {
                 d.sepul || "", d.protocolo || "", (d.atendente_sistema || "").toUpperCase()
             ]);
         });
-
         dados.sort((a,b) => {
              if (a[3] < b[3]) return 1; if (a[3] > b[3]) return -1;
              if (a[2] < b[2]) return 1; if (a[2] > b[2]) return -1;
              return 0;
         });
-
         const headers = ["Data", "Hora", "Mês", "Ano", "Falecido", "Causa Morte", "Responsável", "Telefone", "Funerária", "Local", "Sepultura", "Protocolo", "Atendente"];
         const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dados]);
         const workbook = XLSX.utils.book_new();
@@ -253,7 +304,6 @@ window.carregarLogs = function() {
     const tbody = document.getElementById('tabela-logs');
     if(!tbody || !db) return;
     tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Carregando registros...</td></tr>';
-    
     logsUnsubscribe = db.collection("atendimentos").limit(50).orderBy("data_ficha", "desc").onSnapshot((snapshot) => {
         let logs = [];
         snapshot.forEach(doc => { logs.push(doc.data()); });
@@ -273,7 +323,6 @@ window.abrirModal = function() {
     const f = document.getElementById('form-atendimento'); 
     if(f) f.reset();
     
-    // Helper seguro
     const safeSet = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
     
     safeSet('docId', ''); safeSet('do_24h', 'NAO'); safeSet('hora', ''); safeSet('estado_obito', ''); safeSet('estado_civil', ''); safeSet('func_funeraria', ''); safeSet('membro_amputado', '');
@@ -291,6 +340,9 @@ window.abrirModal = function() {
     const selMembro = document.getElementById('tipo_membro_select');
     if(selMembro) { selMembro.value = ""; selMembro.disabled = true; }
 
+    const filtroLocal = document.getElementById('filtro-local');
+    if(filtroLocal) atualizarLabelQuadra(filtroLocal.value);
+
     if(usuarioLogado) safeSet('atendente_sistema', usuarioLogado.nome);
     sepulturaOriginal = ""; 
     document.getElementById('modal').style.display = 'block';
@@ -302,7 +354,6 @@ window.abrirModalEstatisticas = function() { document.getElementById('modal-esta
 window.fecharModalEstatisticas = function() { document.getElementById('modal-estatisticas').style.display = 'none'; if(typeof statsUnsubscribe === 'function') statsUnsubscribe(); }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // ... (Login e outros listeners mantidos) ...
     const sessao = sessionStorage.getItem('usuarioLogado');
     if (sessao) {
         usuarioLogado = JSON.parse(sessao);
@@ -331,9 +382,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const hj = pegarDataAtualLocal();
     const inputData = document.getElementById('filtro-data'); const inputLocal = document.getElementById('filtro-local');
     if(inputData && inputLocal) {
-        inputData.value = hj; atualizarListener(hj, inputLocal.value);
+        inputData.value = hj; 
+        atualizarListener(hj, inputLocal.value);
+        atualizarLabelQuadra(inputLocal.value);
         inputData.addEventListener('change', (e) => atualizarListener(e.target.value, inputLocal.value));
-        inputLocal.addEventListener('change', (e) => atualizarListener(inputData.value, e.target.value));
+        inputLocal.addEventListener('change', (e) => { atualizarListener(inputData.value, e.target.value); atualizarLabelQuadra(e.target.value); });
     }
 
     const inputBusca = document.getElementById('input-busca');
@@ -377,17 +430,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // LISTENER PARA PERPETUA
     const selectTipoSep = document.getElementById('tipo_sepultura');
     const divPerpetua = document.getElementById('div-perpetua');
     if(selectTipoSep && divPerpetua) {
         selectTipoSep.addEventListener('change', function() {
-            if (this.value === 'PERPETUA') {
-                divPerpetua.classList.remove('hidden');
-            } else {
+            if (this.value === 'PERPETUA') { divPerpetua.classList.remove('hidden'); } else {
                 divPerpetua.classList.add('hidden');
-                document.getElementById('livro_perpetua').value = '';
-                document.getElementById('folha_perpetua').value = '';
+                const elL = document.getElementById('livro_perpetua'); if(elL) elL.value = '';
+                const elF = document.getElementById('folha_perpetua'); if(elF) elF.value = '';
             }
         });
     }
@@ -425,12 +475,15 @@ function renderizarTabela(lista) {
         const tr = document.createElement('tr');
         tr.onclick = () => window.visualizar(item.id);
         
-        const doencasContagiosas = ['COVID', 'MENINGITE', 'TUBERCULOSE', 'H1N1', 'HEPATITE', 'HIV', 'SIDA', 'INFLUENZA', 'SARAMPO', 'FEBRE AMARELA', 'LEPTOSPIROSE', 'SEPCEMIA'];
+        const doencasContagiosas = ['COVID', 'MENINGITE', 'TUBERCULOSE', 'H1N1', 'HEPATITE', 'HIV', 'SIDA', 'INFLUENZA', 'SARAMPO', 'FEBRE AMARELA', 'LEPTOSPIROSE'];
         let isContagioso = false;
         if(item.causa) { const causaUpper = item.causa.toUpperCase(); isContagioso = doencasContagiosas.some(doenca => causaUpper.includes(doenca)); }
         if (isContagioso) { tr.classList.add('alerta-doenca'); }
         const iconAlert = isContagioso ? '<span class="icone-alerta" title="Doença Contagiosa">⚠️</span>' : '';
         
+        // COR VERMELHA EM *TODAS* AS CAUSAS
+        const estiloCausa = 'color:red !important; font-weight:700; font-size:11px; margin-top:2px;';
+
         let btnMap = '';
         const cleanCoords = item.geo_coords ? item.geo_coords.replace(/\s/g, '') : '';
         if (cleanCoords && cleanCoords.includes(',')) {
@@ -457,7 +510,7 @@ function renderizarTabela(lista) {
         if (servicosExtras.length > 0) { displayResponsavel += `<div style="margin-top:2px; font-weight:bold; font-size:10px;">SERVIÇOS: ${servicosExtras.join(', ')}</div>`; }
 
         const conteudoNome = `<div style="font-weight:700; font-size:12px;">${iconAlert}${item.nome ? item.nome.toUpperCase() : 'NOME NÃO INFORMADO'}</div>
-                              <div class="texto-vermelho" style="font-size:11px; margin-top:2px;">(${item.causa ? item.causa.toUpperCase() : 'CAUSA NÃO INFORMADA'})</div>
+                              <div style="${estiloCausa}">(${item.causa ? item.causa.toUpperCase() : 'CAUSA NÃO INFORMADA'})</div>
                               ${item.classificacao_obito === 'ANJO' ? '<span style="font-size:10px; color:blue;">(ANJO)</span>' : ''}`;
         
         let displayFalecimento = '';
@@ -479,6 +532,11 @@ function renderizarTabela(lista) {
         } else if (item.falecimento) {
             displayFalecimento = `<div>${item.falecimento}</div>`;
         }
+        
+        let conteudoSepultura = item.sepul || '';
+        if (item.perpetua === 'X' || item.tipo_sepultura === 'PERPETUA') {
+            conteudoSepultura += `<div style="font-size:10px; font-weight:bold; color:var(--primary-color); margin-top:2px;">PERPÉTUA<br>L: ${item.livro_perpetua || ''} F: ${item.folha_perpetua || ''}</div>`;
+        }
 
         tr.innerHTML = `
             <td>${displayResponsavel}</td>
@@ -486,7 +544,7 @@ function renderizarTabela(lista) {
             <td style="text-align: center; vertical-align: middle;">${conteudoNome}</td>
             <td style="text-align: center;">${item.gav || ''}</td>
             <td style="text-align: center;">${item.car || ''}</td>
-            <td style="text-align: center;">${item.sepul || ''}</td>
+            <td style="text-align: center;">${conteudoSepultura}</td>
             <td style="text-align: center;">${item.qd || ''}</td>
             <td style="text-align: center;">${item.hospital || ''}</td>
             <td style="text-align: center;">${item.cap || ''}</td>
@@ -557,11 +615,9 @@ window.visualizar = function(id) {
             let servicosView = []; if (i.tanato === 'SIM') servicosView.push('Tanatopraxia'); if (i.invol === 'SIM') servicosView.push('Invol'); if (i.translado === 'SIM') servicosView.push('Translado'); if (i.urna_opc === 'SIM') servicosView.push('Urna'); setText('view_servicos_adicionais', servicosView.length > 0 ? servicosView.join(', ') : '-');
             let nomeView = i.nome || '-'; if (i.classificacao_obito === "ANJO") nomeView += " (ANJO)"; setText('view_nome', nomeView); setText('view_causa', i.causa);
             let tipo = ''; if (i.gav && i.gav.includes('X')) tipo = 'GAVETA'; else if (i.car && i.car.includes('X')) tipo = 'CARNEIRO'; else if (i.cova_rasa === 'X') tipo = 'COVA RASA'; else if (i.perpetua === 'X') tipo = 'PERPÉTUA'; else if (i.membro_opc === 'SIM') tipo = 'MEMBRO AMPUTADO';
-            
             if(document.getElementById('view_local_sepul')) {
                  let localTexto = `Tipo: ${tipo} | Nº: ${i.sepul||'-'} | QD: ${i.qd||'-'}`;
                  if(i.membro_opc === 'SIM' && i.tipo_membro) { localTexto += ` | MEMBRO: ${i.tipo_membro}`; }
-                 // Exibe Livro e Folha se for Perpétua
                  if(i.tipo_sepultura === 'PERPETUA' && i.livro_perpetua) { localTexto += ` | L: ${i.livro_perpetua} F: ${i.folha_perpetua}`; }
                  document.getElementById('view_local_sepul').innerText = localTexto;
             }
@@ -589,14 +645,21 @@ window.editar = function(id) {
             setVal('funeraria', item.funeraria); setVal('isencao', item.isencao || 'NAO'); setVal('requisito', item.requisito);
             setVal('data_obito', item.data_obito); setVal('hora_obito', item.hora_obito); setVal('geo_coords', item.geo_coords);
             setVal('estado_civil', item.estado_civil); setVal('func_funeraria', item.func_funeraria); setVal('tipo_membro_select', item.tipo_membro);
-            setVal('livro_perpetua', item.livro_perpetua); setVal('folha_perpetua', item.folha_perpetua); // Carrega Livro e Folha
+            setVal('livro_perpetua', item.livro_perpetua); setVal('folha_perpetua', item.folha_perpetua); 
             document.getElementById('chk_tanato').checked = (item.tanato === 'SIM'); document.getElementById('chk_invol').checked = (item.invol === 'SIM'); document.getElementById('chk_translado').checked = (item.translado === 'SIM'); document.getElementById('chk_urna_opc').checked = (item.urna_opc === 'SIM');
             const isMembro = (item.membro_opc === 'SIM'); document.getElementById('chk_membro').checked = isMembro;
             const selMembro = document.getElementById('tipo_membro_select'); if(selMembro) selMembro.disabled = !isMembro;
             const selectTipo = document.getElementById('tipo_sepultura');
-            if (item.gav && item.gav.includes('X')) selectTipo.value = 'GAVETA'; else if (item.car && item.car.includes('X')) selectTipo.value = 'CARNEIRO'; else if (item.cova_rasa === 'X') selectTipo.value = 'COVA RASA'; else if (item.perpetua === 'X') selectTipo.value = 'PERPETUA'; else if (item.tipo_sepultura === 'MEMBRO') selectTipo.value = 'MEMBRO'; else selectTipo.value = '';
             
-            // Logic to show membro/perpetua input on edit
+            if (item.tipo_sepultura) {
+                 selectTipo.value = item.tipo_sepultura;
+            } else {
+                 if (item.gav && item.gav.includes('X')) selectTipo.value = 'GAVETA'; 
+                 else if (item.car && item.car.includes('X')) selectTipo.value = 'CARNEIRO'; 
+                 else if (item.cova_rasa === 'X') selectTipo.value = 'COVA RASA'; 
+                 else if (item.perpetua === 'X') selectTipo.value = 'PERPETUA';
+            }
+            
             const divMembro = document.getElementById('div-membro');
             const divPerpetua = document.getElementById('div-perpetua');
             if(divMembro) { if(selectTipo.value === 'MEMBRO') divMembro.classList.remove('hidden'); else divMembro.classList.add('hidden'); }
@@ -623,9 +686,14 @@ form.onsubmit = (e) => {
         tanato: document.getElementById('chk_tanato').checked ? 'SIM' : 'NAO', invol: document.getElementById('chk_invol').checked ? 'SIM' : 'NAO',
         translado: document.getElementById('chk_translado').checked ? 'SIM' : 'NAO', urna_opc: document.getElementById('chk_urna_opc').checked ? 'SIM' : 'NAO',
         nome: getVal('nome'), causa: getVal('causa'),
-        gav: tipoSep === 'GAVETA' ? 'X' : '', car: tipoSep === 'CARNEIRO' ? 'X' : '', cova_rasa: tipoSep === 'COVA RASA' ? 'X' : '', perpetua: tipoSep === 'PERPETUA' ? 'X' : '',
+        
+        gav: (tipoSep.includes('GAVETA')) ? 'X' : '', 
+        car: (tipoSep.includes('CARNEIRO')) ? 'X' : '', 
+        cova_rasa: (tipoSep.includes('COVA')) ? 'X' : '', 
+        perpetua: (tipoSep === 'PERPETUA') ? 'X' : '',
+        
         tipo_sepultura: tipoSep,
-        livro_perpetua: getVal('livro_perpetua'), folha_perpetua: getVal('folha_perpetua'), // Save new fields
+        livro_perpetua: getVal('livro_perpetua'), folha_perpetua: getVal('folha_perpetua'), 
         sepul: getVal('sepul'), motivo_troca_sepultura: getVal('motivo_troca_sepultura'), qd: getVal('qd'),
         hospital: getVal('hospital'), cidade_obito: getVal('cidade_obito'), estado_obito: getVal('estado_obito'),
         cap: getVal('cap'), data_obito: getVal('data_obito'), hora_obito: getVal('hora_obito'), geo_coords: getVal('geo_coords'),
@@ -705,6 +773,8 @@ window.gerarComprovante = function() {
     const d = dadosAtendimentoAtual;
 
     const chk = (cond) => cond ? '(X)' : '( )';
+    
+    // DEFINIÇÃO CORRETA DA FUNÇÃO FD DENTRO DO ESCOPO
     const fd = (dataStr) => { 
         if (!dataStr) return ""; 
         const p = dataStr.split('-'); 
@@ -712,17 +782,28 @@ window.gerarComprovante = function() {
     };
 
     const dh = new Date();
-    const df = `${dh.getDate().toString().padStart(2,'0')}/${(dh.getMonth()+1).toString().padStart(2,'0')}/${dh.getFullYear()}`;
-    const hf = `${dh.getHours().toString().padStart(2,'0')}:${dh.getMinutes().toString().padStart(2,'0')}`;
-    const p = d.protocolo || "S/N";
+    const p = d.protocolo || "";
+    let dataProtocolo = "";
+    let horaProtocolo = "";
     
-    // Checkboxes locais
+    if (p.length >= 13 && p.indexOf('-') === 8) {
+        const ano = p.substring(0,4);
+        const mes = p.substring(4,6);
+        const dia = p.substring(6,8);
+        const hora = p.substring(9,11);
+        const min = p.substring(11,13);
+        dataProtocolo = `${dia}/${mes}/${ano}`;
+        horaProtocolo = `${hora}:${min}`;
+    } else {
+        dataProtocolo = `${dh.getDate().toString().padStart(2,'0')}/${(dh.getMonth()+1).toString().padStart(2,'0')}/${dh.getFullYear()}`;
+        horaProtocolo = `${dh.getHours().toString().padStart(2,'0')}:${dh.getMinutes().toString().padStart(2,'0')}`;
+    }
+    
     const im = (d.local && d.local.includes("MARUÍ"));
     const is = (d.local && d.local.includes("SÃO FRANCISCO"));
     const ii = (d.local && d.local.includes("ITAIPU"));
     const cc = (d.cap && !d.cap.toUpperCase().includes("SEM"));
     
-    // Tempo Decorrido
     let tempoDecorrido = "";
     if (d.data_obito && d.hora_obito && d.hora && d.data_ficha) {
         const dtObito = new Date(d.data_obito + 'T' + d.hora_obito);
@@ -738,6 +819,33 @@ window.gerarComprovante = function() {
     const ec = d.estado_civil || "";
     const chkEC = (val) => ec === val ? '(X)' : '( )';
     const relacao = d.parentesco ? `(${d.parentesco})` : '';
+
+    // --- LÓGICA DO TEXTO DA SEPULTURA SELECIONADA (CORRIGIDA) ---
+    let txtSep = "";
+    const ts = d.tipo_sepultura || ""; // Ex: GAVETA, GAVETA_ANJO, PERPETUA
+    const co = d.classificacao_obito || "ADULTO"; // Ex: ADULTO, ANJO
+
+    if (ts === 'PERPETUA') {
+        txtSep = `PERPÉTUA (LIVRO: ${d.livro_perpetua||'-'} / FOLHA: ${d.folha_perpetua||'-'}) - ${co}`;
+    } else if (ts === 'MEMBRO') {
+        txtSep = `MEMBRO AMPUTADO (${d.tipo_membro || 'Não informado'})`;
+    } else {
+        // Normaliza o tipo base
+        let baseTipo = "";
+        if (ts.includes("GAVETA")) baseTipo = "GAVETA";
+        else if (ts.includes("CARNEIRO") || ts.includes("CARNEIRA")) baseTipo = "CARNEIRO";
+        else if (ts.includes("COVA")) baseTipo = "COVA RASA";
+        else baseTipo = ts; 
+
+        // Define a classificação
+        let classificacao = co; 
+        if (ts.includes("ANJO")) {
+            classificacao = "ANJO";
+        }
+        
+        // CORREÇÃO: Garante que apareça o nome completo
+        txtSep = `${baseTipo} - ${classificacao}`;
+    }
 
     const htmlComprovante = `
     <html>
@@ -776,6 +884,7 @@ window.gerarComprovante = function() {
     </head>
     <body>
         <div class="header">
+            <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height: 60px; margin-bottom: 5px;">
             <h2>Comprovante de Atendimento</h2>
             <div class="protocolo">PROTOCOLO: ${p}</div>
         </div>
@@ -787,15 +896,16 @@ window.gerarComprovante = function() {
             
             <div class="line">
                 <span class="bold">Atendente Responsável:</span> ${(d.atendente_sistema||'SISTEMA').toUpperCase()}
-                <span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${df} AS ${hf}
+                <span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dataProtocolo} AS ${horaProtocolo}
             </div>
             
             <div class="line">
                 <span class="bold">Data:</span> ${fd(d.data_ficha)} 
                 <span class="bold spacer">Hora:</span> ${d.hora} 
                 <span class="bold spacer">SEPULTURA:</span> ${d.sepul} 
-                <span class="bold spacer">QUADRA:</span> ${d.qd} 
-                <span class="bold spacer">RUA:</span> - 
+                <span class="bold spacer">
+                    ${(d.local && d.local.includes("MARUÍ")) ? "QUADRA:" : "RUA:"}
+                </span> ${d.qd} 
                 <span class="bold spacer">CAPELA:</span> ${d.cap}
             </div>
             
@@ -815,21 +925,8 @@ window.gerarComprovante = function() {
 
             <div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div>
             
-            <div class="line">
-                ${chk(d.tipo_sepultura==='GAVETA' && d.classificacao_obito==='ADULTO')} Gaveta Adulto 
-                ${chk(d.tipo_sepultura==='CARNEIRO' && d.classificacao_obito==='ADULTO')} Carneira Adulto 
-                ${chk(d.tipo_sepultura==='COVA RASA' && d.classificacao_obito==='ADULTO')} Cova Rasa Adulto 
-                ${chk(d.tipo_sepultura==='GAVETA' && d.classificacao_obito==='ANJO')} Gaveta Anjo
-            </div>
-            <div class="line">
-                ${chk(d.tipo_sepultura==='CARNEIRO' && d.classificacao_obito==='ANJO')} Carneira Anjo 
-                ${chk(d.tipo_sepultura==='COVA RASA' && d.classificacao_obito==='ANJO')} Cova Rasa Anjo 
-                ${chk(d.tipo_sepultura==='PERPETUA')} Perpétuo 
-                ( ) L: ${d.livro_perpetua || '__'} F: ${d.folha_perpetua || '__'}
-            </div>
-            
-            <div class="line" style="margin-top:5px; border-bottom:1px dotted #ccc; padding-bottom:2px;">
-                ${chk(d.membro_opc==='SIM')} <span class="bold">MEMBRO AMPUTADO:</span> <span style="text-decoration:underline">${d.tipo_membro ? d.tipo_membro.toUpperCase() : '_______________________'}</span>
+            <div class="line" style="margin-top:5px; font-size:12px; border: 1px solid #000; padding: 5px;">
+                <span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${txtSep}
             </div>
 
             <div class="line" style="margin-top:10px">
@@ -842,7 +939,8 @@ window.gerarComprovante = function() {
                     <b>${(d.atendente_sistema||'').toUpperCase()}</b>
                 </div>
                 <div class="ass-line">
-                    Assinatura do responsável/família
+                    Assinatura do responsável/família<br>
+                    <b>${(d.resp_nome||'').toUpperCase()}</b>
                 </div>
             </div>
 
@@ -877,7 +975,7 @@ window.gerarComprovante = function() {
             </div>
 
             <div class="footer-line">
-                MARCADO: ________________________ PERMISSIONÁRIO: ${d.funeraria.toUpperCase()} 
+                MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome || '').toUpperCase()}
             </div>
             <div style="font-weight:bold; font-size:11px; margin-top:5px;">
                 TEL: ${d.telefone||''}

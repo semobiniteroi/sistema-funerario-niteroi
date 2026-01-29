@@ -1,5 +1,5 @@
+/* ... Conteúdo do style.css anterior ... */
 :root {
-    /* Paleta Modern */
     --primary-color: #3699ff; 
     --primary-light: #e1f0ff;
     --text-dark: #3f4254;
@@ -14,111 +14,28 @@
     --excel-red: #c0392b; 
     --excel-black: #000000;
 }
-
-body {
-    font-family: 'Poppins', 'Roboto', sans-serif;
-    background-color: var(--bg-body);
-    color: var(--text-dark);
-    margin: 0;
-    padding-bottom: 50px;
-    font-size: 13px;
-    transition: background-color 0.3s;
-}
-
+body { font-family: 'Poppins', 'Roboto', sans-serif; background-color: var(--bg-body); color: var(--text-dark); margin: 0; padding-bottom: 50px; font-size: 13px; transition: background-color 0.3s; }
 .hidden { display: none !important; }
-
-/* HEADER TOTALMENTE HORIZONTAL */
-.header-prefeitura {
-    background-color: var(--bg-card);
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 0 40px 0 rgba(82,63,105,0.1);
-    margin-bottom: 20px;
-    border-bottom: 1px solid #ebedf3;
-    flex-wrap: nowrap; /* Tenta não quebrar */
-    gap: 15px;
-    height: 70px;
-}
-
+.header-prefeitura { background-color: var(--bg-card); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 40px 0 rgba(82,63,105,0.1); margin-bottom: 20px; border-bottom: 1px solid #ebedf3; flex-wrap: nowrap; gap: 15px; height: 70px; }
 .logo-area { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
 .logo-area img { height: auto; max-height: 50px; max-width: 200px; object-fit: contain; }
 .titulo-area { text-align: left; }
 .titulo-area h3 { margin: 2px 0; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; border-left: 2px solid #ccc; padding-left: 10px; }
-
-/* Container Direito (Tudo em linha) */
-.info-area { 
-    display: flex; 
-    flex-direction: row; 
-    align-items: center; 
-    justify-content: flex-end;
-    gap: 10px; 
-    flex-grow: 1;
-}
-
-/* Botões de Usuário */
-.user-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-left: 10px;
-    border-left: 1px solid #eee;
-    flex-shrink: 0;
-}
-
-/* Filtros */
-.controles-topo {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap; 
-    justify-content: flex-end;
-}
-
-.topo-box {
-    height: 34px;
-    display: flex;
-    align-items: center;
-    background: #fff;
-    padding: 0 8px;
-    border-radius: 6px;
-    border: 1px solid #e4e6ef;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    gap: 5px;
-}
-
+.info-area { display: flex; flex-direction: row; align-items: center; justify-content: flex-end; gap: 10px; flex-grow: 1; }
+.user-controls { display: flex; align-items: center; gap: 8px; padding-left: 10px; border-left: 1px solid #eee; flex-shrink: 0; }
+.controles-topo { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.topo-box { height: 34px; display: flex; align-items: center; background: #fff; padding: 0 8px; border-radius: 6px; border: 1px solid #e4e6ef; box-shadow: 0 1px 2px rgba(0,0,0,0.02); gap: 5px; }
 .topo-content { display: flex; flex-direction: column; justify-content: center; }
 .topo-content label { font-size: 8px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin: 0; line-height: 1; }
-.topo-content select, .topo-content input {
-    border: none; background: transparent; font-size: 12px; font-weight: 600; color: var(--text-dark); padding: 0; outline: none; cursor: pointer; height: 16px;
-}
-
-/* Busca */
+.topo-content select, .topo-content input { border: none; background: transparent; font-size: 12px; font-weight: 600; color: var(--text-dark); padding: 0; outline: none; cursor: pointer; height: 16px; }
 .search-box { background-color: #f8f9fa; border-color: #d1d3e0; padding: 0; }
 .search-box input { padding: 0 8px; width: 180px; background: transparent; border: none; height: 100%; outline: none; font-size: 12px; }
 .btn-search { background: transparent; border: none; font-size: 14px; cursor: pointer; padding: 0 10px; color: var(--primary-color); height: 100%; border-left: 1px solid #eee; display: flex; align-items: center; }
-
-/* Botões Header */
-.btn-header {
-    height: 32px;
-    padding: 0 12px;
-    border: none;
-    border-radius: 6px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-    white-space: nowrap;
-    color: white;
-}
+.btn-header { height: 32px; padding: 0 12px; border: none; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; color: white; }
 .btn-admin { background-color: #34495e; }
 .btn-theme { background-color: #333; }
 .btn-exit { background-color: var(--danger); }
 #user-display { font-size: 11px; font-weight: 800; color: var(--primary-color); text-transform: uppercase; margin-right: 5px; white-space: nowrap; }
-
-/* LAYOUT GERAL */
 .main-content { max-width: 98%; margin: 0 auto; }
 .controles { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px; }
 .tabela-container { background: var(--bg-card); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 0; overflow-x: auto; }
@@ -126,20 +43,15 @@ table { width: 100%; border-collapse: collapse; }
 th { background-color: #f8f9fb; color: var(--text-muted); padding: 15px 20px; text-align: left; font-size: 11px; font-weight: 700; border-bottom: 1px solid #ebedf3; }
 td { padding: 15px 20px; border-bottom: 1px solid #ebedf3; color: var(--text-dark); font-size: 12px; font-weight: 600; }
 tbody tr:hover { background-color: #f4f6f9; cursor: pointer; }
-
-/* Botões de Ação da Tabela */
 .t-acoes { display: flex; gap: 8px; justify-content: flex-end; }
 .btn-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; padding: 0; }
 .btn-editar-circle { background-color: var(--primary-light); color: var(--primary-color); }
 .btn-excluir-circle { background-color: var(--danger-light); color: var(--danger); }
 .btn-mapa-circle { background-color: #e0f2f1; color: #00897b; }
-
 .texto-vermelho { color: var(--excel-red) !important; font-weight: 700; }
-.alerta-doenca { background-color: #fff5f5 !important; border-left: 4px solid var(--danger); }
+.alerta-doenca { background-color: #ffe6e6 !important; border-left: 4px solid var(--danger); }
 .icone-alerta { color: var(--danger); margin-right: 5px; animation: pulse 2s infinite; }
 @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-
-/* MODAIS */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.3); backdrop-filter: blur(2px); overflow-y: auto; }
 .modal-content { background-color: #fff; margin: 3% auto; width: 750px; max-width: 95%; border-radius: var(--border-radius); box-shadow: 0 10px 30px rgba(0,0,0,0.1); animation: slideUp 0.3s ease-out; }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -151,20 +63,8 @@ tbody tr:hover { background-color: #f4f6f9; cursor: pointer; }
 label { font-size: 12px; font-weight: 600; }
 input:not([type="checkbox"]), textarea, select { padding: 10px 15px; border: 1px solid #e4e6ef; border-radius: 6px; background-color: #f3f6f9; width: 100%; box-sizing: border-box; }
 .view-field { padding: 12px 15px; background-color: #f3f6f9; border-radius: 6px; font-weight: 500; min-height: 45px; }
-
-/* -- RODAPÉ DO MODAL (BOTOES ALINHADOS) -- */
-.modal-footer-custom { 
-    padding: 20px 30px; 
-    border-top: 1px solid #ebedf3; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center;
-    width: 100%;
-    box-sizing: border-box;
-}
+.modal-footer-custom { padding: 20px 30px; border-top: 1px solid #ebedf3; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; }
 .footer-group { display: flex; flex-direction: row; gap: 10px; align-items: center; }
-
-/* Botões do Modal */
 .btn-modal { height: 36px; padding: 0 15px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 .btn-etiqueta { background-color: #e67e22; color: white; }
 .btn-whatsapp { background-color: #25D366; color: white; }
@@ -172,7 +72,6 @@ input:not([type="checkbox"]), textarea, select { padding: 10px 15px; border: 1px
 .btn-cancelar { background-color: #eee; color: #333; }
 .btn-extra { background-color: #fff; border: 1px solid #ccc; color: #333; }
 .btn-salvar { background-color: var(--primary-color); color: white; }
-
 .ficha-visualizacao { padding: 30px; background-color: #fff; color: #000; }
 .ficha-linha { display: flex; border-bottom: 1px solid #ddd; padding: 8px 0; align-items: baseline; }
 .ficha-label { font-weight: 800; font-size: 12px; color: #555; width: 140px; flex-shrink: 0; text-transform: uppercase; }
@@ -189,31 +88,12 @@ input:not([type="checkbox"]), textarea, select { padding: 10px 15px; border: 1px
 .btn-remove-user { background: none; border: none; color: var(--danger); cursor: pointer; }
 .btn-novo { background-color: var(--primary-color); color: white; border: none; border-radius: 6px; padding: 10px 20px; font-weight: 600; cursor: pointer; }
 .btn-imprimir { background-color: white; color: var(--text-dark); border: 1px solid #ebedf3; border-radius: 6px; padding: 10px 20px; font-weight: 600; cursor: pointer; }
-
-/* Design Classico Override */
 body.design-classico { background-color: #fff !important; color: #000 !important; font-family: 'Times New Roman', serif !important; }
 body.design-classico .header-prefeitura { background-color: #fff !important; border-bottom: 4px solid #000 !important; box-shadow: none !important; }
-body.design-classico .topo-box,
-body.design-classico .search-box,
-body.design-classico .btn-header,
-body.design-classico .btn-novo,
-body.design-classico .btn-imprimir,
-body.design-classico .btn-modal,
-body.design-classico input,
-body.design-classico select,
-body.design-classico textarea,
-body.design-classico .tabela-container,
-body.design-classico .modal-content {
-    border-radius: 0 !important;
-    border: 1px solid #000 !important;
-    box-shadow: none !important;
-    background-color: #fff !important;
-    color: #000 !important;
-}
+body.design-classico .topo-box, body.design-classico .search-box, body.design-classico .btn-header, body.design-classico .btn-novo, body.design-classico .btn-imprimir, body.design-classico .btn-modal, body.design-classico input, body.design-classico select, body.design-classico textarea, body.design-classico .tabela-container, body.design-classico .modal-content { border-radius: 0 !important; border: 1px solid #000 !important; box-shadow: none !important; background-color: #fff !important; color: #000 !important; }
 body.design-classico th { background-color: #000 !important; color: #fff !important; text-transform: uppercase !important; }
 body.design-classico td { border-bottom: 1px solid #000 !important; color: #000 !important; }
 body.design-classico .btn-icon { border: 1px solid #000 !important; border-radius: 0 !important; color: #000 !important; background: #fff !important; }
-
 @media print { 
     @page { margin: 5mm; } 
     body { background-color: white; font-size: 8px; margin: 0; padding: 0; } 
@@ -223,21 +103,4 @@ body.design-classico .btn-icon { border: 1px solid #000 !important; border-radiu
     table { width: 100% !important; border-collapse: collapse !important; } 
     th, td { border: 1px solid #000 !important; padding: 2px !important; color: black !important; font-size: 8px !important; } 
     .header-prefeitura { box-shadow: none; border-bottom: 2px solid #000; padding: 5px; height: auto; }
-/* (Conteúdo do style.css anterior) */
-:root {
-    --primary-color: #3699ff; 
-    --primary-light: #e1f0ff;
-    --text-dark: #3f4254;
-    --text-muted: #b5b5c3;
-    --bg-body: #f3f6f9;
-    --bg-card: #ffffff;
-    --success: #1bc5bd;
-    --danger: #f64e60;
-    --danger-light: #ffe2e5;
-    --border-radius: 10px;
-    --shadow: 0 0 20px 0 rgba(76, 87, 125, 0.02);
-    --excel-red: #c0392b; 
-    --excel-black: #000000;
-}
-/* ... resto do CSS igual ao anterior ... */    
 }
