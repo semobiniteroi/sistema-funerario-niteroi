@@ -86,10 +86,16 @@
                 <input type="hidden" id="protocolo_hidden">
                 
                 <div class="form-grid">
+                    <div class="input-group span-1">
+                        <label>Data Sepultamento</label>
+                        <input type="date" id="data_ficha_modal" required>
+                    </div>
+
                     <div class="input-group span-1"><label>Hora Sepultamento</label><select id="hora" required></select></div>
-                    <div class="input-group span-1"><label style="color:var(--primary-color);">Atendente Responsável</label><input type="text" id="atendente_sistema" readonly style="background-color: #e8e8e8; font-weight:bold; color:#555;"></div>
+                    <div class="input-group span-2"><label style="color:var(--primary-color);">Atendente Responsável</label><input type="text" id="atendente_sistema" readonly style="background-color: #e8e8e8; font-weight:bold; color:#555;"></div>
+                    
                     <div class="input-group span-2"><label>Nome do Responsável (Família)</label><input type="text" id="resp_nome" placeholder="Nome do familiar ou empresa" required></div>
-                    <div class="input-group span-1"><label>Telefone Responsável</label><input type="text" id="telefone" placeholder="(21) 99999-9999"></div>
+                    <div class="input-group span-1"><label>Telefone Responsável</label><input type="text" id="telefone" placeholder="(21) 99999-9999" required></div>
                     <div class="input-group span-1"><label>Grau Parentesco</label><input type="text" id="parentesco" list="lista-parentesco" placeholder="Selecione..."><datalist id="lista-parentesco"><option value="CÔNJUGE"><option value="FILHO(A)"><option value="PAI/MÃE"><option value="IRMÃO(Ã)"><option value="NETO(A)"><option value="SOBRINHO(A)"><option value="GENRO/NORA"><option value="CUNHADO(A)"><option value="TIO(A)"><option value="PRIMO(A)"><option value="OUTRO"></datalist></div>
                     
                     <div class="input-group span-2"><label>Estado Civil (Falecido)</label><select id="estado_civil"><option value="">Selecione...</option><option value="SOLTEIRO">SOLTEIRO</option><option value="CASADO">CASADO</option><option value="VIUVO">VIÚVO</option><option value="UNIAO_ESTAVEL">UNIÃO ESTÁVEL</option><option value="DIVORCIADO">DIVORCIADO</option><option value="IGNORADO">IGNORADO</option></select></div>
@@ -157,7 +163,17 @@
                     <div class="input-group span-2 hidden" id="div-local-domicilio" style="flex-direction: row; gap: 5px;"><div style="flex: 1;"><label>UF</label><select id="estado_obito"><option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></div><div style="flex: 2;"><label>Cidade</label><select id="cidade_obito" disabled><option value="">Selecione a UF</option></select></div></div>
                     <div class="input-group span-2"><label>Capela</label><input type="text" id="cap" list="lista-capelas" placeholder="Selecione..." required><datalist id="lista-capelas"><option value="SEM VELÓRIO / DIRETO"><option value="CAPELA A"><option value="CAPELA B"><option value="CAPELA C"><option value="CAPELA D"><option value="CAPELA E"><option value="CAPELA F"><option value="CAPELA G"><option value="CAPELA H"></datalist></div>
                     <div class="input-group span-2"><label>Data Falecimento</label><input type="date" id="data_obito" required></div>
-                    <div class="input-group span-2"><label>Hora Falecimento</label><input type="time" id="hora_obito" required></div>
+                    
+                    <div class="input-group span-2">
+                        <label>Hora Falecimento</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="time" id="hora_obito">
+                            <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer;">
+                                <input type="checkbox" id="chk_ignorar_hora" style="width:auto;"> <span style="font-size:10px;">IGNORAR</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="input-group span-1"><label>Sepult. < 24h?</label><select id="do_24h"><option value="NAO">NÃO</option><option value="SIM">SIM (Liberado)</option></select></div>
                     <div class="input-group span-3"><label>Observações</label><textarea id="urna_info" rows="2" placeholder="Observações gerais..."></textarea></div>
                 </div>

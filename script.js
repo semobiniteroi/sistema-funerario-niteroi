@@ -328,6 +328,10 @@ window.abrirModal = function() {
     safeSet('docId', ''); safeSet('do_24h', 'NAO'); safeSet('hora', ''); safeSet('estado_obito', ''); safeSet('estado_civil', ''); safeSet('func_funeraria', ''); safeSet('membro_amputado', '');
     safeSet('livro_perpetua', ''); safeSet('folha_perpetua', '');
 
+    // Resetar checkbox Ignorar Hora
+    const chkHora = document.getElementById('chk_ignorar_hora');
+    if(chkHora) chkHora.checked = false;
+
     const elCidade = document.getElementById('cidade_obito');
     if(elCidade) { elCidade.innerHTML = '<option value="">Selecione a UF primeiro</option>'; elCidade.disabled = true; }
     
@@ -341,6 +345,10 @@ window.abrirModal = function() {
     if(selMembro) { selMembro.value = ""; selMembro.disabled = true; }
 
     const filtroLocal = document.getElementById('filtro-local');
+    // Preenche a data do modal com a data do filtro (se existir)
+    const filtroData = document.getElementById('filtro-data');
+    if(filtroData) safeSet('data_ficha_modal', filtroData.value);
+
     if(filtroLocal) atualizarLabelQuadra(filtroLocal.value);
 
     if(usuarioLogado) safeSet('atendente_sistema', usuarioLogado.nome);
@@ -480,8 +488,6 @@ function renderizarTabela(lista) {
         if(item.causa) { const causaUpper = item.causa.toUpperCase(); isContagioso = doencasContagiosas.some(doenca => causaUpper.includes(doenca)); }
         if (isContagioso) { tr.classList.add('alerta-doenca'); }
         const iconAlert = isContagioso ? '<span class="icone-alerta" title="Doença Contagiosa">⚠️</span>' : '';
-        
-        // COR VERMELHA EM *TODAS* AS CAUSAS
         const estiloCausa = 'color:red !important; font-weight:700; font-size:11px; margin-top:2px;';
 
         let btnMap = '';
@@ -622,7 +628,11 @@ window.visualizar = function(id) {
                  document.getElementById('view_local_sepul').innerText = localTexto;
             }
             setText('view_hospital_completo', i.hospital); setText('view_cap', i.cap);
-            let dataFormatada = i.data_obito; if (dataFormatada && dataFormatada.includes('-')) { const p = dataFormatada.split('-'); dataFormatada = `${p[2]}/${p[1]}/${p[0]}`; } setText('view_data_obito', dataFormatada); setText('view_hora_obito', i.hora_obito);
+            let dataFormatada = i.data_obito; if (dataFormatada && dataFormatada.includes('-')) { const p = dataFormatada.split('-'); dataFormatada = `${p[2]}/${p[1]}/${p[0]}`; } setText('view_data_obito', dataFormatada); 
+            
+            // VISUALIZAR: HORA ÓBITO (COM LÓGICA DE IGNORADO)
+            setText('view_hora_obito', i.ignorar_hora_obito === 'SIM' ? (i.hora_obito + ' (IGNORADO)') : i.hora_obito);
+
             const mapContainer = document.getElementById('view_map_container'); const mapFrame = document.getElementById('mapa-frame'); const mapLink = document.getElementById('link-gps');
             const cleanCoords = i.geo_coords ? i.geo_coords.replace(/\s/g, '') : '';
             if (cleanCoords && cleanCoords.includes(',')) { mapContainer.style.display = 'block'; mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://www.google.com/maps?q=${cleanCoords}&z=17&output=embed"></iframe>`; mapLink.href = `https://www.google.com/maps/search/?api=1&query=${cleanCoords}`; } else { mapContainer.style.display = 'none'; mapFrame.innerHTML = ''; }
@@ -646,6 +656,11 @@ window.editar = function(id) {
             setVal('data_obito', item.data_obito); setVal('hora_obito', item.hora_obito); setVal('geo_coords', item.geo_coords);
             setVal('estado_civil', item.estado_civil); setVal('func_funeraria', item.func_funeraria); setVal('tipo_membro_select', item.tipo_membro);
             setVal('livro_perpetua', item.livro_perpetua); setVal('folha_perpetua', item.folha_perpetua); 
+            if(item.data_ficha) setVal('data_ficha_modal', item.data_ficha);
+            
+            // EDITAR: CHECKBOX IGNORAR
+            document.getElementById('chk_ignorar_hora').checked = (item.ignorar_hora_obito === 'SIM');
+
             document.getElementById('chk_tanato').checked = (item.tanato === 'SIM'); document.getElementById('chk_invol').checked = (item.invol === 'SIM'); document.getElementById('chk_translado').checked = (item.translado === 'SIM'); document.getElementById('chk_urna_opc').checked = (item.urna_opc === 'SIM');
             const isMembro = (item.membro_opc === 'SIM'); document.getElementById('chk_membro').checked = isMembro;
             const selMembro = document.getElementById('tipo_membro_select'); if(selMembro) selMembro.disabled = !isMembro;
@@ -679,7 +694,8 @@ form.onsubmit = (e) => {
     const getVal = (id) => { const el = document.getElementById(id); return el ? el.value : ""; };
     const tipoSep = getVal('tipo_sepultura');
     const dados = {
-        data_ficha: getVal('filtro-data'), local: getVal('filtro-local'), hora: getVal('hora'),
+        data_ficha: getVal('data_ficha_modal'), 
+        local: getVal('filtro-local'), hora: getVal('hora'),
         atendente_sistema: getVal('atendente_sistema'), resp_nome: getVal('resp_nome'), telefone: getVal('telefone'), parentesco: getVal('parentesco'),
         classificacao_obito: getVal('classificacao_obito'), do_24h: getVal('do_24h'), urna_info: getVal('urna_info'), combo_urna: getVal('combo_urna'), tipo_urna_detalhe: getVal('tipo_urna_detalhe'),
         funeraria: getVal('funeraria'), isencao: getVal('isencao'), requisito: getVal('requisito'),
@@ -687,6 +703,9 @@ form.onsubmit = (e) => {
         translado: document.getElementById('chk_translado').checked ? 'SIM' : 'NAO', urna_opc: document.getElementById('chk_urna_opc').checked ? 'SIM' : 'NAO',
         nome: getVal('nome'), causa: getVal('causa'),
         
+        // SALVAR: CHECKBOX IGNORAR
+        ignorar_hora_obito: document.getElementById('chk_ignorar_hora').checked ? 'SIM' : 'NAO',
+
         gav: (tipoSep.includes('GAVETA')) ? 'X' : '', 
         car: (tipoSep.includes('CARNEIRO')) ? 'X' : '', 
         cova_rasa: (tipoSep.includes('COVA')) ? 'X' : '', 
@@ -782,6 +801,7 @@ window.gerarComprovante = function() {
     };
 
     const dh = new Date();
+    // Extrai data e hora do protocolo (formato YYYYMMDD-HHmm)
     const p = d.protocolo || "";
     let dataProtocolo = "";
     let horaProtocolo = "";
@@ -795,15 +815,18 @@ window.gerarComprovante = function() {
         dataProtocolo = `${dia}/${mes}/${ano}`;
         horaProtocolo = `${hora}:${min}`;
     } else {
+        // Fallback
         dataProtocolo = `${dh.getDate().toString().padStart(2,'0')}/${(dh.getMonth()+1).toString().padStart(2,'0')}/${dh.getFullYear()}`;
         horaProtocolo = `${dh.getHours().toString().padStart(2,'0')}:${dh.getMinutes().toString().padStart(2,'0')}`;
     }
     
+    // Checkboxes locais
     const im = (d.local && d.local.includes("MARUÍ"));
     const is = (d.local && d.local.includes("SÃO FRANCISCO"));
     const ii = (d.local && d.local.includes("ITAIPU"));
     const cc = (d.cap && !d.cap.toUpperCase().includes("SEM"));
     
+    // Tempo Decorrido
     let tempoDecorrido = "";
     if (d.data_obito && d.hora_obito && d.hora && d.data_ficha) {
         const dtObito = new Date(d.data_obito + 'T' + d.hora_obito);
@@ -820,31 +843,34 @@ window.gerarComprovante = function() {
     const chkEC = (val) => ec === val ? '(X)' : '( )';
     const relacao = d.parentesco ? `(${d.parentesco})` : '';
 
-    // --- LÓGICA DO TEXTO DA SEPULTURA SELECIONADA (CORRIGIDA) ---
+    // --- LÓGICA DO TEXTO DA SEPULTURA SELECIONADA ---
     let txtSep = "";
-    const ts = d.tipo_sepultura || ""; // Ex: GAVETA, GAVETA_ANJO, PERPETUA
-    const co = d.classificacao_obito || "ADULTO"; // Ex: ADULTO, ANJO
+    const ts = d.tipo_sepultura || ""; 
+    const co = d.classificacao_obito || "ADULTO"; 
 
-    if (ts === 'PERPETUA') {
-        txtSep = `PERPÉTUA (LIVRO: ${d.livro_perpetua||'-'} / FOLHA: ${d.folha_perpetua||'-'}) - ${co}`;
-    } else if (ts === 'MEMBRO') {
+    // COMPROVANTE: HORA ÓBITO (COM LÓGICA DE IGNORADO)
+    let txtHoraObito = d.hora_obito;
+    if (d.ignorar_hora_obito === 'SIM') txtHoraObito += " (IGNORADO)";
+
+    let base = "";
+    if (ts.includes("GAVETA")) base = "GAVETA";
+    else if (ts.includes("CARNEIRO")) base = "CARNEIRO";
+    else if (ts.includes("COVA")) base = "COVA RASA";
+    else if (ts.includes("PERPETUA")) base = "PERPÉTUA";
+    else if (ts.includes("MEMBRO")) base = "MEMBRO AMPUTADO";
+    else base = ts;
+
+    let classificacao = co;
+    if (ts.includes("ANJO")) {
+        classificacao = "ANJO";
+    }
+
+    if (base === "PERPÉTUA") {
+        txtSep = `PERPÉTUA (LIVRO: ${d.livro_perpetua||'-'} / FOLHA: ${d.folha_perpetua||'-'}) - ${classificacao}`;
+    } else if (base === "MEMBRO AMPUTADO") {
         txtSep = `MEMBRO AMPUTADO (${d.tipo_membro || 'Não informado'})`;
     } else {
-        // Normaliza o tipo base
-        let baseTipo = "";
-        if (ts.includes("GAVETA")) baseTipo = "GAVETA";
-        else if (ts.includes("CARNEIRO") || ts.includes("CARNEIRA")) baseTipo = "CARNEIRO";
-        else if (ts.includes("COVA")) baseTipo = "COVA RASA";
-        else baseTipo = ts; 
-
-        // Define a classificação
-        let classificacao = co; 
-        if (ts.includes("ANJO")) {
-            classificacao = "ANJO";
-        }
-        
-        // CORREÇÃO: Garante que apareça o nome completo
-        txtSep = `${baseTipo} - ${classificacao}`;
+        txtSep = `${base} - ${classificacao}`;
     }
 
     const htmlComprovante = `
@@ -853,31 +879,31 @@ window.gerarComprovante = function() {
         <title>Comprovante</title>
         <style>
             @page { size: A4 portrait; margin: 8mm; }
-            body { font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 10px; line-height: 1.3; color: #000; }
+            body { font-family: Arial, sans-serif; font-size: 14px; margin: 0; padding: 10px; line-height: 1.3; color: #000; }
             .header { text-align: center; margin-bottom: 25px; position: relative; }
-            .header h2 { font-size: 16px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; color: #000; }
-            .protocolo { position: absolute; top: -5px; right: 0; font-size: 12px; font-weight: bold; border: 2px solid #000; padding: 5px 10px; }
+            .header h2 { font-size: 20px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; color: #000; }
+            .protocolo { position: absolute; top: -5px; right: 0; font-size: 14px; font-weight: bold; border: 2px solid #000; padding: 5px 10px; }
             .content { width: 100%; }
             .line { margin-bottom: 4px; white-space: nowrap; overflow: hidden; }
             .bold { font-weight: 900; }
             .red { color: red; font-weight: bold; }
             
-            .section-title { font-weight: 900; margin-top: 15px; margin-bottom: 2px; text-transform: uppercase; font-size: 11px; }
+            .section-title { font-weight: 900; margin-top: 15px; margin-bottom: 2px; text-transform: uppercase; font-size: 14px; }
             
             .two-columns { display: flex; justify-content: space-between; margin-top: 10px; }
             .col-left { width: 60%; }
             .col-right { width: 38%; }
             
             .assinaturas-block { display: flex; justify-content: space-between; margin-top: 25px; margin-bottom: 10px; gap: 20px; }
-            .ass-line { border-top: 1px solid #000; text-align: center; padding-top: 2px; flex: 1; font-size: 10px; }
+            .ass-line { border-top: 1px solid #000; text-align: center; padding-top: 2px; flex: 1; font-size: 12px; }
             
-            .obs-text { font-weight: bold; font-size: 10px; margin-top: 5px; }
+            .obs-text { font-weight: bold; font-size: 12px; margin-top: 5px; }
             
-            .box-lateral { border: 2px solid #000; padding: 5px; font-weight: 900; font-size: 10px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
-            .termo-juridico { text-align: justify; font-size: 10px; line-height: 1.3; }
+            .box-lateral { border: 2px solid #000; padding: 5px; font-weight: 900; font-size: 12px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
+            .termo-juridico { text-align: justify; font-size: 12px; line-height: 1.3; }
             
-            .footer-line { margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; font-weight: 900; font-size: 11px; }
-            .aviso-final { border: 2px solid #000; padding: 5px; margin-top: 10px; font-weight: 900; text-align: justify; font-size: 10px; line-height: 1.3; }
+            .footer-line { margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; font-weight: 900; font-size: 12px; }
+            .aviso-final { border: 2px solid #000; padding: 5px; margin-top: 10px; font-weight: 900; text-align: justify; font-size: 12px; line-height: 1.3; }
             
             .spacer { margin-left: 10px; }
         </style>
@@ -911,7 +937,7 @@ window.gerarComprovante = function() {
             
             <div class="line">
                 <span class="bold">COM CAPELA</span> ${chk(cc)} <span class="bold">SEM CAPELA</span> ${chk(!cc)} 
-                <span class="bold spacer">DATA DO FALECIMENTO:</span> ${fd(d.data_obito)} AS ${d.hora_obito} 
+                <span class="bold spacer">DATA DO FALECIMENTO:</span> ${fd(d.data_obito)} AS ${txtHoraObito} 
                 <span class="red spacer">[${tempoDecorrido}]</span>
             </div>
             
@@ -925,7 +951,7 @@ window.gerarComprovante = function() {
 
             <div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div>
             
-            <div class="line" style="margin-top:5px; font-size:12px; border: 1px solid #000; padding: 5px;">
+            <div class="line" style="margin-top:5px; font-size:14px; border: 1px solid #000; padding: 5px;">
                 <span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${txtSep}
             </div>
 
@@ -977,7 +1003,7 @@ window.gerarComprovante = function() {
             <div class="footer-line">
                 MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome || '').toUpperCase()}
             </div>
-            <div style="font-weight:bold; font-size:11px; margin-top:5px;">
+            <div style="font-weight:bold; font-size:12px; margin-top:5px;">
                 TEL: ${d.telefone||''}
             </div>
 
