@@ -188,7 +188,15 @@
             <div class="ficha-visualizacao">
                 <div class="ficha-header"><h2>Prefeitura Municipal de Niterói</h2><p>Coordenadoria Municipal de Serviços Funerários</p></div>
                 <div class="ficha-linha"><span class="ficha-label">Protocolo:</span><span class="ficha-valor" id="view_protocolo" style="font-family:'Courier New'; letter-spacing:1px; font-size:16px;"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Atendente:</span><span class="ficha-valor" id="view_atendente" style="color:var(--primary-color); font-weight:bold;"></span></div>
+                
+                <div class="ficha-linha">
+                    <span class="ficha-label">Atendente:</span>
+                    <span class="ficha-valor">
+                        <span id="view_atendente" style="color:var(--primary-color); font-weight:bold;"></span>
+                        <span style="margin-left: 15px; font-size: 11px; color: #555; text-transform: uppercase;">DATA DE HORARIO DE ATENDIMENTO: <span id="view_data_registro" style="color:#000; font-weight:bold;"></span></span>
+                    </span>
+                </div>
+                
                 <div class="ficha-linha"><span class="ficha-label">Horário Sepul.:</span><span class="ficha-valor" id="view_hora"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Falecido(a):</span><span class="ficha-valor" id="view_nome"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">Causa da Morte:</span><span class="ficha-valor" id="view_causa"></span></div>
