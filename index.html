@@ -6,6 +6,10 @@
     <title>Controle Funerário - Niterói</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        .tab-btn.active { background-color: #0056b3 !important; color: white !important; border-bottom: 3px solid #003d80; font-weight: bold; }
+        input[type="month"] { font-family: 'Poppins', sans-serif; padding: 8px; border: 1px solid #ccc; border-radius: 5px; color: #333; cursor: pointer; }
+    </style>
 </head>
 <body>
 
@@ -46,7 +50,6 @@
 
     <div class="main-content">
         <div class="controles">
-            <button onclick="abrirModalEstatisticas()" class="btn-imprimir" style="border-color: #8e44ad; color: #8e44ad;">📊 Estatísticas</button>
             <button onclick="imprimirRelatorio('portrait')" class="btn-imprimir">🖨️ Retrato</button>
             <button onclick="imprimirRelatorio('landscape')" class="btn-imprimir">🖨️ Paisagem</button>
             <button onclick="abrirModal()" class="btn-novo">+ Novo Atendimento</button>
@@ -86,6 +89,16 @@
                 <input type="hidden" id="protocolo_hidden">
                 
                 <div class="form-grid">
+                    <div class="input-group span-4 hidden" id="div-motivo-edicao" style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; margin-bottom: 10px;">
+                        <label style="color:#856404; font-weight:bold;">⚠️ Motivo da Correção (Obrigatório)</label>
+                        <input type="text" id="motivo_edicao" placeholder="Justifique a alteração..." style="border: 1px solid #e0a800;">
+                    </div>
+
+                    <div class="input-group span-2">
+                        <label>Data/Hora Atendimento (Registro)</label>
+                        <input type="datetime-local" id="data_hora_atendimento" required>
+                    </div>
+
                     <div class="input-group span-1">
                         <label>Data Sepultamento</label>
                         <input type="date" id="data_ficha_modal" required>
@@ -145,6 +158,12 @@
                             <option value="CARNEIRO_ANJO">Carneiro Anjo</option>
                             <option value="COVA_RASA_ANJO">Cova Rasa Anjo</option>
                             <option value="MEMBRO">Membro Amputado</option>
+                            <option value="GAVETA PERPETUA">Gaveta Perpétua</option>
+                            <option value="CARNEIRO PERPETUO">Carneiro Perpétuo</option>
+                            <option value="COVA RASA PERPETUA">Cova Rasa Perpétua</option>
+                            <option value="GAVETA ANJO PERPETUA">Gaveta Anjo Perpétua</option>
+                            <option value="CARNEIRO ANJO PERPETUO">Carneiro Anjo Perpétuo</option>
+                            <option value="COVA RASA ANJO PERPETUA">Cova Rasa Anjo Perpétua</option>
                         </select>
                     </div>
                     
@@ -182,41 +201,6 @@
         </div>
     </div>
 
-    <div id="modal-visualizar" class="modal">
-        <div class="modal-content" style="max-width: 700px; background: #fff;">
-            <div class="modal-header"><h3>Ficha de Atendimento</h3><span class="close" onclick="fecharModalVisualizar()">×</span></div>
-            <div class="ficha-visualizacao">
-                <div class="ficha-header"><h2>Prefeitura Municipal de Niterói</h2><p>Coordenadoria Municipal de Serviços Funerários</p></div>
-                <div class="ficha-linha"><span class="ficha-label">Protocolo:</span><span class="ficha-valor" id="view_protocolo" style="font-family:'Courier New'; letter-spacing:1px; font-size:16px;"></span></div>
-                
-                <div class="ficha-linha">
-                    <span class="ficha-label">Atendente:</span>
-                    <span class="ficha-valor">
-                        <span id="view_atendente" style="color:var(--primary-color); font-weight:bold;"></span>
-                        <span style="margin-left: 15px; font-size: 11px; color: #555; text-transform: uppercase;">DATA DE HORARIO DE ATENDIMENTO: <span id="view_data_registro" style="color:#000; font-weight:bold;"></span></span>
-                    </span>
-                </div>
-                
-                <div class="ficha-linha"><span class="ficha-label">Horário Sepul.:</span><span class="ficha-valor" id="view_hora"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Falecido(a):</span><span class="ficha-valor" id="view_nome"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Causa da Morte:</span><span class="ficha-valor" id="view_causa"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Responsável:</span><span class="ficha-valor" id="view_resp_completo"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Telefone:</span><span class="ficha-valor" id="view_telefone"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Funerária:</span><span class="ficha-valor" id="view_funeraria"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Acolhimento:</span><span class="ficha-valor" id="view_isencao_completa"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Dados da Urna:</span><span class="ficha-valor"><span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Serviços Extras:</span><span class="ficha-valor" id="view_servicos_adicionais"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Local Sepul.:</span><span class="ficha-valor" id="view_local_sepul"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Local Óbito:</span><span class="ficha-valor" id="view_hospital_completo"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Velório:</span><span class="ficha-valor" id="view_cap"></span></div>
-                <div class="ficha-linha"><span class="ficha-label">Data/Hora Óbito:</span><span class="ficha-valor"><span id="view_data_obito"></span> às <span id="view_hora_obito"></span><span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span></span></div>
-                <div class="ficha-linha" style="border-bottom: none;"><span class="ficha-label">Observações:</span><span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span></div>
-                <div id="view_map_container" style="display:none; margin-top: 20px;"><div class="ficha-linha" style="border-bottom:none; margin-bottom:5px;"><span class="ficha-label">Localização:</span></div><div id="mapa-frame" style="width:100%; height:250px; border:1px solid #ccc; border-radius:6px; overflow:hidden;"></div><div style="text-align:right; margin-top:5px;"><a id="link-gps" href="#" target="_blank" style="font-size:12px; font-weight:bold; color:var(--primary-color); text-decoration:none;">📍 Abrir no Google Maps</a></div></div>
-            </div>
-            <div class="modal-footer-custom"><div class="footer-group"><button type="button" class="btn-modal btn-extra" onclick="gerarComprovante()">📄 Comprovante</button><button type="button" class="btn-modal btn-etiqueta" onclick="gerarEtiqueta()">🏷️ Etiqueta</button></div><div class="footer-group"><button type="button" class="btn-modal btn-whatsapp" onclick="enviarWhatsapp()">📱 WhatsApp</button><button type="button" class="btn-modal btn-sms" onclick="enviarSMS()">💬 SMS</button><button type="button" class="btn-modal btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button></div></div>
-        </div>
-    </div>
-
     <div id="modal-admin" class="modal">
         <div class="modal-content" style="max-width: 900px; height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header"><h3>Painel Administrativo</h3><span class="close" onclick="fecharModalAdmin()">×</span></div>
@@ -228,7 +212,6 @@
             <div class="tab-content-area" style="flex-grow: 1; overflow-y: auto; padding: 20px;">
                 <div id="tab-equipe" class="tab-pane active">
                     <h4>Gerenciar Usuários</h4>
-                    
                     <div id="box-novo-usuario" style="display:flex; flex-direction: column; gap:10px; margin-bottom:20px; background: #f9f9f9; padding:15px; border-radius:8px;">
                         <strong style="color:var(--primary-color);">Novo Usuário:</strong>
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px;">
@@ -239,12 +222,11 @@
                             <button onclick="adicionarFuncionario()" class="btn-novo" style="padding: 10px 20px;">+</button>
                         </div>
                     </div>
-
                     <div id="div-editar-usuario" class="hidden" style="display:flex; flex-direction: column; gap:10px; margin-bottom:20px; background: #fff3cd; padding:15px; border-radius:8px; border:1px solid #ffeeba;">
                         <strong style="color:#856404;">✏️ Editando Usuário:</strong>
                         <input type="hidden" id="edit-id">
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px;">
-                            <input type="text" id="edit-nome" placeholder="Nome">
+                            <input type="text" id="edit-nome" placeholder="Nome e Sobrenome">
                             <input type="text" id="edit-login" placeholder="Login" disabled style="background:#e9ecef; cursor:not-allowed;">
                             <input type="email" id="edit-email" placeholder="E-mail">
                             <input type="text" id="edit-senha" placeholder="Nova Senha">
@@ -254,15 +236,22 @@
                             <button onclick="salvarEdicaoUsuario()" class="btn-modal btn-salvar">Salvar Alterações</button>
                         </div>
                     </div>
-
                     <ul id="lista-equipe" class="lista-simples"></ul>
                 </div>
 
                 <div id="tab-stats" class="tab-pane">
-                    <div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap;">
-                        <button onclick="baixarRelatorioCompleto()" class="btn-novo" style="background-color: #1e3a8a;">📊 Baixar Relatório Completo</button>
+                    <div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <button onclick="carregarEstatisticas('7')" class="btn-imprimir">7 Dias</button>
+                        <button onclick="carregarEstatisticas('14')" class="btn-imprimir">14 Dias</button>
+                        <button onclick="carregarEstatisticas('30')" class="btn-imprimir">30 Dias</button>
+                        <button onclick="carregarEstatisticas('mes')" class="btn-imprimir">Este Mês</button>
                         <div style="width: 1px; height: 25px; background: #ccc; margin: 0 10px;"></div>
-                        <button onclick="carregarEstatisticas(30)" class="btn-imprimir">30 Dias</button>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <input type="month" id="filtro-mes-ano" class="btn-imprimir" style="padding: 5px 10px;">
+                            <button onclick="carregarEstatisticas('custom')" class="btn-novo" style="background-color: #666;" title="Filtrar">🔍</button>
+                        </div>
+                        <div style="width: 1px; height: 25px; background: #ccc; margin: 0 10px;"></div>
+                        <button onclick="baixarRelatorioCompleto()" class="btn-novo" style="background-color: #1e3a8a;">📊 Baixar Relatório Completo</button>
                         <button onclick="baixarExcel()" class="btn-novo" style="background-color: #27ae60;">📥 Excel (Visual)</button>
                     </div>
                     <div id="loading-stats" style="text-align:center; display:none; color:#666;">Carregando dados...</div>
@@ -274,17 +263,27 @@
                 </div>
 
                 <div id="tab-logs" class="tab-pane">
-                    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;"><h4>Registro de Atividades Recentes</h4><button onclick="carregarLogs()" class="btn-imprimir">🔄 Atualizar</button></div>
+                    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;">
+                        <h4>Log de Auditoria e Alterações</h4>
+                        <button onclick="carregarLogs()" class="btn-imprimir">🔄 Atualizar</button>
+                    </div>
                     <table class="table-logs" style="width:100%; font-size:12px; border-collapse: collapse;">
-                        <thead><tr style="background:#eee; text-align:left;"><th style="padding:10px;">Data/Hora Registro</th><th style="padding:10px;">Falecido</th><th style="padding:10px;">Responsável (Atendente)</th></tr></thead>
+                        <thead>
+                            <tr style="background:#eee; text-align:left;">
+                                <th style="padding:10px;">Data/Hora</th>
+                                <th style="padding:10px;">Usuário</th>
+                                <th style="padding:10px;">Ação / Detalhes</th>
+                            </tr>
+                        </thead>
                         <tbody id="tabela-logs"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-
-    <div id="modal-estatisticas" class="modal"><div class="modal-content" style="max-width: 800px;"><div class="modal-header"><h3>Relatórios Rápidos</h3><span class="close" onclick="fecharModalEstatisticas()">×</span></div><div style="padding: 20px;"><div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap;"><button onclick="carregarEstatisticas(7)" class="btn-imprimir">7 Dias</button><button onclick="carregarEstatisticas(14)" class="btn-imprimir">14 Dias</button><button onclick="carregarEstatisticas(30)" class="btn-imprimir">30 Dias</button></div><div class="grafico-container" style="height: 250px;"><canvas id="grafico-causas-modal"></canvas></div><div class="grafico-container" style="height: 250px; margin-top:20px;"><canvas id="grafico-atendentes-modal"></canvas></div></div></div></div>
+    
+    <div id="modal-estatisticas" class="modal" style="display:none;"><div class="modal-content"></div></div>
+    <div id="modal-visualizar" class="modal"><div class="modal-content" style="max-width: 700px; background: #fff;"><div class="modal-header"><h3>Ficha de Atendimento</h3><span class="close" onclick="fecharModalVisualizar()">×</span></div><div class="ficha-visualizacao"><div class="ficha-header"><h2>Prefeitura Municipal de Niterói</h2><p>Coordenadoria Municipal de Serviços Funerários</p></div><div class="ficha-linha"><span class="ficha-label">PROTOCOLO:</span><span class="ficha-valor" id="view_protocolo" style="font-family:'Courier New'; letter-spacing:1px; font-size:16px;"></span></div><div class="ficha-linha"><span class="ficha-label">ATENDENTE:</span><span class="ficha-valor" id="view_atendente" style="color:var(--primary-color); font-weight:bold;"></span></div><div class="ficha-linha"><span class="ficha-label">DATA/HORA ATENDIMENTO:</span><span class="ficha-valor" id="view_data_registro" style="font-weight: bold;"></span></div><div class="ficha-linha"><span class="ficha-label">HORÁRIO SEPUL.:</span><span class="ficha-valor" id="view_hora"></span></div><div class="ficha-linha"><span class="ficha-label">FALECIDO(A):</span><span class="ficha-valor" id="view_nome"></span></div><div class="ficha-linha"><span class="ficha-label">CAUSA DA MORTE:</span><span class="ficha-valor" id="view_causa"></span></div><div class="ficha-linha"><span class="ficha-label">RESPONSÁVEL:</span><span class="ficha-valor" id="view_resp_completo"></span></div><div class="ficha-linha"><span class="ficha-label">TELEFONE:</span><span class="ficha-valor" id="view_telefone"></span></div><div class="ficha-linha"><span class="ficha-label">FUNERÁRIA:</span><span class="ficha-valor" id="view_funeraria"></span></div><div class="ficha-linha"><span class="ficha-label">ACOLHIMENTO:</span><span class="ficha-valor" id="view_isencao_completa"></span></div><div class="ficha-linha"><span class="ficha-label">DADOS DA URNA:</span><span class="ficha-valor"><span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span></span></div><div class="ficha-linha"><span class="ficha-label">SERVIÇOS EXTRAS:</span><span class="ficha-valor" id="view_servicos_adicionais"></span></div><div class="ficha-linha"><span class="ficha-label">LOCAL SEPUL.:</span><span class="ficha-valor" id="view_local_sepul"></span></div><div class="ficha-linha"><span class="ficha-label">LOCAL ÓBITO:</span><span class="ficha-valor" id="view_hospital_completo"></span></div><div class="ficha-linha"><span class="ficha-label">VELÓRIO:</span><span class="ficha-valor" id="view_cap"></span></div><div class="ficha-linha"><span class="ficha-label">DATA/HORA ÓBITO:</span><span class="ficha-valor"><span id="view_data_obito"></span> às <span id="view_hora_obito"></span><span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span></span></div><div class="ficha-linha" style="border-bottom: none;"><span class="ficha-label">OBSERVAÇÕES:</span><span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span></div><div id="view_map_container" style="display:none; margin-top: 20px;"><div class="ficha-linha" style="border-bottom:none; margin-bottom:5px;"><span class="ficha-label">Localização:</span></div><div id="mapa-frame" style="width:100%; height:250px; border:1px solid #ccc; border-radius:6px; overflow:hidden;"></div><div style="text-align:right; margin-top:5px;"><a id="link-gps" href="#" target="_blank" style="font-size:12px; font-weight:bold; color:var(--primary-color); text-decoration:none;">📍 Abrir no Google Maps</a></div></div></div><div class="modal-footer-custom"><div class="footer-group"><button type="button" class="btn-modal btn-extra" onclick="gerarComprovante()">📄 Comprovante</button><button type="button" class="btn-modal btn-etiqueta" onclick="gerarEtiqueta()">🏷️ Etiqueta</button></div><div class="footer-group"><button type="button" class="btn-modal btn-whatsapp" onclick="enviarWhatsapp()">📱 WhatsApp</button><button type="button" class="btn-modal btn-sms" onclick="enviarSMS()">💬 SMS</button><button type="button" class="btn-modal btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button></div></div></div></div>
 
     <footer style="text-align: center; padding: 20px; color: #888; font-size: 11px; margin-top: 30px; border-top: 1px solid #eee;">© 2026 Controle Funerário Niterói. Todos os direitos reservados.</footer>
 

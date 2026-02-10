@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Sepultamento - Niterói</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background-color: #f0f2f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; }
+        .consulta-box {
+            background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%; max-width: 500px; text-align: center;
+        }
+        .consulta-box img { max-height: 80px; margin-bottom: 20px; }
+        .input-grande {
+            width: 100%; padding: 15px; font-size: 18px; border: 2px solid #ddd; border-radius: 8px;
+            margin-bottom: 15px; text-align: center; letter-spacing: 2px; font-weight: bold;
+        }
+        .btn-consultar {
+            width: 100%; padding: 15px; background-color: #0056b3; color: white; border: none;
+            border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn-consultar:hover { background-color: #004494; }
+        
+        #resultado-area { margin-top: 30px; text-align: left; display: none; border-top: 1px solid #eee; padding-top: 20px; }
+        .res-label { font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase; }
+        .res-valor { font-size: 16px; color: #333; margin-bottom: 10px; font-weight: 500; }
+        .res-destaque { color: #0056b3; font-weight: 800; font-size: 18px; }
+        
+        .btn-acao {
+            display: inline-block; width: 48%; padding: 10px; margin-top: 15px;
+            border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: center;
+        }
+        .btn-print { background-color: #28a745; color: white; }
+        .btn-map { background-color: #ffc107; color: #333; }
+        .erro-msg { color: red; font-weight: bold; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="consulta-box">
+        <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" alt="Prefeitura de Niterói">
+        <h3>Consulta de Sepultamento</h3>
+        <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Digite o número do protocolo impresso no seu comprovante.</p>
+        
+        <input type="text" id="input-protocolo" class="input-grande" placeholder="Ex: 20260210-1430">
+        <button onclick="consultarProtocolo()" class="btn-consultar">🔍 Consultar</button>
+        <p id="msg-erro" class="erro-msg">Protocolo não encontrado.</p>
+
+        <div id="resultado-area">
+            <div class="res-label">Falecido(a)</div>
+            <div class="res-valor res-destaque" id="res-nome"></div>
+
+            <div class="res-label">Local e Sepultura</div>
+            <div class="res-valor" id="res-local"></div>
+
+            <div class="res-label">Data do Sepultamento</div>
+            <div class="res-valor" id="res-data"></div>
+
+            <div style="display: flex; justify-content: space-between;">
+                <button onclick="gerar2ViaPublica()" class="btn-acao btn-print">🖨️ 2ª Via Comprovante</button>
+                <button onclick="abrirMapaPublico()" id="btn-mapa" class="btn-acao btn-map" style="display:none;">📍 Ver Localização</button>
+            </div>
+        </div>
+    </div>
+
+    <footer style="margin-top: 20px; color: #888; font-size: 12px;">© 2026 Controle Funerário Niterói</footer>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="script_publico.js"></script>
+</body>
+</html>
