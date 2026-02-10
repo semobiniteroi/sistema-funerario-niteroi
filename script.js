@@ -79,6 +79,14 @@ window.carregarCidades = function(uf) {
     }
 }
 
+window.carregarListaHorarios = function() {
+    const select = document.getElementById('hora');
+    if (!select) return;
+    select.innerHTML = '<option value="">Selecione...</option>';
+    const horarios = [ "08:00", "08:15", "08:30", "08:45", "09:00", "09:15", "09:30", "09:45", "10:00", "10:15", "10:30", "10:45", "11:00", "11:15", "11:30", "11:45", "12:00", "12:15", "12:30", "12:45", "13:00", "13:15", "13:30", "13:45", "14:00", "14:15", "14:30", "14:45", "15:00", "15:15", "15:30", "15:45", "16:00", "16:15", "16:30", "16:45", "17:00", "17:15", "17:30" ];
+    horarios.forEach(hora => { const option = document.createElement('option'); option.value = hora; option.textContent = hora; select.appendChild(option); });
+}
+
 // --- 3. CORE (TABELA PRINCIPAL) ---
 window.renderizarTabela = function(lista) {
     const tbody = document.getElementById('tabela-corpo'); if(!tbody) return;
@@ -156,7 +164,8 @@ window.renderizarTabela = function(lista) {
         let btnMap = '';
         const cleanCoords = item.geo_coords ? item.geo_coords.replace(/\s/g, '') : '';
         if (cleanCoords && cleanCoords.includes(',')) {
-             btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://www.google.com/maps/search/?api=1&query=${cleanCoords}', '_blank')" title="Ver Localização">📍</button>`;
+             // CORRIGIDO: Link direto para Google Maps com coordenadas limpas
+             btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://www.google.com/maps?q=${cleanCoords}', '_blank')" title="Ver Localização">📍</button>`;
         }
 
         tr.innerHTML = `
@@ -534,6 +543,25 @@ if(form) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. CARREGAR LISTA DE HORÁRIOS
+    window.carregarListaHorarios();
+
+    // 2. ADICIONAR O LISTENER PARA O SELETOR DE CAUSAS
+    const seletorCausas = document.getElementById('seletor_causas');
+    const inputCausa = document.getElementById('causa');
+    if (seletorCausas && inputCausa) {
+        seletorCausas.addEventListener('change', function() {
+            if (this.value) {
+                if (inputCausa.value === "") {
+                    inputCausa.value = this.value;
+                } else {
+                    inputCausa.value += " / " + this.value;
+                }
+                this.value = ""; // Reseta o select
+            }
+        });
+    }
+
     const selectTipo = document.getElementById('tipo_sepultura');
     if (selectTipo) {
         selectTipo.addEventListener('change', function() {
@@ -576,15 +604,13 @@ window.visualizar = function(id) {
             
             const map = {
                 'view_protocolo': d.protocolo, 'view_hora': d.hora, 'view_nome': d.nome, 'view_causa': d.causa,
+                'view_resp_completo': d.resp_nome + (d.parentesco ? ` (${d.parentesco})` : ''),
                 'view_telefone': d.telefone, 'view_funeraria': d.funeraria,
                 'view_atendente': d.atendente_sistema, 'view_combo_urna': d.combo_urna, 
                 'view_hospital_completo': d.hospital, 'view_cap': d.cap, 'view_urna_info': d.urna_info
             };
             for(let k in map) { const el = document.getElementById(k); if(el) el.innerText = map[k] || '-'; }
             
-            const respCompleto = d.resp_nome + (d.parentesco ? ` (${d.parentesco})` : '');
-            if(document.getElementById('view_resp_completo')) document.getElementById('view_resp_completo').innerText = respCompleto;
-
             let localSep = `Tipo: ${d.tipo_sepultura || ''} | Nº: ${d.sepul||''} | QD: ${d.qd||''}`;
             if(d.tipo_sepultura && d.tipo_sepultura.toUpperCase().includes('PERPETU')) {
                 localSep += ` (L: ${d.livro_perpetua||'-'} F: ${d.folha_perpetua||'-'})`;
@@ -608,6 +634,7 @@ window.visualizar = function(id) {
             }
             if(document.getElementById('view_data_registro')) document.getElementById('view_data_registro').innerText = dataHoraFinal;
 
+            // CORREÇÃO MAPA NO MODAL
             const mapContainer = document.getElementById('view_map_container');
             const mapFrame = document.getElementById('mapa-frame');
             const mapLink = document.getElementById('link-gps');
@@ -615,8 +642,9 @@ window.visualizar = function(id) {
                  const cleanCoords = d.geo_coords ? d.geo_coords.replace(/\s/g, '') : '';
                  if (cleanCoords && cleanCoords.includes(',')) {
                      mapContainer.style.display = 'block';
-                     mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://www.google.com/maps?q=${cleanCoords}&z=17&output=embed"></iframe>`;
-                     mapLink.href = `https://www.google.com/maps/search/?api=1&query=${cleanCoords}`;
+                     // Formato oficial de iframe e link
+                     mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://maps.google.com/maps?q=${cleanCoords}&z=17&output=embed"></iframe>`;
+                     mapLink.href = `https://www.google.com/maps?q=${cleanCoords}`;
                  } else {
                      mapContainer.style.display = 'none';
                  }
@@ -652,66 +680,28 @@ window.gerarEtiqueta = function() {
         return `${p[2]}/${p[1]}/${p[0]}`; 
     };
     const dataF = fd(d.data_ficha);
-    const h = `
-    <html>
-    <head>
-    <style>
-        @page { size: landscape; margin: 0; }
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; height: 100vh; width: 100vw; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .box { width: 95vw; height: 90vh; border: 5px solid #000; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; gap: 20px; }
-        .header-img { max-height: 100px; margin-bottom: 10px; }
-        .title { font-size: 24px; font-weight: 900; text-transform: uppercase; border-bottom: 3px solid #000; padding-bottom: 5px; display: inline-block; margin-bottom: 30px; }
-        .group { margin-bottom: 30px; width: 100%; }
-        .label { font-size: 18px; color: #333; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
-        .val-nome { font-size: 55px; font-weight: 900; text-transform: uppercase; line-height: 1.1; }
-        .val-data { font-size: 40px; font-weight: 800; }
-        .val-local { font-size: 35px; font-weight: 800; text-transform: uppercase; }
-    </style>
-    </head>
-    <body>
-        <div class="box">
-            <div>
-                <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" class="header-img">
-                <br>
-                <div class="title">IDENTIFICAÇÃO DE VELÓRIO</div>
-            </div>
-            
-            <div class="group">
-                <div class="label">FALECIDO(A)</div>
-                <div class="val-nome">${d.nome}</div>
-            </div>
-
-            <div class="group">
-                <div class="label">SEPULTAMENTO</div>
-                <div class="val-data">${dataF} às ${d.hora}</div>
-            </div>
-
-            <div class="group">
-                <div class="label">LOCAL</div>
-                <div class="val-local">${d.cap}<br>${d.local || "CEMITÉRIO DO MARUÍ"}</div>
-            </div>
-        </div>
-        <script>window.onload=function(){setTimeout(function(){window.print()},500)}</script>
-    </body>
-    </html>`;
+    const h = `<html><head><style>@page{size:landscape;margin:0}body{font-family:Arial,sans-serif;margin:0;padding:0;height:100vh;width:100vw;display:flex;justify-content:center;align-items:center;overflow:hidden}.box{width:95vw;height:90vh;border:5px solid #000;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;text-align:center;padding:10px}.header-img{max-height:100px;margin-bottom:10px}.title{font-size:24px;font-weight:900;text-transform:uppercase;border-bottom:3px solid #000;padding-bottom:5px;display:inline-block;margin-bottom:30px}.group{margin-bottom:30px;width:100%}.label{font-size:18px;color:#333;font-weight:bold;text-transform:uppercase;margin-bottom:5px}.val-nome{font-size:55px;font-weight:900;text-transform:uppercase;line-height:1.1}.val-data{font-size:40px;font-weight:800}.val-local{font-size:35px;font-weight:800;text-transform:uppercase}</style></head><body><div class="box"><div><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" class="header-img"><br><div class="title">IDENTIFICAÇÃO DE VELÓRIO</div></div><div class="group"><div class="label">FALECIDO(A)</div><div class="val-nome">${d.nome}</div></div><div class="group"><div class="label">SEPULTAMENTO</div><div class="val-data">${dataF} às ${d.hora}</div></div><div class="group"><div class="label">LOCAL</div><div class="val-local">${d.cap}<br>${d.local || "CEMITÉRIO DO MARUÍ"}</div></div></div><script>window.onload=function(){setTimeout(function(){window.print()},500)}</script></body></html>`;
     const w = window.open('','_blank'); 
     if(w) { w.document.write(h); w.document.close(); } else { alert("Desbloqueie os pop-ups."); }
 }
 
+// CORREÇÃO: Links WhatsApp e SMS com formato oficial
 window.enviarWhatsapp = function() {
     if (!dadosAtendimentoAtual) return;
     const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : '';
     const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : '';
     if (!t) { alert("Sem telefone."); return; }
     if (!c) { alert("Sem GPS."); return; }
-    window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização: https://www.google.com/maps/search/?api=1&query=$' + c)}`, '_blank');
+    // Formato correto que abre o App Google Maps ou Browser
+    window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização da Sepultura: https://www.google.com/maps?q=' + c)}`, '_blank');
 }
+
 window.enviarSMS = function() {
     if (!dadosAtendimentoAtual) return;
     const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : '';
     const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : '';
     if (!t) { alert("Sem telefone."); return; }
-    window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização: https://www.google.com/maps/search/?api=1&query=$' + c)}`;
+    window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://www.google.com/maps?q=' + c)}`;
 }
 
 window.gerarComprovante = function() {
@@ -731,14 +721,9 @@ window.gerarComprovante = function() {
     }
     
     const im = (d.local && d.local.includes("MARUÍ")); const is = (d.local && d.local.includes("SÃO FRANCISCO")); const ii = (d.local && d.local.includes("ITAIPU")); const cc = (d.cap && !d.cap.toUpperCase().includes("SEM"));
-    
     let tempoDecorrido = "";
     if (d.data_obito && d.hora_obito && d.hora && d.data_ficha) { const dtObito = new Date(d.data_obito + 'T' + d.hora_obito); const dtSepul = new Date(d.data_ficha + 'T' + d.hora); const diff = dtSepul - dtObito; if (diff > 0) { const diffHrs = Math.floor(diff / 3600000); const diffMins = Math.round(((diff % 3600000) / 60000)); tempoDecorrido = `${diffHrs}h ${diffMins}min`; } }
-    
-    const ec = d.estado_civil || "";
-    const chkEC = (val) => ec === val ? '(X)' : '( )';
-    const relacao = d.parentesco ? `(${d.parentesco})` : '';
-
+    const ec = d.estado_civil || ""; const chkEC = (val) => ec === val ? '(X)' : '( )'; const relacao = d.parentesco ? `(${d.parentesco})` : '';
     let txtSep = (d.tipo_sepultura || "").toUpperCase(); 
     const co = d.classificacao_obito || "ADULTO"; 
     let txtHoraObito = d.hora_obito; if (d.ignorar_hora_obito === 'SIM') txtHoraObito += " (IGNORADO)";
@@ -752,15 +737,12 @@ window.gerarComprovante = function() {
         txtSep = `${txtSep} - ${classificacao}`;
     }
 
-    // Cálculo da Data de Exumação
     let dataExumacao = "";
     if (d.data_ficha) {
         const parts = d.data_ficha.split('-');
         let ano = parseInt(parts[0]);
         const mes = parts[1];
         const dia = parts[2];
-        
-        // Se for ANJO (criança) = +2 anos, senão = +3 anos
         const addAnos = (d.classificacao_obito === 'ANJO') ? 2 : 3;
         dataExumacao = `${dia}/${mes}/${ano + addAnos}`;
     }

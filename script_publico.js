@@ -56,11 +56,14 @@ function consultarProtocolo() {
                 const dataF = dadosConsulta.data_ficha ? dadosConsulta.data_ficha.split('-').reverse().join('/') : '--/--/----';
                 document.getElementById('res-data').innerText = `${dataF} às ${dadosConsulta.hora}`;
 
-                // Verifica GPS
+                // Verifica GPS e configura o botão
                 const cleanCoords = dadosConsulta.geo_coords ? dadosConsulta.geo_coords.replace(/\s/g, '') : '';
                 if (cleanCoords && cleanCoords.includes(',')) {
                     btnMapa.style.display = 'inline-block';
-                    btnMapa.onclick = function() { window.open(`https://www.google.com/maps/search/?api=1&query=$${cleanCoords}`, '_blank'); };
+                    // CORREÇÃO AQUI: Link padrão do Google Maps
+                    btnMapa.onclick = function() { 
+                        window.open(`https://www.google.com/maps?q=${cleanCoords}`, '_blank'); 
+                    };
                 } else {
                     btnMapa.style.display = 'none';
                 }
@@ -143,6 +146,7 @@ function gerar2ViaPublica() {
 function abrirMapaPublico() {
     if(dadosConsulta && dadosConsulta.geo_coords) {
         const clean = dadosConsulta.geo_coords.replace(/\s/g, '');
-        window.open(`https://www.google.com/maps/search/?api=1&query=$${clean}`, '_blank');
+        // CORREÇÃO AQUI TAMBÉM
+        window.open(`https://www.google.com/maps?q=${clean}`, '_blank');
     }
 }
