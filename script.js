@@ -128,17 +128,28 @@ window.renderizarTabela = function(lista) {
                               <div style="color:red; font-size:10px; font-weight:bold; margin-top:2px;">(${item.causa ? item.causa.toUpperCase() : 'CAUSA NÃO INFORMADA'})</div>
                               ${item.classificacao_obito === 'ANJO' ? '<div style="font-size:9px; color:blue; font-weight:bold;">(ANJO)</div>' : ''}`;
 
-        // Coluna 6
-        let conteudoSepultura = `<div style="font-weight:bold; font-size:13px; color:#333;">${item.sepul||''}</div>`;
+        // Coluna 6: SEPULTURA (CORRIGIDO PARA AZUL SE PERPÉTUA)
+        // Cor padrão: Preto #333
+        let corNumero = "#333";
+        let labelPerpetua = "";
+        
         const tipoSep = (item.tipo_sepultura || "").toUpperCase();
+        
+        // Se for perpétua (seja pela flag antiga ou novo tipo)
         if (item.perpetua === 'X' || tipoSep.includes('PERPETU')) {
-             let labelPerpetua = tipoSep.replace('PERPETUA', 'PERPÉTUA').replace('PERPETUO', 'PERPÉTUO');
-             if(labelPerpetua === "") labelPerpetua = "PERPÉTUA";
-             conteudoSepultura += `
-                <div style="font-weight:bold; font-size:10px; color:#2196F3; margin-top:2px;">${labelPerpetua}</div>
+             corNumero = "#2196F3"; // Número fica Azul
+             
+             // Define o texto da label
+             let labelTexto = tipoSep.replace('PERPETUA', 'PERPÉTUA').replace('PERPETUO', 'PERPÉTUO');
+             if(labelTexto === "") labelTexto = "PERPÉTUA";
+             
+             labelPerpetua = `
+                <div style="font-weight:bold; font-size:10px; color:#2196F3; margin-top:2px;">${labelTexto}</div>
                 <div style="font-weight:bold; font-size:10px; color:#2196F3;">L: ${item.livro_perpetua||''} F: ${item.folha_perpetua||''}</div>
              `;
         }
+
+        let conteudoSepultura = `<div style="font-weight:bold; font-size:13px; color:${corNumero};">${item.sepul||''}</div>${labelPerpetua}`;
 
         // Coluna 10
         let displayFalecimento = '';
@@ -164,7 +175,6 @@ window.renderizarTabela = function(lista) {
         let btnMap = '';
         const cleanCoords = item.geo_coords ? item.geo_coords.replace(/\s/g, '') : '';
         if (cleanCoords && cleanCoords.includes(',')) {
-             // CORRIGIDO: Link direto para Google Maps com coordenadas limpas
              btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://www.google.com/maps?q=${cleanCoords}', '_blank')" title="Ver Localização">📍</button>`;
         }
 
@@ -188,6 +198,34 @@ window.renderizarTabela = function(lista) {
             </td>`;
         tbody.appendChild(tr);
     });
+}
+
+// CORREÇÃO: Função de Busca (estava faltando)
+window.realizarBusca = function() {
+    const termo = document.getElementById('input-busca').value.trim().toUpperCase();
+    if (!termo) { alert("Digite um nome para buscar."); return; }
+    
+    const database = getDB();
+    if (!database) return;
+
+    // Cancela o listener atual (que filtra por data)
+    if (unsubscribe) unsubscribe();
+    
+    // Busca por Nome (prefixo)
+    unsubscribe = database.collection("atendimentos")
+        .orderBy("nome")
+        .startAt(termo)
+        .endAt(termo + "\uf8ff")
+        .limit(20)
+        .onSnapshot((snap) => {
+            let lista = [];
+            snap.forEach(doc => {
+                let d = doc.data();
+                d.id = doc.id;
+                lista.push(d);
+            });
+            window.renderizarTabela(lista);
+        });
 }
 
 window.atualizarListener = function(data, local) {
@@ -543,10 +581,8 @@ if(form) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. CARREGAR LISTA DE HORÁRIOS
     window.carregarListaHorarios();
 
-    // 2. ADICIONAR O LISTENER PARA O SELETOR DE CAUSAS
     const seletorCausas = document.getElementById('seletor_causas');
     const inputCausa = document.getElementById('causa');
     if (seletorCausas && inputCausa) {
@@ -557,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     inputCausa.value += " / " + this.value;
                 }
-                this.value = ""; // Reseta o select
+                this.value = ""; 
             }
         });
     }
@@ -634,7 +670,6 @@ window.visualizar = function(id) {
             }
             if(document.getElementById('view_data_registro')) document.getElementById('view_data_registro').innerText = dataHoraFinal;
 
-            // CORREÇÃO MAPA NO MODAL
             const mapContainer = document.getElementById('view_map_container');
             const mapFrame = document.getElementById('mapa-frame');
             const mapLink = document.getElementById('link-gps');
@@ -642,9 +677,8 @@ window.visualizar = function(id) {
                  const cleanCoords = d.geo_coords ? d.geo_coords.replace(/\s/g, '') : '';
                  if (cleanCoords && cleanCoords.includes(',')) {
                      mapContainer.style.display = 'block';
-                     // Formato oficial de iframe e link
-                     mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://maps.google.com/maps?q=${cleanCoords}&z=17&output=embed"></iframe>`;
-                     mapLink.href = `https://www.google.com/maps?q=${cleanCoords}`;
+                     mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://www.google.com/maps?q=${cleanCoords}&z=17&output=embed"></iframe>`;
+                     mapLink.href = `https://www.google.com/maps/search/?api=1&query=${cleanCoords}`;
                  } else {
                      mapContainer.style.display = 'none';
                  }
@@ -681,27 +715,23 @@ window.gerarEtiqueta = function() {
     };
     const dataF = fd(d.data_ficha);
     const h = `<html><head><style>@page{size:landscape;margin:0}body{font-family:Arial,sans-serif;margin:0;padding:0;height:100vh;width:100vw;display:flex;justify-content:center;align-items:center;overflow:hidden}.box{width:95vw;height:90vh;border:5px solid #000;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;text-align:center;padding:10px}.header-img{max-height:100px;margin-bottom:10px}.title{font-size:24px;font-weight:900;text-transform:uppercase;border-bottom:3px solid #000;padding-bottom:5px;display:inline-block;margin-bottom:30px}.group{margin-bottom:30px;width:100%}.label{font-size:18px;color:#333;font-weight:bold;text-transform:uppercase;margin-bottom:5px}.val-nome{font-size:55px;font-weight:900;text-transform:uppercase;line-height:1.1}.val-data{font-size:40px;font-weight:800}.val-local{font-size:35px;font-weight:800;text-transform:uppercase}</style></head><body><div class="box"><div><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" class="header-img"><br><div class="title">IDENTIFICAÇÃO DE VELÓRIO</div></div><div class="group"><div class="label">FALECIDO(A)</div><div class="val-nome">${d.nome}</div></div><div class="group"><div class="label">SEPULTAMENTO</div><div class="val-data">${dataF} às ${d.hora}</div></div><div class="group"><div class="label">LOCAL</div><div class="val-local">${d.cap}<br>${d.local || "CEMITÉRIO DO MARUÍ"}</div></div></div><script>window.onload=function(){setTimeout(function(){window.print()},500)}</script></body></html>`;
-    const w = window.open('','_blank'); 
-    if(w) { w.document.write(h); w.document.close(); } else { alert("Desbloqueie os pop-ups."); }
+    const w = window.open('','_blank'); if(w) { w.document.write(h); w.document.close(); }
 }
 
-// CORREÇÃO: Links WhatsApp e SMS com formato oficial
 window.enviarWhatsapp = function() {
     if (!dadosAtendimentoAtual) return;
     const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : '';
     const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : '';
     if (!t) { alert("Sem telefone."); return; }
     if (!c) { alert("Sem GPS."); return; }
-    // Formato correto que abre o App Google Maps ou Browser
-    window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização da Sepultura: https://www.google.com/maps?q=' + c)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização: https://www.google.com/maps/search/?api=1&query=$' + c)}`, '_blank');
 }
-
 window.enviarSMS = function() {
     if (!dadosAtendimentoAtual) return;
     const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : '';
     const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : '';
     if (!t) { alert("Sem telefone."); return; }
-    window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://www.google.com/maps?q=' + c)}`;
+    window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização: https://www.google.com/maps/search/?api=1&query=$' + c)}`;
 }
 
 window.gerarComprovante = function() {
