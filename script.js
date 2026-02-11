@@ -19,7 +19,7 @@ let dadosEstatisticasExportacao = [];
 let chartInstances = {}; 
 let usuarioLogado = null; 
 
-// VARIÁVEIS PARA ASSINATURA
+// VARIÁVEIS GLOBAIS PARA ASSINATURA
 let signaturePad = null;
 let isDrawing = false;
 let assinaturaResponsavelImg = null;
@@ -49,7 +49,7 @@ function safeDisplay(id, displayType) {
     if (el) el.style.display = displayType;
 }
 
-// --- LÓGICA DE ASSINATURA DIGITAL (CANVAS CORRIGIDO) ---
+// --- LÓGICA DE ASSINATURA DIGITAL (CANVAS OTIMIZADO MOBILE) ---
 function setupSignaturePad() {
     const canvas = document.getElementById('signature-pad');
     if (!canvas) return;
@@ -64,9 +64,8 @@ function setupSignaturePad() {
     // Função para pegar a posição exata (Mouse ou Touch) com correção de escala
     function getPos(canvas, evt) {
         const rect = canvas.getBoundingClientRect();
-        
-        // Verifica se é toque ou mouse
         let clientX, clientY;
+        
         if (evt.touches && evt.touches.length > 0) {
             clientX = evt.touches[0].clientX;
             clientY = evt.touches[0].clientY;
@@ -75,7 +74,6 @@ function setupSignaturePad() {
             clientY = evt.clientY;
         }
 
-        // Fator de escala (importante para responsividade no celular)
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
 
@@ -86,9 +84,7 @@ function setupSignaturePad() {
     }
 
     function startDraw(e) {
-        // Se for toque, previne rolagem da tela
         if(e.type === 'touchstart') e.preventDefault();
-        
         isDrawing = true;
         const pos = getPos(canvas, e);
         ctx.beginPath();
@@ -97,8 +93,7 @@ function setupSignaturePad() {
 
     function draw(e) {
         if (!isDrawing) return;
-        if(e.type === 'touchmove') e.preventDefault(); // Previne rolagem ao desenhar
-        
+        if(e.type === 'touchmove') e.preventDefault();
         const pos = getPos(canvas, e);
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
@@ -109,7 +104,7 @@ function setupSignaturePad() {
         isDrawing = false;
     }
 
-    // Remover listeners antigos para não duplicar
+    // Remover listeners antigos
     canvas.removeEventListener('mousedown', startDraw);
     canvas.removeEventListener('mousemove', draw);
     canvas.removeEventListener('mouseup', endDraw);
@@ -118,13 +113,11 @@ function setupSignaturePad() {
     canvas.removeEventListener('touchmove', draw);
     canvas.removeEventListener('touchend', endDraw);
 
-    // Adicionar Listeners Mouse
+    // Adicionar novos listeners
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', endDraw);
     canvas.addEventListener('mouseout', endDraw);
-
-    // Adicionar Listeners Touch (Com passive: false para permitir preventDefault)
     canvas.addEventListener('touchstart', startDraw, { passive: false });
     canvas.addEventListener('touchmove', draw, { passive: false });
     canvas.addEventListener('touchend', endDraw, { passive: false });
@@ -136,10 +129,8 @@ window.abrirModalAssinatura = function(tipo) {
     if(titulo) {
         titulo.innerText = (tipo === 'responsavel') ? 'Assinatura do Responsável' : 'Assinatura da Equipe';
     }
-    
     safeDisplay('modal-assinatura', 'flex');
     window.limparAssinatura(); 
-    // Delay maior para garantir renderização no mobile
     setTimeout(setupSignaturePad, 200); 
 }
 
@@ -159,16 +150,21 @@ window.salvarAssinatura = function() {
     const canvas = document.getElementById('signature-pad');
     if (canvas) {
         const imgData = canvas.toDataURL('image/png');
+        const db = getDB();
         
+        // Atualiza variável local e salva no banco de dados imediatamente
         if (tipoAssinaturaAtual === 'responsavel') {
             assinaturaResponsavelImg = imgData;
-            // Removido alert para evitar travamento no mobile
+            if (dadosAtendimentoAtual && dadosAtendimentoAtual.id) {
+                db.collection("atendimentos").doc(dadosAtendimentoAtual.id).update({ assinatura_responsavel: imgData });
+            }
         } else {
             assinaturaAtendenteImg = imgData;
-            // Removido alert
+            if (dadosAtendimentoAtual && dadosAtendimentoAtual.id) {
+                db.collection("atendimentos").doc(dadosAtendimentoAtual.id).update({ assinatura_atendente: imgData });
+            }
         }
-        
-        // Fecha o modal imediatamente
+        // Sem alert() para não travar mobile
         window.fecharModalAssinatura();
     }
 }
@@ -257,6 +253,7 @@ window.renderizarTabela = function(lista) {
                               <div style="color:red; font-size:10px; font-weight:bold; margin-top:2px;">(${item.causa ? item.causa.toUpperCase() : 'CAUSA NÃO INFORMADA'})</div>
                               ${item.classificacao_obito === 'ANJO' ? '<div style="font-size:9px; color:blue; font-weight:bold;">(ANJO)</div>' : ''}`;
 
+        // Sepultura com destaque Azul se Perpétua
         let labelPerpetua = "";
         const tipoSep = (item.tipo_sepultura || "").toUpperCase();
         if (item.perpetua === 'X' || tipoSep.includes('PERPETU')) {
@@ -318,9 +315,12 @@ window.renderizarTabela = function(lista) {
 window.realizarBusca = function() {
     const termo = document.getElementById('input-busca').value.trim().toUpperCase();
     if (!termo) { alert("Digite um nome para buscar."); return; }
+    
     const database = getDB();
     if (!database) return;
+
     if (unsubscribe) unsubscribe();
+    
     unsubscribe = database.collection("atendimentos")
         .orderBy("nome")
         .startAt(termo)
@@ -328,7 +328,11 @@ window.realizarBusca = function() {
         .limit(20)
         .onSnapshot((snap) => {
             let lista = [];
-            snap.forEach(doc => { let d = doc.data(); d.id = doc.id; lista.push(d); });
+            snap.forEach(doc => {
+                let d = doc.data();
+                d.id = doc.id;
+                lista.push(d);
+            });
             window.renderizarTabela(lista);
         });
 }
@@ -372,11 +376,14 @@ window.fecharModalAdmin = function() { safeDisplay('modal-admin', 'none'); }
 window.abrirAba = function(id) {
     Array.from(document.getElementsByClassName('tab-pane')).forEach(e => e.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+    
     const buttons = document.querySelectorAll('.tab-header .tab-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
+    
     if (id === 'tab-equipe') buttons[0].classList.add('active');
     if (id === 'tab-stats') buttons[1].classList.add('active');
     if (id === 'tab-logs') buttons[2].classList.add('active');
+
     if(id==='tab-equipe') window.listarEquipe();
     if(id==='tab-logs') window.carregarLogs();
     if(id==='tab-stats') window.carregarEstatisticas('7');
@@ -388,10 +395,14 @@ window.carregarLogs = function() {
     const tbody = document.getElementById('tabela-logs');
     if(!database || !tbody) return;
     tbody.innerHTML = '<tr><td colspan="3">Carregando...</td></tr>';
+    
     logsUnsubscribe = database.collection("atendimentos").limit(50).orderBy("data_ficha", "desc").onSnapshot(snap => {
         tbody.innerHTML = '';
         if(snap.empty) { tbody.innerHTML = '<tr><td colspan="3">Nenhum registro encontrado.</td></tr>'; return; }
-        let logs = []; snap.forEach(doc => { logs.push(doc.data()); });
+        
+        let logs = [];
+        snap.forEach(doc => { logs.push(doc.data()); });
+        
         logs.forEach(log => {
             let displayDataHora = '-';
             if (log.data_hora_atendimento) {
@@ -399,7 +410,10 @@ window.carregarLogs = function() {
                 if(!isNaN(dh)) {
                     displayDataHora = `${dh.getDate().toString().padStart(2,'0')}/${(dh.getMonth()+1).toString().padStart(2,'0')}/${dh.getFullYear()} <br> <span style="font-size:11px; color:#666;">${dh.getHours().toString().padStart(2,'0')}:${dh.getMinutes().toString().padStart(2,'0')}</span>`;
                 }
-            } else { const p = log.data_ficha ? log.data_ficha.split('-').reverse().join('/') : '-'; displayDataHora = p; }
+            } else {
+                const p = log.data_ficha ? log.data_ficha.split('-').reverse().join('/') : '-';
+                displayDataHora = p;
+            }
             const atendente = log.atendente_sistema ? log.atendente_sistema.toUpperCase() : 'SISTEMA';
             const detalhe = `Cadastro: <b>${log.nome}</b>`;
             const tr = document.createElement('tr');
@@ -452,6 +466,7 @@ window.listarEquipe = function() {
     const database = getDB();
     const ul = document.getElementById('lista-equipe');
     if(!database || !ul) return;
+    
     equipeUnsubscribe = database.collection("equipe").orderBy("nome").onSnapshot(snap => {
         ul.innerHTML = '';
         snap.forEach(doc => {
@@ -518,18 +533,24 @@ window.cancelarEdicao = function() {
 window.carregarEstatisticas = function(modo) {
     const database = getDB();
     if(!database) return;
+    
     let dInicio = new Date();
     let filtroMes = null, filtroAno = null;
     let dString = "";
+
     if (modo === 'custom') {
         const inputMonth = document.getElementById('filtro-mes-ano');
-        if(inputMonth && inputMonth.value) { dString = inputMonth.value + "-01"; filtroAno = inputMonth.value.split('-')[0]; filtroMes = inputMonth.value.split('-')[1]; } 
-        else { alert("Selecione Mês e Ano."); return; }
+        if(inputMonth && inputMonth.value) {
+             dString = inputMonth.value + "-01";
+             filtroAno = inputMonth.value.split('-')[0];
+             filtroMes = inputMonth.value.split('-')[1];
+        } else { alert("Selecione Mês e Ano."); return; }
     } else {
         if (modo === 'mes') dInicio = new Date(dInicio.getFullYear(), dInicio.getMonth(), 1);
         else dInicio.setDate(dInicio.getDate() - parseInt(modo));
         dString = dInicio.toISOString().split('T')[0];
     }
+    
     database.collection("atendimentos").where("data_ficha", ">=", dString).onSnapshot(snap => {
         let causas = {};
         snap.forEach(doc => {
@@ -540,13 +561,19 @@ window.carregarEstatisticas = function(modo) {
             }
             if(d.causa) { d.causa.split('/').forEach(c => { const k = c.trim().toUpperCase(); if(k) causas[k] = (causas[k] || 0) + 1; }); }
         });
+        
         const sorted = Object.entries(causas).sort((a,b) => b[1] - a[1]).slice(0, 10);
         const labels = sorted.map(x => x[0]);
         const data = sorted.map(x => x[1]);
+
         const ctx = document.getElementById('grafico-causas');
         if(ctx && window.Chart) {
             if(chartInstances['causas']) chartInstances['causas'].destroy();
-            chartInstances['causas'] = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Top 10 Causas', data: data, backgroundColor: '#3699ff' }] }, options: { indexAxis: 'y', maintainAspectRatio: false, scales: { x: { beginAtZero: true } } } });
+            chartInstances['causas'] = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: 'Top 10 Causas', data: data, backgroundColor: '#3699ff' }] },
+                options: { indexAxis: 'y', maintainAspectRatio: false, scales: { x: { beginAtZero: true } } }
+            });
         }
         dadosEstatisticasExportacao = sorted.map(([c,q]) => ({"Causa": c, "Qtd": q}));
     });
@@ -600,6 +627,7 @@ window.editar = function(id) {
             document.getElementById('protocolo_hidden').value = d.protocolo;
             document.getElementById('data_ficha_modal').value = d.data_ficha;
             ['tanato', 'invol', 'translado', 'urna_opc'].forEach(k => { const chk = document.getElementById('chk_'+k); if(chk) chk.checked = (d[k] === 'SIM'); });
+            
             if(d.data_hora_atendimento) { document.getElementById('data_hora_atendimento').value = d.data_hora_atendimento; } 
             else if(d.protocolo && d.protocolo.length >= 13) {
                  const p = d.protocolo; const y = p.substring(0,4), m = p.substring(4,6), day = p.substring(6,8); const h = p.substring(9,11), min = p.substring(11,13);
@@ -610,10 +638,6 @@ window.editar = function(id) {
             if (tipoSep.includes('PERPETU')) divP.classList.remove('hidden'); else divP.classList.add('hidden');
             document.getElementById('div-motivo-edicao').classList.remove('hidden');
             safeDisplay('modal', 'block');
-            
-            // RESETAR ASSINATURAS AO ABRIR
-            assinaturaResponsavelImg = null;
-            assinaturaAtendenteImg = null;
         }
     });
 }
@@ -671,12 +695,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if(fd) fd.addEventListener('change', (e) => window.atualizarListener(e.target.value, document.getElementById('filtro-local').value));
 });
 
+// VISUALIZAR (ATUALIZADA PARA LER DO BANCO)
 window.visualizar = function(id) {
     const database = getDB();
     const modalView = document.getElementById('modal-visualizar');
     if(!modalView || !database) return;
     
-    // RESETAR ASSINATURAS AO ABRIR
+    // Reset local
     assinaturaResponsavelImg = null;
     assinaturaAtendenteImg = null;
 
@@ -684,6 +709,11 @@ window.visualizar = function(id) {
         if(doc.exists) {
             const d = doc.data();
             dadosAtendimentoAtual = d;
+            
+            // CARREGA ASSINATURAS DO BANCO
+            if(d.assinatura_responsavel) assinaturaResponsavelImg = d.assinatura_responsavel;
+            if(d.assinatura_atendente) assinaturaAtendenteImg = d.assinatura_atendente;
+
             const map = {
                 'view_protocolo': d.protocolo, 'view_hora': d.hora, 'view_nome': d.nome, 'view_causa': d.causa, 'view_resp_completo': d.resp_nome + (d.parentesco ? ` (${d.parentesco})` : ''), 'view_telefone': d.telefone, 'view_funeraria': d.funeraria, 'view_atendente': d.atendente_sistema, 'view_combo_urna': d.combo_urna, 'view_hospital_completo': d.hospital, 'view_cap': d.cap, 'view_urna_info': d.urna_info
             };
@@ -720,7 +750,7 @@ window.gerarEtiqueta = function() { if (!dadosAtendimentoAtual) return; const d 
 window.enviarWhatsapp = function() { if (!dadosAtendimentoAtual) return; const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : ''; if (!t) { alert("Sem telefone."); return; } if (!c) { alert("Sem GPS."); return; } window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`, '_blank'); }
 window.enviarSMS = function() { if (!dadosAtendimentoAtual) return; const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : ''; if (!t) { alert("Sem telefone."); return; } window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`; }
 
-// --- GERAR COMPROVANTE (ATUALIZADO COM 2 ASSINATURAS DIGITAIS) ---
+// --- GERAR COMPROVANTE (ATUALIZADO) ---
 window.gerarComprovante = function() {
     if (!dadosAtendimentoAtual) return;
     const d = dadosAtendimentoAtual;
@@ -739,7 +769,6 @@ window.gerarComprovante = function() {
     if (txtSep.includes("PERPETUA") || txtSep.includes("PERPETUO")) { txtSep = `${txtSep} (LIVRO: ${d.livro_perpetua||'-'} / FOLHA: ${d.folha_perpetua||'-'}) - ${classificacao}`; } else if (txtSep.includes("MEMBRO")) { txtSep = `MEMBRO AMPUTADO (${d.tipo_membro || 'Não informado'})`; } else { txtSep = `${txtSep} - ${classificacao}`; }
     let dataExumacao = ""; if (d.data_ficha) { const parts = d.data_ficha.split('-'); let ano = parseInt(parts[0]); const mes = parts[1]; const dia = parts[2]; const addAnos = (d.classificacao_obito === 'ANJO') ? 2 : 3; dataExumacao = `${dia}/${mes}/${ano + addAnos}`; }
 
-    // BLOCO DE ASSINATURA FAMÍLIA
     let blocoAssinaturaFamilia = "";
     if (assinaturaResponsavelImg) {
         blocoAssinaturaFamilia = `<div style="text-align:center;"><img src="${assinaturaResponsavelImg}" style="max-height:60px; max-width:80%;"></div>`;
@@ -747,7 +776,6 @@ window.gerarComprovante = function() {
         blocoAssinaturaFamilia = `<div style="height:40px;"></div>`;
     }
 
-    // BLOCO DE ASSINATURA ATENDENTE (NOVO)
     let blocoAssinaturaAtendente = "";
     if (assinaturaAtendenteImg) {
         blocoAssinaturaAtendente = `<div style="text-align:center;"><img src="${assinaturaAtendenteImg}" style="max-height:60px; max-width:80%;"></div>`;
