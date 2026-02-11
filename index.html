@@ -20,21 +20,20 @@
             width: 100%;
         }
 
-        /* AJUSTE DOS BOTÕES DO RODAPÉ (SOLICITADO) */
+        /* AJUSTE DOS BOTÕES DO RODAPÉ */
         .modal-footer-custom {
             display: flex;
-            justify-content: center; /* Centralizar */
+            justify-content: center;
             align-items: center;
             padding-top: 15px;
             border-top: 1px solid #eee;
             flex-wrap: wrap;
-            gap: 8px; /* Espaço menor entre botões */
+            gap: 8px;
         }
 
-        /* Estilo base para botões do rodapé mais compactos */
         .modal-footer-custom button {
-            padding: 8px 12px; /* Menor padding */
-            font-size: 13px;   /* Fonte menor */
+            padding: 8px 12px;
+            font-size: 13px;
             border-radius: 6px;
             border: none;
             cursor: pointer;
@@ -43,13 +42,12 @@
             gap: 5px;
             color: white;
             font-weight: 500;
-            flex-grow: 1; /* Ocupar espaço igual */
+            flex-grow: 1;
             justify-content: center;
-            max-width: 180px; /* Largura máxima para não esticar demais */
-            min-width: 120px; /* Largura mínima para não quebrar texto */
+            max-width: 180px;
+            min-width: 120px;
         }
 
-        /* Cores Específicas */
         .btn-print { background-color: #555; }
         .btn-tag { background-color: #e67e22; }
         .btn-sign-fam { background-color: #663399; }
@@ -59,12 +57,8 @@
         .btn-close { background-color: #95a5a6; }
 
         @media (max-width: 768px) {
-            .modal-footer-custom {
-                padding-bottom: 20px; /* Espaço extra no mobile */
-            }
-            .modal-footer-custom button {
-                max-width: 48%; /* 2 botões por linha no mobile */
-            }
+            .modal-footer-custom { padding-bottom: 20px; }
+            .modal-footer-custom button { max-width: 48%; }
         }
     </style>
 </head>
@@ -164,6 +158,11 @@
                     <div class="input-group span-1"><label>Hora Sepultamento</label><select id="hora" required></select></div>
                     <div class="input-group span-2"><label style="color:var(--primary-color);">Atendente Responsável</label><input type="text" id="atendente_sistema" readonly style="background-color: #e8e8e8; font-weight:bold; color:#555;"></div>
                     
+                    <div class="input-group span-4" style="background-color: #fce4ec; border: 1px solid #f8bbd0; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="chk_indigente" style="width: auto; height: 18px; width: 18px;">
+                        <label for="chk_indigente" style="margin: 0; color: #c2185b; font-weight: bold; cursor: pointer;">SEPULTAMENTO DE INDIGENTE (Desativa campos obrigatórios)</label>
+                    </div>
+
                     <div class="input-group span-2"><label>Nome do Responsável (Família)</label><input type="text" id="resp_nome" placeholder="Nome do familiar ou empresa" required></div>
                     <div class="input-group span-1"><label>Telefone Responsável</label><input type="text" id="telefone" placeholder="(21) 99999-9999" required></div>
                     <div class="input-group span-1"><label>Grau Parentesco</label><input type="text" id="parentesco" list="lista-parentesco" placeholder="Selecione..."><datalist id="lista-parentesco"><option value="CÔNJUGE"><option value="FILHO(A)"><option value="PAI/MÃE"><option value="IRMÃO(Ã)"><option value="NETO(A)"><option value="SOBRINHO(A)"><option value="GENRO/NORA"><option value="CUNHADO(A)"><option value="TIO(A)"><option value="PRIMO(A)"><option value="OUTRO"></datalist></div>

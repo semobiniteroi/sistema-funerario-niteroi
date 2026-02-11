@@ -49,19 +49,41 @@ function safeDisplay(id, displayType) {
     if (el) el.style.display = displayType;
 }
 
-// --- LÓGICA DE ASSINATURA DIGITAL (CANVAS OTIMIZADO MOBILE) ---
+// --- LÓGICA DE INDIGENTE ---
+window.toggleIndigente = function() {
+    const chk = document.getElementById('chk_indigente');
+    // Campos que perdem a obrigatoriedade
+    const camposObrigatorios = ['resp_nome', 'telefone', 'funeraria', 'isencao', 'tipo_sepultura', 'sepul', 'qd', 'hospital', 'cap', 'data_obito', 'nome', 'causa', 'hora'];
+
+    camposObrigatorios.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (chk && chk.checked) {
+                if (el.hasAttribute('required')) {
+                    el.removeAttribute('required');
+                    el.setAttribute('data-was-required', 'true');
+                }
+            } else {
+                if (el.getAttribute('data-was-required') === 'true') {
+                     el.setAttribute('required', '');
+                     el.removeAttribute('data-was-required');
+                }
+            }
+        }
+    });
+}
+
+// --- LÓGICA DE ASSINATURA DIGITAL (CANVAS) ---
 function setupSignaturePad() {
     const canvas = document.getElementById('signature-pad');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
-    // Configurações do traço
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.strokeStyle = '#000';
 
-    // Função para pegar a posição exata (Mouse ou Touch) com correção de escala
     function getPos(canvas, evt) {
         const rect = canvas.getBoundingClientRect();
         let clientX, clientY;
@@ -152,7 +174,7 @@ window.salvarAssinatura = function() {
         const imgData = canvas.toDataURL('image/png');
         const db = getDB();
         
-        // Atualiza variável local e salva no banco de dados imediatamente
+        // Atualiza variável local e salva no banco de dados
         if (tipoAssinaturaAtual === 'responsavel') {
             assinaturaResponsavelImg = imgData;
             if (dadosAtendimentoAtual && dadosAtendimentoAtual.id) {
@@ -164,7 +186,6 @@ window.salvarAssinatura = function() {
                 db.collection("atendimentos").doc(dadosAtendimentoAtual.id).update({ assinatura_atendente: imgData });
             }
         }
-        // Sem alert() para não travar mobile
         window.fecharModalAssinatura();
     }
 }
@@ -253,7 +274,7 @@ window.renderizarTabela = function(lista) {
                               <div style="color:red; font-size:10px; font-weight:bold; margin-top:2px;">(${item.causa ? item.causa.toUpperCase() : 'CAUSA NÃO INFORMADA'})</div>
                               ${item.classificacao_obito === 'ANJO' ? '<div style="font-size:9px; color:blue; font-weight:bold;">(ANJO)</div>' : ''}`;
 
-        // Sepultura com destaque Azul se Perpétua
+        // SEPULTURA PERPÉTUA (AZUL)
         let labelPerpetua = "";
         const tipoSep = (item.tipo_sepultura || "").toUpperCase();
         if (item.perpetua === 'X' || tipoSep.includes('PERPETU')) {
@@ -311,7 +332,7 @@ window.renderizarTabela = function(lista) {
     });
 }
 
-// FUNÇÃO DE BUSCA
+// FUNÇÃO DE BUSCA (CORRIGIDA)
 window.realizarBusca = function() {
     const termo = document.getElementById('input-busca').value.trim().toUpperCase();
     if (!termo) { alert("Digite um nome para buscar."); return; }
@@ -608,11 +629,22 @@ window.abrirModal = function() {
     document.getElementById('form-atendimento').reset();
     document.getElementById('docId').value = ""; document.getElementById('protocolo_hidden').value = "";
     document.getElementById('div-motivo-edicao').classList.add('hidden');
+    
+    if (usuarioLogado && usuarioLogado.nome) {
+        const elAtendente = document.getElementById('atendente_sistema');
+        if (elAtendente) elAtendente.value = usuarioLogado.nome;
+    }
+
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
     document.getElementById('data_hora_atendimento').value = (new Date(now - offset)).toISOString().slice(0, 16);
     const fd = document.getElementById('filtro-data');
     if(fd) document.getElementById('data_ficha_modal').value = fd.value;
+    
+    // RESETAR INDIGENTE
+    const chkInd = document.getElementById('chk_indigente');
+    if(chkInd) { chkInd.checked = false; window.toggleIndigente(); }
+
     safeDisplay('modal', 'block');
 }
 
@@ -628,6 +660,10 @@ window.editar = function(id) {
             document.getElementById('data_ficha_modal').value = d.data_ficha;
             ['tanato', 'invol', 'translado', 'urna_opc'].forEach(k => { const chk = document.getElementById('chk_'+k); if(chk) chk.checked = (d[k] === 'SIM'); });
             
+            // INDIGENTE NO EDITAR
+            const chkInd = document.getElementById('chk_indigente');
+            if(chkInd) { chkInd.checked = (d.indigente === 'SIM'); window.toggleIndigente(); }
+
             if(d.data_hora_atendimento) { document.getElementById('data_hora_atendimento').value = d.data_hora_atendimento; } 
             else if(d.protocolo && d.protocolo.length >= 13) {
                  const p = d.protocolo; const y = p.substring(0,4), m = p.substring(4,6), day = p.substring(6,8); const h = p.substring(9,11), min = p.substring(11,13);
@@ -638,6 +674,10 @@ window.editar = function(id) {
             if (tipoSep.includes('PERPETU')) divP.classList.remove('hidden'); else divP.classList.add('hidden');
             document.getElementById('div-motivo-edicao').classList.remove('hidden');
             safeDisplay('modal', 'block');
+            
+            // RESETAR ASSINATURAS AO ABRIR
+            assinaturaResponsavelImg = null;
+            assinaturaAtendenteImg = null;
         }
     });
 }
@@ -659,6 +699,10 @@ if(form) {
                 else dados[el.id] = el.value;
             }
         });
+        
+        // Garantir que o nome do atendente vai
+        if(!dados.atendente_sistema && usuarioLogado) { dados.atendente_sistema = usuarioLogado.nome; }
+
         dados.data_hora_atendimento = document.getElementById('data_hora_atendimento').value;
         dados.data_ficha = document.getElementById('data_ficha_modal').value;
         dados.local = document.getElementById('filtro-local').value;
@@ -666,6 +710,7 @@ if(form) {
         dados.car = tipoSep.includes('CARNEIRO') ? 'X' : '';
         dados.cova_rasa = tipoSep.includes('COVA') ? 'X' : '';
         dados.perpetua = (tipoSep.includes('PERPETUA') || tipoSep.includes('PERPETUO')) ? 'X' : '';
+        dados.indigente = document.getElementById('chk_indigente').checked ? 'SIM' : 'NAO';
 
         if(!id && !dados.protocolo) dados.protocolo = window.gerarProtocolo();
 
@@ -682,6 +727,9 @@ if(form) {
 
 document.addEventListener('DOMContentLoaded', () => {
     window.carregarListaHorarios();
+    const chkIndigente = document.getElementById('chk_indigente');
+    if(chkIndigente) { chkIndigente.addEventListener('change', window.toggleIndigente); }
+
     const seletorCausas = document.getElementById('seletor_causas');
     const inputCausa = document.getElementById('causa');
     if (seletorCausas && inputCausa) { seletorCausas.addEventListener('change', function() { if (this.value) { if (inputCausa.value === "") { inputCausa.value = this.value; } else { inputCausa.value += " / " + this.value; } this.value = ""; } }); }
@@ -695,13 +743,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if(fd) fd.addEventListener('change', (e) => window.atualizarListener(e.target.value, document.getElementById('filtro-local').value));
 });
 
-// VISUALIZAR (ATUALIZADA PARA LER DO BANCO)
 window.visualizar = function(id) {
     const database = getDB();
     const modalView = document.getElementById('modal-visualizar');
     if(!modalView || !database) return;
     
-    // Reset local
+    // RESETAR ASSINATURAS AO ABRIR
     assinaturaResponsavelImg = null;
     assinaturaAtendenteImg = null;
 
@@ -710,7 +757,6 @@ window.visualizar = function(id) {
             const d = doc.data();
             dadosAtendimentoAtual = d;
             
-            // CARREGA ASSINATURAS DO BANCO
             if(d.assinatura_responsavel) assinaturaResponsavelImg = d.assinatura_responsavel;
             if(d.assinatura_atendente) assinaturaAtendenteImg = d.assinatura_atendente;
 
@@ -745,12 +791,11 @@ window.onclick = function(event) { const t = event.target; if (t == document.get
 window.fazerLogout = function() { sessionStorage.removeItem('usuarioLogado'); window.location.reload(); }
 window.checarLoginEnter = function(e) { if(e.key==='Enter') window.fazerLogin(); }
 window.bloquearTela = function() { const t = document.getElementById('tela-bloqueio'); if(t) t.style.display = 'flex'; }
-
 window.gerarEtiqueta = function() { if (!dadosAtendimentoAtual) return; const d = dadosAtendimentoAtual; const fd = (dataStr) => { if (!dataStr) return ""; const p = dataStr.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }; const dataF = fd(d.data_ficha); const h = `<html><head><style>@page{size:landscape;margin:0}body{font-family:Arial,sans-serif;margin:0;padding:0;height:100vh;width:100vw;display:flex;justify-content:center;align-items:center;overflow:hidden}.box{width:95vw;height:90vh;border:5px solid #000;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;text-align:center;padding:10px}.header-img{max-height:100px;margin-bottom:10px}.title{font-size:24px;font-weight:900;text-transform:uppercase;border-bottom:3px solid #000;padding-bottom:5px;display:inline-block;margin-bottom:30px}.group{margin-bottom:30px;width:100%}.label{font-size:18px;color:#333;font-weight:bold;text-transform:uppercase;margin-bottom:5px}.val-nome{font-size:55px;font-weight:900;text-transform:uppercase;line-height:1.1}.val-data{font-size:40px;font-weight:800}.val-local{font-size:35px;font-weight:800;text-transform:uppercase}</style></head><body><div class="box"><div><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" class="header-img"><br><div class="title">IDENTIFICAÇÃO DE VELÓRIO</div></div><div class="group"><div class="label">FALECIDO(A)</div><div class="val-nome">${d.nome}</div></div><div class="group"><div class="label">SEPULTAMENTO</div><div class="val-data">${dataF} às ${d.hora}</div></div><div class="group"><div class="label">LOCAL</div><div class="val-local">${d.cap}<br>${d.local || "CEMITÉRIO DO MARUÍ"}</div></div></div><script>window.onload=function(){setTimeout(function(){window.print()},500)}</script></body></html>`; const w = window.open('','_blank'); if(w) { w.document.write(h); w.document.close(); } }
 window.enviarWhatsapp = function() { if (!dadosAtendimentoAtual) return; const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : ''; if (!t) { alert("Sem telefone."); return; } if (!c) { alert("Sem GPS."); return; } window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`, '_blank'); }
 window.enviarSMS = function() { if (!dadosAtendimentoAtual) return; const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : ''; if (!t) { alert("Sem telefone."); return; } window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`; }
 
-// --- GERAR COMPROVANTE (ATUALIZADO) ---
+// --- GERAR COMPROVANTE (CORRIGIDO: 1 LINHA OU IMAGEM) ---
 window.gerarComprovante = function() {
     if (!dadosAtendimentoAtual) return;
     const d = dadosAtendimentoAtual;
@@ -769,41 +814,26 @@ window.gerarComprovante = function() {
     if (txtSep.includes("PERPETUA") || txtSep.includes("PERPETUO")) { txtSep = `${txtSep} (LIVRO: ${d.livro_perpetua||'-'} / FOLHA: ${d.folha_perpetua||'-'}) - ${classificacao}`; } else if (txtSep.includes("MEMBRO")) { txtSep = `MEMBRO AMPUTADO (${d.tipo_membro || 'Não informado'})`; } else { txtSep = `${txtSep} - ${classificacao}`; }
     let dataExumacao = ""; if (d.data_ficha) { const parts = d.data_ficha.split('-'); let ano = parseInt(parts[0]); const mes = parts[1]; const dia = parts[2]; const addAnos = (d.classificacao_obito === 'ANJO') ? 2 : 3; dataExumacao = `${dia}/${mes}/${ano + addAnos}`; }
 
+    // ASSINATURA FAMÍLIA (IMAGEM OU LINHA PONTILHADA VAZIA)
     let blocoAssinaturaFamilia = "";
     if (assinaturaResponsavelImg) {
-        blocoAssinaturaFamilia = `<div style="text-align:center;"><img src="${assinaturaResponsavelImg}" style="max-height:60px; max-width:80%;"></div>`;
+        blocoAssinaturaFamilia = `<div style="text-align:center; height:45px;"><img src="${assinaturaResponsavelImg}" style="max-height:40px; max-width:80%;"></div>`;
     } else {
-        blocoAssinaturaFamilia = `<div style="height:40px;"></div>`;
+        blocoAssinaturaFamilia = `<div style="height:45px;"></div>`; // Espaço vazio para assinar fisicamente
     }
 
+    // ASSINATURA ATENDENTE (IMAGEM OU LINHA PONTILHADA VAZIA)
     let blocoAssinaturaAtendente = "";
     if (assinaturaAtendenteImg) {
-        blocoAssinaturaAtendente = `<div style="text-align:center;"><img src="${assinaturaAtendenteImg}" style="max-height:60px; max-width:80%;"></div>`;
+        blocoAssinaturaAtendente = `<div style="text-align:center; height:45px;"><img src="${assinaturaAtendenteImg}" style="max-height:40px; max-width:80%;"></div>`;
     } else {
-        blocoAssinaturaAtendente = `<div style="height:40px;"></div>`;
+        blocoAssinaturaAtendente = `<div style="height:45px;"></div>`; // Espaço vazio
     }
 
-    const htmlComprovante = `<html><head><title>Comprovante</title><style>@page { size: A4 portrait; margin: 8mm; } body { font-family: Arial, sans-serif; font-size: 14px; margin: 0; padding: 10px; line-height: 1.3; color: #000; } .header { text-align: center; margin-bottom: 25px; position: relative; } .header h2 { font-size: 20px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; color: #000; } .protocolo { position: absolute; top: -5px; right: 0; font-size: 14px; font-weight: bold; border: 2px solid #000; padding: 5px 10px; } .content { width: 100%; } .line { margin-bottom: 4px; white-space: nowrap; overflow: hidden; } .bold { font-weight: 900; } .red { color: red; font-weight: bold; } .section-title { font-weight: 900; margin-top: 15px; margin-bottom: 2px; text-transform: uppercase; font-size: 14px; } .two-columns { display: flex; justify-content: space-between; margin-top: 10px; } .col-left { width: 60%; } .col-right { width: 38%; } .assinaturas-block { display: flex; justify-content: space-between; margin-top: 25px; margin-bottom: 10px; gap: 20px; } .ass-line { border-top: 1px solid #000; text-align: center; padding-top: 2px; flex: 1; font-size: 12px; } .obs-text { font-weight: bold; font-size: 12px; margin-top: 5px; } .box-lateral { border: 2px solid #000; padding: 5px; font-weight: 900; font-size: 12px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; } .termo-juridico { text-align: justify; font-size: 12px; line-height: 1.3; } .footer-line { margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; font-weight: 900; font-size: 12px; } .aviso-final { border: 2px solid #000; padding: 5px; margin-top: 10px; font-weight: 900; text-align: justify; font-size: 12px; line-height: 1.3; } .spacer { margin-left: 10px; } </style></head><body><div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height: 60px; margin-bottom: 5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${d.nome.toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome || '').toUpperCase()} <span style="margin-left:5px; font-weight:normal;">${relacao}</span></div><div class="line"><span class="bold">Funerária:</span> ${d.funeraria.toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria || 'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${(d.atendente_sistema||'SISTEMA').toUpperCase()}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dataHoraAtendimentoTexto}</div><div class="line"><span class="bold">Data:</span> ${fd(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora} <span class="bold spacer">SEPULTURA:</span> ${d.sepul} <span class="bold spacer">${(d.local && d.local.includes("MARUÍ")) ? "QUADRA:" : "RUA:"}</span> ${d.qd} <span class="bold spacer">CAPELA:</span> ${d.cap}</div><div class="line"><span class="bold">COM CAPELA</span> ${chk(cc)} <span class="bold">SEM CAPELA</span> ${chk(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${fd(d.data_obito)} AS ${txtHoraObito} <span class="red spacer">[${tempoDecorrido}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${chkEC('SOLTEIRO')} SOLTEIRO ${chkEC('CASADO')} CASADO ${chkEC('VIUVO')} VÍUVO ${chkEC('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${chkEC('DIVORCIADO')} DIVORCIADO ${chkEC('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px; font-size:14px; border: 1px solid #000; padding: 5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${txtSep}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div>
-    
-    <div class="assinaturas-block">
-        <div class="ass-line">
-            ${blocoAssinaturaAtendente}
-            <div style="border-top:1px solid #000;">Acolhimento / Atendente:<br><b>${(d.atendente_sistema||'').toUpperCase()}</b></div>
-        </div>
-        <div class="ass-line">
-            ${blocoAssinaturaFamilia}
-            <div style="border-top:1px solid #000;">Assinatura do responsável/família<br><b>${(d.resp_nome||'').toUpperCase()}</b></div>
-        </div>
-    </div>
-    
-    <div class="obs-box">OBS: PASSANDO DAS 36 HORAS DO FALECIMENTO SOMENTE COM TANATOPRAXIA.</div><div class="obs-box">OBS.: VELÓRIO COM DURAÇÃO DE DUAS HORAS ANTES DO SEPULTAMENTO. EM CASO DE ATRASO DO SERVIÇO FUNERÁRIO NÃO SERÁ ESTENDIDO O HORÁRIO ESTABELECIDO.</div><div class="line" style="margin-top: 15px; border: 2px solid #000; padding: 5px;"><span class="bold">PREVISÃO DE EXUMAÇÃO:</span> A partir de <span class="red" style="font-size:16px;">${dataExumacao}</span><br><span style="font-size:10px;">(Legislação: 3 anos para Adultos / 2 anos para Crianças até 11 anos)</span>
-    
-    <div style="margin-top: 15px; text-align: center;">
-        ${blocoAssinaturaFamilia}
-        <div style="border-top: 1px solid #000; width: 60%; margin: 0 auto;">Assinatura do Responsável (Ciência do Prazo)</div>
-    </div>
-    
-    </div><div class="two-columns"><div class="col-left"><div style="text-align:center; font-weight:bold; text-decoration:underline; margin-bottom:5px;">TERMO DE COMPROMISSO CEMITÉRIOS MUNICIPAIS</div><div class="termo-juridico">Sendo o <span class="bold">FALECIDO CASADO</span>, o responsável perante, o Cemitério do MARUÍ, SÃO FRANCISCO E ITAIPU será obrigatoriamente o <span class="bold">CONJUGE</span>.<br>Sendo o <span class="bold">FALECIDO VIÚVO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU serão obrigatoriamente os <span class="bold">FILHOS</span>.<br>Sendo o <span class="bold">FALECIDO SOLTEIRO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU obrigatoriamente os <span class="bold">FILHOS, PAIS, IRMÃOS</span>.<br>Será exigida a apresentação de documentos de <span class="bold" style="text-decoration:underline">IDENTIDADE e CPF</span>.</div><div class="assinaturas-block" style="margin-top: 40px;"><div style="flex:1;"></div><div class="ass-line">Assinatura funcionário/família</div></div></div><div class="col-right"><div class="box-lateral"><div>CAPELAS MUNICIPAIS E PARTICULARES:</div><br><div>PAGAMENTO E NOTA FISCAL DAS TAXAS MUNICIPAIS E INVOL COM DUAS HORAS ANTES DO SEPULTAMENTO</div><br><br><div>CLIENTE: _____________________</div></div></div></div><div class="footer-line">MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome || '').toUpperCase()}</div><div style="font-weight:bold; font-size:12px; margin-top:5px;">TEL: ${d.telefone||''}</div><div class="aviso-final"><span style="text-decoration:underline">COMUNICADO AOS FAMILIARES DO FALECIDO E AS EMPRESAS FUNERÁRIAS RESPONSÁVEIS PELO SEPULTAMENTO.</span><br>Informamos que somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação dos seguintes documentos:<span class="bold">GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL PELO SERVIÇO), TAXAS MUNICIPAIS PAGAS e INVOL.</span></div></div></body><script>window.onload=function(){window.print()}</script></html>`;
+    let nomeAtendente = (d.atendente_sistema || (usuarioLogado ? usuarioLogado.nome : 'N/A')).toUpperCase();
+
+    // REMOVIDO border-top do style .ass-line na string abaixo para corrigir o erro das duas linhas
+    const htmlComprovante = `<html><head><title>Comprovante</title><style>@page { size: A4 portrait; margin: 8mm; } body { font-family: Arial, sans-serif; font-size: 14px; margin: 0; padding: 10px; line-height: 1.3; color: #000; } .header { text-align: center; margin-bottom: 25px; position: relative; } .header h2 { font-size: 20px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; color: #000; } .protocolo { position: absolute; top: -5px; right: 0; font-size: 14px; font-weight: bold; border: 2px solid #000; padding: 5px 10px; } .content { width: 100%; } .line { margin-bottom: 4px; white-space: nowrap; overflow: hidden; } .bold { font-weight: 900; } .red { color: red; font-weight: bold; } .section-title { font-weight: 900; margin-top: 15px; margin-bottom: 2px; text-transform: uppercase; font-size: 14px; } .two-columns { display: flex; justify-content: space-between; margin-top: 10px; } .col-left { width: 60%; } .col-right { width: 38%; } .assinaturas-block { display: flex; justify-content: space-between; margin-top: 25px; margin-bottom: 10px; gap: 20px; } .ass-line { text-align: center; padding-top: 2px; flex: 1; font-size: 12px; } .obs-text { font-weight: bold; font-size: 12px; margin-top: 5px; } .box-lateral { border: 2px solid #000; padding: 5px; font-weight: 900; font-size: 12px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; } .termo-juridico { text-align: justify; font-size: 12px; line-height: 1.3; } .footer-line { margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; font-weight: 900; font-size: 12px; } .aviso-final { border: 2px solid #000; padding: 5px; margin-top: 10px; font-weight: 900; text-align: justify; font-size: 12px; line-height: 1.3; } .spacer { margin-left: 10px; } </style></head><body><div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height: 60px; margin-bottom: 5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${d.nome.toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome || '').toUpperCase()} <span style="margin-left:5px; font-weight:normal;">${relacao}</span></div><div class="line"><span class="bold">Funerária:</span> ${d.funeraria.toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria || 'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${nomeAtendente}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dataHoraAtendimentoTexto}</div><div class="line"><span class="bold">Data:</span> ${fd(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora} <span class="bold spacer">SEPULTURA:</span> ${d.sepul} <span class="bold spacer">${(d.local && d.local.includes("MARUÍ")) ? "QUADRA:" : "RUA:"}</span> ${d.qd} <span class="bold spacer">CAPELA:</span> ${d.cap}</div><div class="line"><span class="bold">COM CAPELA</span> ${chk(cc)} <span class="bold">SEM CAPELA</span> ${chk(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${fd(d.data_obito)} AS ${txtHoraObito} <span class="red spacer">[${tempoDecorrido}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${chkEC('SOLTEIRO')} SOLTEIRO ${chkEC('CASADO')} CASADO ${chkEC('VIUVO')} VÍUVO ${chkEC('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${chkEC('DIVORCIADO')} DIVORCIADO ${chkEC('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px; font-size:14px; border: 1px solid #000; padding: 5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${txtSep}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div><div class="assinaturas-block"><div class="ass-line">${blocoAssinaturaAtendente}<div style="border-top:1px solid #000;">Acolhimento / Atendente:<br><b>${nomeAtendente}</b></div></div><div class="ass-line">${blocoAssinaturaFamilia}<div style="border-top:1px solid #000;">Assinatura do responsável/família<br><b>${(d.resp_nome||'').toUpperCase()}</b></div></div></div><div class="obs-box">OBS: PASSANDO DAS 36 HORAS DO FALECIMENTO SOMENTE COM TANATOPRAXIA.</div><div class="obs-box">OBS.: VELÓRIO COM DURAÇÃO DE DUAS HORAS ANTES DO SEPULTAMENTO. EM CASO DE ATRASO DO SERVIÇO FUNERÁRIO NÃO SERÁ ESTENDIDO O HORÁRIO ESTABELECIDO.</div><div class="line" style="margin-top: 15px; border: 2px solid #000; padding: 5px;"><span class="bold">PREVISÃO DE EXUMAÇÃO:</span> A partir de <span class="red" style="font-size:16px;">${dataExumacao}</span><br><span style="font-size:10px;">(Legislação: 3 anos para Adultos / 2 anos para Crianças até 11 anos)</span><div style="margin-top: 15px; text-align: center;">${blocoAssinaturaFamilia}<div style="border-top: 1px solid #000; width: 60%; margin: 0 auto;">Assinatura do Responsável (Ciência do Prazo)</div></div></div><div class="two-columns"><div class="col-left"><div style="text-align:center; font-weight:bold; text-decoration:underline; margin-bottom:5px;">TERMO DE COMPROMISSO CEMITÉRIOS MUNICIPAIS</div><div class="termo-juridico">Sendo o <span class="bold">FALECIDO CASADO</span>, o responsável perante, o Cemitério do MARUÍ, SÃO FRANCISCO E ITAIPU será obrigatoriamente o <span class="bold">CONJUGE</span>.<br>Sendo o <span class="bold">FALECIDO VIÚVO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU serão obrigatoriamente os <span class="bold">FILHOS</span>.<br>Sendo o <span class="bold">FALECIDO SOLTEIRO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU obrigatoriamente os <span class="bold">FILHOS, PAIS, IRMÃOS</span>.<br>Será exigida a apresentação de documentos de <span class="bold" style="text-decoration:underline">IDENTIDADE e CPF</span>.</div><div class="assinaturas-block" style="margin-top: 40px;"><div style="flex:1;"></div><div class="ass-line">Assinatura funcionário/família</div></div></div><div class="col-right"><div class="box-lateral"><div>CAPELAS MUNICIPAIS E PARTICULARES:</div><br><div>PAGAMENTO E NOTA FISCAL DAS TAXAS MUNICIPAIS E INVOL COM DUAS HORAS ANTES DO SEPULTAMENTO</div><br><br><div>CLIENTE: _____________________</div></div></div></div><div class="footer-line">MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome || '').toUpperCase()}</div><div style="font-weight:bold; font-size:12px; margin-top:5px;">TEL: ${d.telefone||''}</div><div class="aviso-final"><span style="text-decoration:underline">COMUNICADO AOS FAMILIARES DO FALECIDO E AS EMPRESAS FUNERÁRIAS RESPONSÁVEIS PELO SEPULTAMENTO.</span><br>Informamos que somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação dos seguintes documentos:<span class="bold">GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL PELO SERVIÇO), TAXAS MUNICIPAIS PAGAS e INVOL.</span></div></div></body><script>window.onload=function(){window.print()}</script></html>`;
     
     const w = window.open('','_blank'); w.document.write(htmlComprovante); w.document.close();
 }
