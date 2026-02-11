@@ -103,4 +103,154 @@ body.design-classico .btn-icon { border: 1px solid #000 !important; border-radiu
     table { width: 100% !important; border-collapse: collapse !important; } 
     th, td { border: 1px solid #000 !important; padding: 2px !important; color: black !important; font-size: 8px !important; } 
     .header-prefeitura { box-shadow: none; border-bottom: 2px solid #000; padding: 5px; height: auto; }
+/* --- BLOCO DE RESPONSIVIDADE (ADICIONAR AO FINAL DO ARQUIVO) --- */
+
+@media only screen and (max-width: 768px) {
+    /* HEADER: Empilhar elementos */
+    .header-prefeitura {
+        flex-direction: column;
+        height: auto;
+        padding: 15px;
+        gap: 10px;
+    }
+    
+    .logo-area {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+    
+    .titulo-area h3 {
+        font-size: 16px;
+        text-align: center;
+    }
+
+    .info-area {
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .controles-topo {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+
+    .topo-box {
+        width: 100%;
+        margin-right: 0;
+        box-sizing: border-box; /* Garante que padding não estoure a largura */
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    .search-box input {
+        width: 100%; /* Input ocupa todo espaço */
+        flex: 1;
+    }
+
+    .user-controls {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 10px;
+        gap: 5px;
+    }
+    
+    .user-controls span {
+        display: none; /* Esconde nome do usuário em telas muito pequenas pra economizar espaço */
+    }
+
+    /* CONTEÚDO PRINCIPAL */
+    .main-content {
+        padding: 10px;
+        margin-top: 20px;
+    }
+
+    /* CONTROLES (Botões de imprimir/novo) */
+    .controles {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .controles button {
+        width: 100%;
+    }
+
+    /* TABELA: Habilitar rolagem horizontal */
+    .tabela-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 5px;
+        border: 1px solid #eee;
+    }
+    
+    table {
+        min-width: 1000px; /* Força a tabela a ter largura mínima para não espremer colunas */
+    }
+    
+    /* MODAL: Ajustar largura e grid */
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+        max-height: 85vh; /* Evita que o modal passe da tela */
+        overflow-y: auto; /* Permite rolar o modal */
+        padding: 15px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr; /* Força 1 coluna em tudo */
+        gap: 10px;
+    }
+
+    /* Força todos os inputs a ocuparem 100% da linha no mobile */
+    .input-group.span-1, 
+    .input-group.span-2, 
+    .input-group.span-3, 
+    .input-group.span-4 {
+        grid-column: span 1 !important;
+    }
+    
+    /* Ajustes específicos de layout dentro do form */
+    #div-local-domicilio, #div-perpetua {
+        flex-direction: column !important;
+    }
+    
+    /* Causa Morte: Seletor e Input um abaixo do outro */
+    .input-group label + div { 
+        flex-direction: column;
+    }
+    
+    #seletor_causas, #causa {
+        width: 100% !important;
+        margin-bottom: 5px;
+    }
+
+    /* RODAPÉ DO MODAL */
+    .modal-footer-custom {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .footer-group {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .btn-modal {
+        width: 100%;
+        margin: 0;
+    }
+
+    /* LOGIN */
+    .bloqueio-box {
+        width: 90%;
+        padding: 20px;
+    }
+}
 }
