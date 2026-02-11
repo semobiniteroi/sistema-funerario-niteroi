@@ -19,10 +19,12 @@ let dadosEstatisticasExportacao = [];
 let chartInstances = {}; 
 let usuarioLogado = null; 
 
-// VARIÁVEIS PARA ASSINATURA
+// VARIÁVEIS PARA ASSINATURA (SEPARADAS)
 let signaturePad = null;
 let isDrawing = false;
-let assinaturaImagem = null; 
+let assinaturaResponsavelImg = null;
+let assinaturaAtendenteImg = null;
+let tipoAssinaturaAtual = ''; // 'responsavel' ou 'atendente'
 
 try {
     if (typeof firebase !== 'undefined') {
@@ -96,7 +98,14 @@ function setupSignaturePad() {
     canvas.addEventListener('touchend', endDraw);
 }
 
-window.abrirModalAssinatura = function() {
+// Abre o modal de assinatura sabendo QUEM está assinando
+window.abrirModalAssinatura = function(tipo) {
+    tipoAssinaturaAtual = tipo;
+    const titulo = document.getElementById('titulo-assinatura');
+    if(titulo) {
+        titulo.innerText = (tipo === 'responsavel') ? 'Assinatura do Responsável' : 'Assinatura da Equipe';
+    }
+    
     safeDisplay('modal-assinatura', 'flex');
     window.limparAssinatura(); 
     setTimeout(setupSignaturePad, 100); 
@@ -112,15 +121,21 @@ window.limparAssinatura = function() {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-    assinaturaImagem = null;
+    // Não limpa a variável aqui, só o canvas, para permitir re-assinar se errar
 }
 
-window.salvarAssinaturaEImprimir = function() {
+window.salvarAssinatura = function() {
     const canvas = document.getElementById('signature-pad');
     if (canvas) {
-        assinaturaImagem = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/png');
+        if (tipoAssinaturaAtual === 'responsavel') {
+            assinaturaResponsavelImg = imgData;
+            alert("Assinatura do Responsável capturada!");
+        } else {
+            assinaturaAtendenteImg = imgData;
+            alert("Assinatura da Equipe capturada!");
+        }
         window.fecharModalAssinatura();
-        window.gerarComprovante(); 
     }
 }
 
@@ -593,6 +608,10 @@ window.editar = function(id) {
             if (tipoSep.includes('PERPETU')) divP.classList.remove('hidden'); else divP.classList.add('hidden');
             document.getElementById('div-motivo-edicao').classList.remove('hidden');
             safeDisplay('modal', 'block');
+            
+            // RESETAR ASSINATURAS AO ABRIR (Nova visualização limpa)
+            assinaturaResponsavelImg = null;
+            assinaturaAtendenteImg = null;
         }
     });
 }
@@ -650,11 +669,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if(fd) fd.addEventListener('change', (e) => window.atualizarListener(e.target.value, document.getElementById('filtro-local').value));
 });
 
-// VISUALIZAR
 window.visualizar = function(id) {
     const database = getDB();
     const modalView = document.getElementById('modal-visualizar');
     if(!modalView || !database) return;
+    
+    // RESETAR ASSINATURAS AO ABRIR (Para garantir que não use assinaturas de outro atendimento)
+    assinaturaResponsavelImg = null;
+    assinaturaAtendenteImg = null;
+
     database.collection("atendimentos").doc(id).get().then(doc => {
         if(doc.exists) {
             const d = doc.data();
@@ -695,7 +718,7 @@ window.gerarEtiqueta = function() { if (!dadosAtendimentoAtual) return; const d 
 window.enviarWhatsapp = function() { if (!dadosAtendimentoAtual) return; const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : ''; if (!t) { alert("Sem telefone."); return; } if (!c) { alert("Sem GPS."); return; } window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`, '_blank'); }
 window.enviarSMS = function() { if (!dadosAtendimentoAtual) return; const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : ''; if (!t) { alert("Sem telefone."); return; } window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`; }
 
-// --- GERAR COMPROVANTE (COM ASSINATURA) ---
+// --- GERAR COMPROVANTE (ATUALIZADO COM 2 ASSINATURAS DIGITAIS) ---
 window.gerarComprovante = function() {
     if (!dadosAtendimentoAtual) return;
     const d = dadosAtendimentoAtual;
@@ -714,28 +737,39 @@ window.gerarComprovante = function() {
     if (txtSep.includes("PERPETUA") || txtSep.includes("PERPETUO")) { txtSep = `${txtSep} (LIVRO: ${d.livro_perpetua||'-'} / FOLHA: ${d.folha_perpetua||'-'}) - ${classificacao}`; } else if (txtSep.includes("MEMBRO")) { txtSep = `MEMBRO AMPUTADO (${d.tipo_membro || 'Não informado'})`; } else { txtSep = `${txtSep} - ${classificacao}`; }
     let dataExumacao = ""; if (d.data_ficha) { const parts = d.data_ficha.split('-'); let ano = parseInt(parts[0]); const mes = parts[1]; const dia = parts[2]; const addAnos = (d.classificacao_obito === 'ANJO') ? 2 : 3; dataExumacao = `${dia}/${mes}/${ano + addAnos}`; }
 
-    let blocoAssinaturaHTML = "";
-    if (assinaturaImagem) {
-        blocoAssinaturaHTML = `<div style="text-align:center;"><img src="${assinaturaImagem}" style="max-height:60px; max-width:80%;"></div>`;
+    // BLOCO DE ASSINATURA FAMÍLIA
+    let blocoAssinaturaFamilia = "";
+    if (assinaturaResponsavelImg) {
+        blocoAssinaturaFamilia = `<div style="text-align:center;"><img src="${assinaturaResponsavelImg}" style="max-height:60px; max-width:80%;"></div>`;
     } else {
-        blocoAssinaturaHTML = `<div style="height:40px;"></div>`;
+        blocoAssinaturaFamilia = `<div style="height:40px;"></div>`;
+    }
+
+    // BLOCO DE ASSINATURA ATENDENTE (NOVO)
+    let blocoAssinaturaAtendente = "";
+    if (assinaturaAtendenteImg) {
+        blocoAssinaturaAtendente = `<div style="text-align:center;"><img src="${assinaturaAtendenteImg}" style="max-height:60px; max-width:80%;"></div>`;
+    } else {
+        blocoAssinaturaAtendente = `<div style="height:40px;"></div>`;
     }
 
     const htmlComprovante = `<html><head><title>Comprovante</title><style>@page { size: A4 portrait; margin: 8mm; } body { font-family: Arial, sans-serif; font-size: 14px; margin: 0; padding: 10px; line-height: 1.3; color: #000; } .header { text-align: center; margin-bottom: 25px; position: relative; } .header h2 { font-size: 20px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; color: #000; } .protocolo { position: absolute; top: -5px; right: 0; font-size: 14px; font-weight: bold; border: 2px solid #000; padding: 5px 10px; } .content { width: 100%; } .line { margin-bottom: 4px; white-space: nowrap; overflow: hidden; } .bold { font-weight: 900; } .red { color: red; font-weight: bold; } .section-title { font-weight: 900; margin-top: 15px; margin-bottom: 2px; text-transform: uppercase; font-size: 14px; } .two-columns { display: flex; justify-content: space-between; margin-top: 10px; } .col-left { width: 60%; } .col-right { width: 38%; } .assinaturas-block { display: flex; justify-content: space-between; margin-top: 25px; margin-bottom: 10px; gap: 20px; } .ass-line { border-top: 1px solid #000; text-align: center; padding-top: 2px; flex: 1; font-size: 12px; } .obs-text { font-weight: bold; font-size: 12px; margin-top: 5px; } .box-lateral { border: 2px solid #000; padding: 5px; font-weight: 900; font-size: 12px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; } .termo-juridico { text-align: justify; font-size: 12px; line-height: 1.3; } .footer-line { margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; font-weight: 900; font-size: 12px; } .aviso-final { border: 2px solid #000; padding: 5px; margin-top: 10px; font-weight: 900; text-align: justify; font-size: 12px; line-height: 1.3; } .spacer { margin-left: 10px; } </style></head><body><div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height: 60px; margin-bottom: 5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${d.nome.toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome || '').toUpperCase()} <span style="margin-left:5px; font-weight:normal;">${relacao}</span></div><div class="line"><span class="bold">Funerária:</span> ${d.funeraria.toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria || 'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${(d.atendente_sistema||'SISTEMA').toUpperCase()}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dataHoraAtendimentoTexto}</div><div class="line"><span class="bold">Data:</span> ${fd(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora} <span class="bold spacer">SEPULTURA:</span> ${d.sepul} <span class="bold spacer">${(d.local && d.local.includes("MARUÍ")) ? "QUADRA:" : "RUA:"}</span> ${d.qd} <span class="bold spacer">CAPELA:</span> ${d.cap}</div><div class="line"><span class="bold">COM CAPELA</span> ${chk(cc)} <span class="bold">SEM CAPELA</span> ${chk(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${fd(d.data_obito)} AS ${txtHoraObito} <span class="red spacer">[${tempoDecorrido}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${chkEC('SOLTEIRO')} SOLTEIRO ${chkEC('CASADO')} CASADO ${chkEC('VIUVO')} VÍUVO ${chkEC('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${chkEC('DIVORCIADO')} DIVORCIADO ${chkEC('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px; font-size:14px; border: 1px solid #000; padding: 5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${txtSep}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div>
     
     <div class="assinaturas-block">
         <div class="ass-line">
-            <div style="height:40px;"></div> <div style="border-top:1px solid #000;">Acolhimento / Atendente:<br><b>${(d.atendente_sistema||'').toUpperCase()}</b></div>
+            ${blocoAssinaturaAtendente}
+            <div style="border-top:1px solid #000;">Acolhimento / Atendente:<br><b>${(d.atendente_sistema||'').toUpperCase()}</b></div>
         </div>
         <div class="ass-line">
-            ${blocoAssinaturaHTML} <div style="border-top:1px solid #000;">Assinatura do responsável/família<br><b>${(d.resp_nome||'').toUpperCase()}</b></div>
+            ${blocoAssinaturaFamilia}
+            <div style="border-top:1px solid #000;">Assinatura do responsável/família<br><b>${(d.resp_nome||'').toUpperCase()}</b></div>
         </div>
     </div>
     
     <div class="obs-box">OBS: PASSANDO DAS 36 HORAS DO FALECIMENTO SOMENTE COM TANATOPRAXIA.</div><div class="obs-box">OBS.: VELÓRIO COM DURAÇÃO DE DUAS HORAS ANTES DO SEPULTAMENTO. EM CASO DE ATRASO DO SERVIÇO FUNERÁRIO NÃO SERÁ ESTENDIDO O HORÁRIO ESTABELECIDO.</div><div class="line" style="margin-top: 15px; border: 2px solid #000; padding: 5px;"><span class="bold">PREVISÃO DE EXUMAÇÃO:</span> A partir de <span class="red" style="font-size:16px;">${dataExumacao}</span><br><span style="font-size:10px;">(Legislação: 3 anos para Adultos / 2 anos para Crianças até 11 anos)</span>
     
     <div style="margin-top: 15px; text-align: center;">
-        ${blocoAssinaturaHTML}
+        ${blocoAssinaturaFamilia}
         <div style="border-top: 1px solid #000; width: 60%; margin: 0 auto;">Assinatura do Responsável (Ciência do Prazo)</div>
     </div>
     

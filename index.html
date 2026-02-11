@@ -20,35 +20,50 @@
             width: 100%;
         }
 
-        /* CORREÇÃO DO ESPAÇAMENTO DOS BOTÕES */
+        /* AJUSTE DOS BOTÕES DO RODAPÉ (SOLICITADO) */
         .modal-footer-custom {
             display: flex;
-            justify-content: space-between;
+            justify-content: center; /* Centralizar */
             align-items: center;
             padding-top: 15px;
             border-top: 1px solid #eee;
             flex-wrap: wrap;
-            gap: 15px; /* Espaço entre os grupos de botões */
+            gap: 8px; /* Espaço menor entre botões */
         }
 
-        .footer-group {
+        /* Estilo base para botões do rodapé mais compactos */
+        .modal-footer-custom button {
+            padding: 8px 12px; /* Menor padding */
+            font-size: 13px;   /* Fonte menor */
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
             display: flex;
-            gap: 10px; /* Espaço entre os botões individuais */
-            flex-wrap: wrap;
+            align-items: center;
+            gap: 5px;
+            color: white;
+            font-weight: 500;
+            flex-grow: 1; /* Ocupar espaço igual */
+            justify-content: center;
+            max-width: 180px; /* Largura máxima para não esticar demais */
+            min-width: 120px; /* Largura mínima para não quebrar texto */
         }
 
-        /* Responsividade para botões em telas pequenas */
+        /* Cores Específicas */
+        .btn-print { background-color: #555; }
+        .btn-tag { background-color: #e67e22; }
+        .btn-sign-fam { background-color: #663399; }
+        .btn-sign-func { background-color: #8e44ad; }
+        .btn-wpp { background-color: #2ecc71; }
+        .btn-sms { background-color: #3498db; }
+        .btn-close { background-color: #95a5a6; }
+
         @media (max-width: 768px) {
             .modal-footer-custom {
-                flex-direction: column;
+                padding-bottom: 20px; /* Espaço extra no mobile */
             }
-            .footer-group {
-                width: 100%;
-                justify-content: center;
-            }
-            .footer-group button {
-                flex: 1;
-                min-width: 120px;
+            .modal-footer-custom button {
+                max-width: 48%; /* 2 botões por linha no mobile */
             }
         }
     </style>
@@ -243,7 +258,19 @@
         </div>
     </div>
 
-    <div id="modal-visualizar" class="modal"><div class="modal-content" style="max-width: 700px; background: #fff;"><div class="modal-header"><h3>Ficha de Atendimento</h3><span class="close" onclick="fecharModalVisualizar()">×</span></div><div class="ficha-visualizacao"><div class="ficha-header"><h2>Prefeitura Municipal de Niterói</h2><p>Coordenadoria Municipal de Serviços Funerários</p></div><div class="ficha-linha"><span class="ficha-label">PROTOCOLO:</span><span class="ficha-valor" id="view_protocolo" style="font-family:'Courier New'; letter-spacing:1px; font-size:16px;"></span></div><div class="ficha-linha"><span class="ficha-label">ATENDENTE:</span><span class="ficha-valor" id="view_atendente" style="color:var(--primary-color); font-weight:bold;"></span></div><div class="ficha-linha"><span class="ficha-label">DATA/HORA ATENDIMENTO:</span><span class="ficha-valor" id="view_data_registro" style="font-weight: bold;"></span></div><div class="ficha-linha"><span class="ficha-label">HORÁRIO SEPUL.:</span><span class="ficha-valor" id="view_hora"></span></div><div class="ficha-linha"><span class="ficha-label">FALECIDO(A):</span><span class="ficha-valor" id="view_nome"></span></div><div class="ficha-linha"><span class="ficha-label">CAUSA DA MORTE:</span><span class="ficha-valor" id="view_causa"></span></div><div class="ficha-linha"><span class="ficha-label">RESPONSÁVEL:</span><span class="ficha-valor" id="view_resp_completo"></span></div><div class="ficha-linha"><span class="ficha-label">TELEFONE:</span><span class="ficha-valor" id="view_telefone"></span></div><div class="ficha-linha"><span class="ficha-label">FUNERÁRIA:</span><span class="ficha-valor" id="view_funeraria"></span></div><div class="ficha-linha"><span class="ficha-label">ACOLHIMENTO:</span><span class="ficha-valor" id="view_isencao_completa"></span></div><div class="ficha-linha"><span class="ficha-label">DADOS DA URNA:</span><span class="ficha-valor"><span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span></span></div><div class="ficha-linha"><span class="ficha-label">SERVIÇOS EXTRAS:</span><span class="ficha-valor" id="view_servicos_adicionais"></span></div><div class="ficha-linha"><span class="ficha-label">LOCAL SEPUL.:</span><span class="ficha-valor" id="view_local_sepul"></span></div><div class="ficha-linha"><span class="ficha-label">LOCAL ÓBITO:</span><span class="ficha-valor" id="view_hospital_completo"></span></div><div class="ficha-linha"><span class="ficha-label">VELÓRIO:</span><span class="ficha-valor" id="view_cap"></span></div><div class="ficha-linha"><span class="ficha-label">DATA/HORA ÓBITO:</span><span class="ficha-valor"><span id="view_data_obito"></span> às <span id="view_hora_obito"></span><span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span></span></div><div class="ficha-linha" style="border-bottom: none;"><span class="ficha-label">OBSERVAÇÕES:</span><span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span></div><div id="view_map_container" style="display:none; margin-top: 20px;"><div class="ficha-linha" style="border-bottom:none; margin-bottom:5px;"><span class="ficha-label">Localização:</span></div><div id="mapa-frame" style="width:100%; height:250px; border:1px solid #ccc; border-radius:6px; overflow:hidden;"></div><div style="text-align:right; margin-top:5px;"><a id="link-gps" href="#" target="_blank" style="font-size:12px; font-weight:bold; color:var(--primary-color); text-decoration:none;">📍 Abrir no Google Maps</a></div></div></div><div class="modal-footer-custom"><div class="footer-group"><button type="button" class="btn-modal btn-extra" onclick="gerarComprovante()">📄 Comprovante</button><button type="button" class="btn-modal btn-etiqueta" onclick="gerarEtiqueta()">🏷️ Etiqueta</button><button type="button" onclick="abrirModalAssinatura()" class="btn-modal btn-novo" style="background-color: #663399;">✍️ Assinar e Imprimir</button></div><div class="footer-group"><button type="button" class="btn-modal btn-whatsapp" onclick="enviarWhatsapp()">📱 WhatsApp</button><button type="button" class="btn-modal btn-sms" onclick="enviarSMS()">💬 SMS</button><button type="button" class="btn-modal btn-cancelar" onclick="fecharModalVisualizar()">Fechar</button></div></div></div></div>
+    <div id="modal-visualizar" class="modal"><div class="modal-content" style="max-width: 700px; background: #fff;"><div class="modal-header"><h3>Ficha de Atendimento</h3><span class="close" onclick="fecharModalVisualizar()">×</span></div><div class="ficha-visualizacao"><div class="ficha-header"><h2>Prefeitura Municipal de Niterói</h2><p>Coordenadoria Municipal de Serviços Funerários</p></div><div class="ficha-linha"><span class="ficha-label">PROTOCOLO:</span><span class="ficha-valor" id="view_protocolo" style="font-family:'Courier New'; letter-spacing:1px; font-size:16px;"></span></div><div class="ficha-linha"><span class="ficha-label">ATENDENTE:</span><span class="ficha-valor" id="view_atendente" style="color:var(--primary-color); font-weight:bold;"></span></div><div class="ficha-linha"><span class="ficha-label">DATA/HORA ATENDIMENTO:</span><span class="ficha-valor" id="view_data_registro" style="font-weight: bold;"></span></div><div class="ficha-linha"><span class="ficha-label">HORÁRIO SEPUL.:</span><span class="ficha-valor" id="view_hora"></span></div><div class="ficha-linha"><span class="ficha-label">FALECIDO(A):</span><span class="ficha-valor" id="view_nome"></span></div><div class="ficha-linha"><span class="ficha-label">CAUSA DA MORTE:</span><span class="ficha-valor" id="view_causa"></span></div><div class="ficha-linha"><span class="ficha-label">RESPONSÁVEL:</span><span class="ficha-valor" id="view_resp_completo"></span></div><div class="ficha-linha"><span class="ficha-label">TELEFONE:</span><span class="ficha-valor" id="view_telefone"></span></div><div class="ficha-linha"><span class="ficha-label">FUNERÁRIA:</span><span class="ficha-valor" id="view_funeraria"></span></div><div class="ficha-linha"><span class="ficha-label">ACOLHIMENTO:</span><span class="ficha-valor" id="view_isencao_completa"></span></div><div class="ficha-linha"><span class="ficha-label">DADOS DA URNA:</span><span class="ficha-valor"><span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span></span></div><div class="ficha-linha"><span class="ficha-label">SERVIÇOS EXTRAS:</span><span class="ficha-valor" id="view_servicos_adicionais"></span></div><div class="ficha-linha"><span class="ficha-label">LOCAL SEPUL.:</span><span class="ficha-valor" id="view_local_sepul"></span></div><div class="ficha-linha"><span class="ficha-label">LOCAL ÓBITO:</span><span class="ficha-valor" id="view_hospital_completo"></span></div><div class="ficha-linha"><span class="ficha-label">VELÓRIO:</span><span class="ficha-valor" id="view_cap"></span></div><div class="ficha-linha"><span class="ficha-label">DATA/HORA ÓBITO:</span><span class="ficha-valor"><span id="view_data_obito"></span> às <span id="view_hora_obito"></span><span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span></span></div><div class="ficha-linha" style="border-bottom: none;"><span class="ficha-label">OBSERVAÇÕES:</span><span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span></div><div id="view_map_container" style="display:none; margin-top: 20px;"><div class="ficha-linha" style="border-bottom:none; margin-bottom:5px;"><span class="ficha-label">Localização:</span></div><div id="mapa-frame" style="width:100%; height:250px; border:1px solid #ccc; border-radius:6px; overflow:hidden;"></div><div style="text-align:right; margin-top:5px;"><a id="link-gps" href="#" target="_blank" style="font-size:12px; font-weight:bold; color:var(--primary-color); text-decoration:none;">📍 Abrir no Google Maps</a></div></div></div>
+    
+    <div class="modal-footer-custom">
+        <button type="button" class="btn-modal btn-sign-fam" onclick="abrirModalAssinatura('responsavel')">✍️ Assinar Família</button>
+        <button type="button" class="btn-modal btn-sign-func" onclick="abrirModalAssinatura('atendente')">✍️ Assinar Equipe</button>
+        <button type="button" class="btn-modal btn-print" onclick="gerarComprovante()">📄 Comprovante</button>
+        <button type="button" class="btn-modal btn-tag" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
+        <button type="button" class="btn-modal btn-wpp" onclick="enviarWhatsapp()">📱 WhatsApp</button>
+        <button type="button" class="btn-modal btn-sms" onclick="enviarSMS()">💬 SMS</button>
+        <button type="button" class="btn-modal btn-close" onclick="fecharModalVisualizar()">Fechar</button>
+    </div>
+    
+    </div></div>
 
     <div id="modal-admin" class="modal">
         <div class="modal-content" style="max-width: 900px; height: 85vh; display: flex; flex-direction: column;">
@@ -332,14 +359,14 @@
 
     <div id="modal-assinatura" class="modal">
         <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <h3>Assinatura do Responsável</h3>
+            <h3 id="titulo-assinatura">Assinatura</h3>
             <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Assine abaixo usando o dedo ou mouse.</p>
             <div style="border: 2px solid #333; background: #fff; display: inline-block;">
                 <canvas id="signature-pad" width="400" height="200"></canvas>
             </div>
             <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
                 <button onclick="limparAssinatura()" class="btn-modal btn-cancelar" style="background: #f44336; color: white;">Limpar</button>
-                <button onclick="salvarAssinaturaEImprimir()" class="btn-modal btn-salvar">Confirmar & Imprimir</button>
+                <button onclick="salvarAssinatura()" class="btn-modal btn-salvar">Confirmar</button>
             </div>
             <button onclick="fecharModalAssinatura()" class="close" style="position: absolute; top: 10px; right: 15px;">×</button>
         </div>
