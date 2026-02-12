@@ -1,4 +1,4 @@
-// --- CONFIGURAÇÃO (Mesma do painel) ---
+// --- CONFIGURAÇÃO ---
 const firebaseConfig = {
   apiKey: "AIzaSyB6pkQZNuLiYidKqstJdMXRl2OYW4JWmfs",
   authDomain: "funeraria-niteroi.firebaseapp.com",
@@ -37,11 +37,9 @@ function consultarProtocolo() {
                 msgErro.style.display = 'block';
                 dadosConsulta = null;
             } else {
-                // Pega o primeiro documento encontrado
                 const doc = querySnapshot.docs[0];
                 dadosConsulta = doc.data();
                 
-                // Preenche a tela
                 document.getElementById('res-nome').innerText = dadosConsulta.nome;
                 
                 let localTxt = `${dadosConsulta.local || 'Cemitério do Maruí'} - ${dadosConsulta.cap || ''}`;
@@ -56,7 +54,6 @@ function consultarProtocolo() {
                 const dataF = dadosConsulta.data_ficha ? dadosConsulta.data_ficha.split('-').reverse().join('/') : '--/--/----';
                 document.getElementById('res-data').innerText = `${dataF} às ${dadosConsulta.hora}`;
 
-                // Verifica GPS
                 const cleanCoords = dadosConsulta.geo_coords ? dadosConsulta.geo_coords.replace(/\s/g, '') : '';
                 if (cleanCoords && cleanCoords.includes(',')) {
                     btnMapa.style.display = 'inline-block';
@@ -74,17 +71,15 @@ function consultarProtocolo() {
         });
 }
 
-// --- GERAR 2ª VIA (ATUALIZADA COM ASSINATURAS DO BANCO) ---
+// --- GERAR 2ª VIA (CORRIGIDO: COM ASSINATURAS DO BANCO) ---
 function gerar2ViaPublica() {
     if (!dadosConsulta) return;
     const d = dadosConsulta;
     
-    // Funções auxiliares internas
     const chk = (cond) => cond ? '(X)' : '( )';
     const chkEC = (val) => (d.estado_civil === val) ? '(X)' : '( )';
     const fd = (dataStr) => { if (!dataStr) return ""; const p = dataStr.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
 
-    // Lógica Data/Hora Registro
     const p = d.protocolo || "";
     let dataHoraAtendimentoTexto = "";
     if (d.data_hora_atendimento) {
@@ -96,10 +91,8 @@ function gerar2ViaPublica() {
         }
     }
 
-    // Lógica Locais
     const im = (d.local && d.local.includes("MARUÍ")); const is = (d.local && d.local.includes("SÃO FRANCISCO")); const ii = (d.local && d.local.includes("ITAIPU")); const cc = (d.cap && !d.cap.toUpperCase().includes("SEM"));
     
-    // Tempo Decorrido
     let tempoDecorrido = "";
     if (d.data_obito && d.hora_obito && d.hora && d.data_ficha) { const dtObito = new Date(d.data_obito + 'T' + d.hora_obito); const dtSepul = new Date(d.data_ficha + 'T' + d.hora); const diff = dtSepul - dtObito; if (diff > 0) { const diffHrs = Math.floor(diff / 3600000); const diffMins = Math.round(((diff % 3600000) / 60000)); tempoDecorrido = `${diffHrs}h ${diffMins}min`; } }
     
@@ -117,7 +110,6 @@ function gerar2ViaPublica() {
         txtSep = `${txtSep} - ${classificacao}`;
     }
 
-    // --- CÁLCULO DA DATA DE EXUMAÇÃO ---
     let dataExumacao = "";
     if (d.data_ficha) {
         const parts = d.data_ficha.split('-');
@@ -128,29 +120,33 @@ function gerar2ViaPublica() {
         dataExumacao = `${dia}/${mes}/${ano + addAnos}`;
     }
 
-    // RECUPERAR ASSINATURAS DO OBJETO DADOSCONSULTA
+    // --- LEITURA DAS ASSINATURAS DO BANCO (DADOS CONSULTA) ---
+    // Verifica se existem no banco. Se sim, cria a tag IMG. Se não, cria espaço vazio com altura fixa.
+    
     let blocoAssinaturaFamilia = "";
     if (d.assinatura_responsavel) {
-        blocoAssinaturaFamilia = `<div style="text-align:center;"><img src="${d.assinatura_responsavel}" style="max-height:60px; max-width:80%;"></div>`;
+        blocoAssinaturaFamilia = `<div style="text-align:center; height:45px;"><img src="${d.assinatura_responsavel}" style="max-height:40px; max-width:80%;"></div>`;
     } else {
-        blocoAssinaturaFamilia = `<div style="height:40px;"></div>`;
+        blocoAssinaturaFamilia = `<div style="height:45px;"></div>`;
     }
 
     let blocoAssinaturaAtendente = "";
     if (d.assinatura_atendente) {
-        blocoAssinaturaAtendente = `<div style="text-align:center;"><img src="${d.assinatura_atendente}" style="max-height:60px; max-width:80%;"></div>`;
+        blocoAssinaturaAtendente = `<div style="text-align:center; height:45px;"><img src="${d.assinatura_atendente}" style="max-height:40px; max-width:80%;"></div>`;
     } else {
-        blocoAssinaturaAtendente = `<div style="height:40px;"></div>`;
+        blocoAssinaturaAtendente = `<div style="height:45px;"></div>`;
     }
 
-    const htmlComprovante = `<html><head><title>2ª Via Comprovante</title><style>@page { size: A4 portrait; margin: 8mm; } body { font-family: Arial, sans-serif; font-size: 14px; margin: 0; padding: 10px; line-height: 1.3; color: #000; } .header { text-align: center; margin-bottom: 25px; position: relative; } .header h2 { font-size: 20px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; color: #000; } .protocolo { position: absolute; top: -5px; right: 0; font-size: 14px; font-weight: bold; border: 2px solid #000; padding: 5px 10px; } .content { width: 100%; } .line { margin-bottom: 4px; white-space: nowrap; overflow: hidden; } .bold { font-weight: 900; } .red { color: red; font-weight: bold; } .section-title { font-weight: 900; margin-top: 15px; margin-bottom: 2px; text-transform: uppercase; font-size: 14px; } .two-columns { display: flex; justify-content: space-between; margin-top: 10px; } .col-left { width: 60%; } .col-right { width: 38%; } .assinaturas-block { display: flex; justify-content: space-between; margin-top: 25px; margin-bottom: 10px; gap: 20px; } .ass-line { border-top: 1px solid #000; text-align: center; padding-top: 2px; flex: 1; font-size: 12px; } .obs-text { font-weight: bold; font-size: 12px; margin-top: 5px; } .box-lateral { border: 2px solid #000; padding: 5px; font-weight: 900; font-size: 12px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; } .termo-juridico { text-align: justify; font-size: 12px; line-height: 1.3; } .footer-line { margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; font-weight: 900; font-size: 12px; } .aviso-final { border: 2px solid #000; padding: 5px; margin-top: 10px; font-weight: 900; text-align: justify; font-size: 12px; line-height: 1.3; } .spacer { margin-left: 10px; } .marca-dagua { position:absolute; top:40%; left:50%; transform:translate(-50%, -50%) rotate(-45deg); font-size:100px; color:rgba(0,0,0,0.05); font-weight:bold; z-index:-1; white-space:nowrap; } </style></head><body>
+    let nomeAtendente = (d.atendente_sistema || 'N/A').toUpperCase();
+
+    const htmlComprovante = `<html><head><title>2ª Via Comprovante</title><style>@page { size: A4 portrait; margin: 8mm; } body { font-family: Arial, sans-serif; font-size: 14px; margin: 0; padding: 10px; line-height: 1.3; color: #000; } .header { text-align: center; margin-bottom: 25px; position: relative; } .header h2 { font-size: 20px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; color: #000; } .protocolo { position: absolute; top: -5px; right: 0; font-size: 14px; font-weight: bold; border: 2px solid #000; padding: 5px 10px; } .content { width: 100%; } .line { margin-bottom: 4px; white-space: nowrap; overflow: hidden; } .bold { font-weight: 900; } .red { color: red; font-weight: bold; } .section-title { font-weight: 900; margin-top: 15px; margin-bottom: 2px; text-transform: uppercase; font-size: 14px; } .two-columns { display: flex; justify-content: space-between; margin-top: 10px; } .col-left { width: 60%; } .col-right { width: 38%; } .assinaturas-block { display: flex; justify-content: space-between; margin-top: 25px; margin-bottom: 10px; gap: 20px; } .ass-line { text-align: center; padding-top: 2px; flex: 1; font-size: 12px; } .obs-text { font-weight: bold; font-size: 12px; margin-top: 5px; } .box-lateral { border: 2px solid #000; padding: 5px; font-weight: 900; font-size: 12px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; } .termo-juridico { text-align: justify; font-size: 12px; line-height: 1.3; } .footer-line { margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; font-weight: 900; font-size: 12px; } .aviso-final { border: 2px solid #000; padding: 5px; margin-top: 10px; font-weight: 900; text-align: justify; font-size: 12px; line-height: 1.3; } .spacer { margin-left: 10px; } .marca-dagua { position:absolute; top:40%; left:50%; transform:translate(-50%, -50%) rotate(-45deg); font-size:100px; color:rgba(0,0,0,0.05); font-weight:bold; z-index:-1; white-space:nowrap; } </style></head><body>
     <div class="marca-dagua">2ª VIA DO CLIENTE</div>
-    <div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height: 60px; margin-bottom: 5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${d.nome.toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome || '').toUpperCase()} <span style="margin-left:5px; font-weight:normal;">${relacao}</span></div><div class="line"><span class="bold">Funerária:</span> ${d.funeraria.toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria || 'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${(d.atendente_sistema||'SISTEMA').toUpperCase()}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dataHoraAtendimentoTexto}</div><div class="line"><span class="bold">Data:</span> ${fd(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora} <span class="bold spacer">SEPULTURA:</span> ${d.sepul} <span class="bold spacer">${(d.local && d.local.includes("MARUÍ")) ? "QUADRA:" : "RUA:"}</span> ${d.qd} <span class="bold spacer">CAPELA:</span> ${d.cap}</div><div class="line"><span class="bold">COM CAPELA</span> ${chk(cc)} <span class="bold">SEM CAPELA</span> ${chk(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${fd(d.data_obito)} AS ${txtHoraObito} <span class="red spacer">[${tempoDecorrido}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${chkEC('SOLTEIRO')} SOLTEIRO ${chkEC('CASADO')} CASADO ${chkEC('VIUVO')} VÍUVO ${chkEC('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${chkEC('DIVORCIADO')} DIVORCIADO ${chkEC('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px; font-size:14px; border: 1px solid #000; padding: 5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${txtSep}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div>
+    <div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height: 60px; margin-bottom: 5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${d.nome.toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome || '').toUpperCase()} <span style="margin-left:5px; font-weight:normal;">${relacao}</span></div><div class="line"><span class="bold">Funerária:</span> ${d.funeraria.toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria || 'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${nomeAtendente}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dataHoraAtendimentoTexto}</div><div class="line"><span class="bold">Data:</span> ${fd(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora} <span class="bold spacer">SEPULTURA:</span> ${d.sepul} <span class="bold spacer">${(d.local && d.local.includes("MARUÍ")) ? "QUADRA:" : "RUA:"}</span> ${d.qd} <span class="bold spacer">CAPELA:</span> ${d.cap}</div><div class="line"><span class="bold">COM CAPELA</span> ${chk(cc)} <span class="bold">SEM CAPELA</span> ${chk(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${fd(d.data_obito)} AS ${txtHoraObito} <span class="red spacer">[${tempoDecorrido}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${chkEC('SOLTEIRO')} SOLTEIRO ${chkEC('CASADO')} CASADO ${chkEC('VIUVO')} VÍUVO ${chkEC('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${chkEC('DIVORCIADO')} DIVORCIADO ${chkEC('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px; font-size:14px; border: 1px solid #000; padding: 5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${txtSep}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div>
     
     <div class="assinaturas-block">
         <div class="ass-line">
             ${blocoAssinaturaAtendente}
-            <div style="border-top:1px solid #000;">Acolhimento / Atendente:<br><b>${(d.atendente_sistema||'').toUpperCase()}</b></div>
+            <div style="border-top:1px solid #000;">Acolhimento / Atendente:<br><b>${nomeAtendente}</b></div>
         </div>
         <div class="ass-line">
             ${blocoAssinaturaFamilia}
@@ -166,7 +162,15 @@ function gerar2ViaPublica() {
         <div style="border-top: 1px solid #000; width: 60%; margin: 0 auto;">Assinatura do Responsável (Ciência do Prazo)</div>
     </div>
     
-    </div><div class="two-columns"><div class="col-left"><div style="text-align:center; font-weight:bold; text-decoration:underline; margin-bottom:5px;">TERMO DE COMPROMISSO CEMITÉRIOS MUNICIPAIS</div><div class="termo-juridico">Sendo o <span class="bold">FALECIDO CASADO</span>, o responsável perante, o Cemitério do MARUÍ, SÃO FRANCISCO E ITAIPU será obrigatoriamente o <span class="bold">CONJUGE</span>.<br>Sendo o <span class="bold">FALECIDO VIÚVO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU serão obrigatoriamente os <span class="bold">FILHOS</span>.<br>Sendo o <span class="bold">FALECIDO SOLTEIRO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU obrigatoriamente os <span class="bold">FILHOS, PAIS, IRMÃOS</span>.<br>Será exigida a apresentação de documentos de <span class="bold" style="text-decoration:underline">IDENTIDADE e CPF</span>.</div><div class="assinaturas-block" style="margin-top: 40px;"><div style="flex:1;"></div><div class="ass-line">Assinatura funcionário/família</div></div></div><div class="col-right"><div class="box-lateral"><div>CAPELAS MUNICIPAIS E PARTICULARES:</div><br><div>PAGAMENTO E NOTA FISCAL DAS TAXAS MUNICIPAIS E INVOL COM DUAS HORAS ANTES DO SEPULTAMENTO</div><br><br><div>CLIENTE: _____________________</div></div></div></div><div class="footer-line">MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome || '').toUpperCase()}</div><div style="font-weight:bold; font-size:12px; margin-top:5px;">TEL: ${d.telefone||''}</div><div class="aviso-final"><span style="text-decoration:underline">COMUNICADO AOS FAMILIARES DO FALECIDO E AS EMPRESAS FUNERÁRIAS RESPONSÁVEIS PELO SEPULTAMENTO.</span><br>Informamos que somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação dos seguintes documentos:<span class="bold">GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL PELO SERVIÇO), TAXAS MUNICIPAIS PAGAS e INVOL.</span></div></div></body><script>window.onload=function(){window.print()}</script></html>`;
+    </div><div class="two-columns"><div class="col-left"><div style="text-align:center; font-weight:bold; text-decoration:underline; margin-bottom:5px;">TERMO DE COMPROMISSO CEMITÉRIOS MUNICIPAIS</div><div class="termo-juridico">Sendo o <span class="bold">FALECIDO CASADO</span>, o responsável perante, o Cemitério do MARUÍ, SÃO FRANCISCO E ITAIPU será obrigatoriamente o <span class="bold">CONJUGE</span>.<br>Sendo o <span class="bold">FALECIDO VIÚVO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU serão obrigatoriamente os <span class="bold">FILHOS</span>.<br>Sendo o <span class="bold">FALECIDO SOLTEIRO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU obrigatoriamente os <span class="bold">FILHOS, PAIS, IRMÃOS</span>.<br>Será exigida a apresentação de documentos de <span class="bold" style="text-decoration:underline">IDENTIDADE e CPF</span>.</div>
+    <div class="assinaturas-block" style="margin-top: 40px;">
+        <div style="flex:1;"></div>
+        <div class="ass-line">
+            ${blocoAssinaturaFamilia}
+            <div style="border-top: 1px solid #000;">Assinatura funcionário/família</div>
+        </div>
+    </div>
+    </div><div class="col-right"><div class="box-lateral"><div>CAPELAS MUNICIPAIS E PARTICULARES:</div><br><div>PAGAMENTO E NOTA FISCAL DAS TAXAS MUNICIPAIS E INVOL COM DUAS HORAS ANTES DO SEPULTAMENTO</div><br><br><div>CLIENTE: _____________________</div></div></div></div><div class="footer-line">MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome || '').toUpperCase()}</div><div style="font-weight:bold; font-size:12px; margin-top:5px;">TEL: ${d.telefone||''}</div><div class="aviso-final"><span style="text-decoration:underline">COMUNICADO AOS FAMILIARES DO FALECIDO E AS EMPRESAS FUNERÁRIAS RESPONSÁVEIS PELO SEPULTAMENTO.</span><br>Informamos que somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação dos seguintes documentos:<span class="bold">GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL PELO SERVIÇO), TAXAS MUNICIPAIS PAGAS e INVOL.</span></div></div></body><script>window.onload=function(){window.print()}</script></html>`;
     
     const w = window.open('','_blank'); w.document.write(htmlComprovante); w.document.close();
 }
