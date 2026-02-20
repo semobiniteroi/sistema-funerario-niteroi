@@ -30,13 +30,56 @@ function consultarProtocolo() {
     areaRes.style.display = 'none';
     msgErro.style.display = 'none';
 
-    // Busca exata pelo campo 'protocolo'
+    // 1. Busca primeiro na coleção de Sepultamentos (atendimentos)
     db.collection("atendimentos").where("protocolo", "==", protocoloInput).get()
         .then((querySnapshot) => {
             if (querySnapshot.empty) {
-                msgErro.style.display = 'block';
-                dadosConsulta = null;
+                
+                // 2. Se não achou em atendimentos, busca em Exumações (exumacoes)
+                db.collection("exumacoes").where("protocolo", "==", protocoloInput).get()
+                    .then((exumSnapshot) => {
+                        if (exumSnapshot.empty) {
+                            msgErro.style.display = 'block';
+                            dadosConsulta = null;
+                        } else {
+                            const doc = exumSnapshot.docs[0];
+                            dadosConsulta = doc.data();
+                            dadosConsulta.isExumacao = true; // Flag interna para saber a origem
+                            
+                            // Preenche os dados (usando chaves compatíveis com exumação)
+                            document.getElementById('res-nome').innerText = dadosConsulta.nome || dadosConsulta.nome_falecido || dadosConsulta.falecido || 'Não informado';
+                            
+                            let localTxt = `${dadosConsulta.cemiterio || dadosConsulta.local || 'Cemitério não informado'}`;
+                            localTxt += `<br>Sepultura: ${dadosConsulta.sepultura || dadosConsulta.sepul || '?'} | QD: ${dadosConsulta.quadra || dadosConsulta.qd || '?'}`;
+                            localTxt += `<br><span style="color:#6f42c1; font-weight:bold;">(Protocolo de Exumação)</span>`;
+                            
+                            document.getElementById('res-local').innerHTML = localTxt;
+                            
+                            let rawData = dadosConsulta.data_exumacao || dadosConsulta.data_agendamento || dadosConsulta.data_ficha || '';
+                            const dataF = rawData.includes('-') ? rawData.split('-').reverse().join('/') : (rawData || '--/--/----');
+                            const horaF = dadosConsulta.hora_exumacao || dadosConsulta.hora || '--:--';
+                            
+                            document.getElementById('res-data').innerText = `${dataF} às ${horaF}`;
+
+                            // Mapa oculto por padrão para exumação, a não ser que tenha geo_coords
+                            const cleanCoords = dadosConsulta.geo_coords ? dadosConsulta.geo_coords.replace(/\s/g, '') : '';
+                            if (cleanCoords && cleanCoords.includes(',')) {
+                                btnMapa.style.display = 'inline-block';
+                                btnMapa.onclick = function() { window.open(`https://www.google.com/maps?q=${cleanCoords}`, '_blank'); };
+                            } else {
+                                btnMapa.style.display = 'none';
+                            }
+
+                            areaRes.style.display = 'block';
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Erro exumações:", error);
+                        msgErro.style.display = 'block';
+                    });
+
             } else {
+                // 3. Lógica original preservada caso seja encontrado em Sepultamentos
                 const doc = querySnapshot.docs[0];
                 dadosConsulta = doc.data();
                 
@@ -71,7 +114,7 @@ function consultarProtocolo() {
         });
 }
 
-// --- GERAR 2ª VIA (CORRIGIDO: COM ASSINATURAS DO BANCO) ---
+// --- GERAR 2ª VIA (MANTIDO INTACTO) ---
 function gerar2ViaPublica() {
     if (!dadosConsulta) return;
     const d = dadosConsulta;
@@ -120,9 +163,6 @@ function gerar2ViaPublica() {
         dataExumacao = `${dia}/${mes}/${ano + addAnos}`;
     }
 
-    // --- LEITURA DAS ASSINATURAS DO BANCO (DADOS CONSULTA) ---
-    // Verifica se existem no banco. Se sim, cria a tag IMG. Se não, cria espaço vazio com altura fixa.
-    
     let blocoAssinaturaFamilia = "";
     if (d.assinatura_responsavel) {
         blocoAssinaturaFamilia = `<div style="text-align:center; height:45px;"><img src="${d.assinatura_responsavel}" style="max-height:40px; max-width:80%;"></div>`;
@@ -141,7 +181,7 @@ function gerar2ViaPublica() {
 
     const htmlComprovante = `<html><head><title>2ª Via Comprovante</title><style>@page { size: A4 portrait; margin: 8mm; } body { font-family: Arial, sans-serif; font-size: 14px; margin: 0; padding: 10px; line-height: 1.3; color: #000; } .header { text-align: center; margin-bottom: 25px; position: relative; } .header h2 { font-size: 20px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; color: #000; } .protocolo { position: absolute; top: -5px; right: 0; font-size: 14px; font-weight: bold; border: 2px solid #000; padding: 5px 10px; } .content { width: 100%; } .line { margin-bottom: 4px; white-space: nowrap; overflow: hidden; } .bold { font-weight: 900; } .red { color: red; font-weight: bold; } .section-title { font-weight: 900; margin-top: 15px; margin-bottom: 2px; text-transform: uppercase; font-size: 14px; } .two-columns { display: flex; justify-content: space-between; margin-top: 10px; } .col-left { width: 60%; } .col-right { width: 38%; } .assinaturas-block { display: flex; justify-content: space-between; margin-top: 25px; margin-bottom: 10px; gap: 20px; } .ass-line { text-align: center; padding-top: 2px; flex: 1; font-size: 12px; } .obs-text { font-weight: bold; font-size: 12px; margin-top: 5px; } .box-lateral { border: 2px solid #000; padding: 5px; font-weight: 900; font-size: 12px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; } .termo-juridico { text-align: justify; font-size: 12px; line-height: 1.3; } .footer-line { margin-top: 10px; border-top: 1px solid #000; padding-top: 5px; font-weight: 900; font-size: 12px; } .aviso-final { border: 2px solid #000; padding: 5px; margin-top: 10px; font-weight: 900; text-align: justify; font-size: 12px; line-height: 1.3; } .spacer { margin-left: 10px; } .marca-dagua { position:absolute; top:40%; left:50%; transform:translate(-50%, -50%) rotate(-45deg); font-size:100px; color:rgba(0,0,0,0.05); font-weight:bold; z-index:-1; white-space:nowrap; } </style></head><body>
     <div class="marca-dagua">2ª VIA DO CLIENTE</div>
-    <div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height: 60px; margin-bottom: 5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${d.nome.toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome || '').toUpperCase()} <span style="margin-left:5px; font-weight:normal;">${relacao}</span></div><div class="line"><span class="bold">Funerária:</span> ${d.funeraria.toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria || 'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${nomeAtendente}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dataHoraAtendimentoTexto}</div><div class="line"><span class="bold">Data:</span> ${fd(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora} <span class="bold spacer">SEPULTURA:</span> ${d.sepul} <span class="bold spacer">${(d.local && d.local.includes("MARUÍ")) ? "QUADRA:" : "RUA:"}</span> ${d.qd} <span class="bold spacer">CAPELA:</span> ${d.cap}</div><div class="line"><span class="bold">COM CAPELA</span> ${chk(cc)} <span class="bold">SEM CAPELA</span> ${chk(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${fd(d.data_obito)} AS ${txtHoraObito} <span class="red spacer">[${tempoDecorrido}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${chkEC('SOLTEIRO')} SOLTEIRO ${chkEC('CASADO')} CASADO ${chkEC('VIUVO')} VÍUVO ${chkEC('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${chkEC('DIVORCIADO')} DIVORCIADO ${chkEC('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px; font-size:14px; border: 1px solid #000; padding: 5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${txtSep}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div>
+    <div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height: 60px; margin-bottom: 5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${(d.nome || d.nome_falecido || d.falecido || 'Não Informado').toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome || '').toUpperCase()} <span style="margin-left:5px; font-weight:normal;">${relacao}</span></div><div class="line"><span class="bold">Funerária:</span> ${(d.funeraria || 'N/A').toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria || 'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${nomeAtendente}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dataHoraAtendimentoTexto}</div><div class="line"><span class="bold">Data:</span> ${fd(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora} <span class="bold spacer">SEPULTURA:</span> ${d.sepul} <span class="bold spacer">${(d.local && d.local.includes("MARUÍ")) ? "QUADRA:" : "RUA:"}</span> ${d.qd} <span class="bold spacer">CAPELA:</span> ${d.cap}</div><div class="line"><span class="bold">COM CAPELA</span> ${chk(cc)} <span class="bold">SEM CAPELA</span> ${chk(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${fd(d.data_obito)} AS ${txtHoraObito} <span class="red spacer">[${tempoDecorrido}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${chkEC('SOLTEIRO')} SOLTEIRO ${chkEC('CASADO')} CASADO ${chkEC('VIUVO')} VÍUVO ${chkEC('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${chkEC('DIVORCIADO')} DIVORCIADO ${chkEC('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px; font-size:14px; border: 1px solid #000; padding: 5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${txtSep}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div>
     
     <div class="assinaturas-block">
         <div class="ass-line">
