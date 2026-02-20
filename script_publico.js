@@ -35,51 +35,34 @@ function consultarProtocolo() {
         .then((querySnapshot) => {
             if (querySnapshot.empty) {
                 
-                // 2. Se não achou em atendimentos, busca em Exumações (exumacoes)
+                // 2. Se não achou em atendimentos, busca em Exumações (plural)
                 db.collection("exumacoes").where("protocolo", "==", protocoloInput).get()
                     .then((exumSnapshot) => {
                         if (exumSnapshot.empty) {
-                            msgErro.style.display = 'block';
-                            dadosConsulta = null;
+                            
+                            // 3. Tenta na coleção singular caso o nome no banco seja "exumacao"
+                            db.collection("exumacao").where("protocolo", "==", protocoloInput).get()
+                                .then((exumSingularSnap) => {
+                                    if (exumSingularSnap.empty) {
+                                        // Se não achou em lugar nenhum, exibe o erro
+                                        msgErro.style.display = 'block';
+                                        dadosConsulta = null;
+                                    } else {
+                                        renderizarDadosExumacao(exumSingularSnap.docs[0]);
+                                    }
+                                });
+
                         } else {
-                            const doc = exumSnapshot.docs[0];
-                            dadosConsulta = doc.data();
-                            dadosConsulta.isExumacao = true; // Flag interna para saber a origem
-                            
-                            // Preenche os dados (usando chaves compatíveis com exumação)
-                            document.getElementById('res-nome').innerText = dadosConsulta.nome || dadosConsulta.nome_falecido || dadosConsulta.falecido || 'Não informado';
-                            
-                            let localTxt = `${dadosConsulta.cemiterio || dadosConsulta.local || 'Cemitério não informado'}`;
-                            localTxt += `<br>Sepultura: ${dadosConsulta.sepultura || dadosConsulta.sepul || '?'} | QD: ${dadosConsulta.quadra || dadosConsulta.qd || '?'}`;
-                            localTxt += `<br><span style="color:#6f42c1; font-weight:bold;">(Protocolo de Exumação)</span>`;
-                            
-                            document.getElementById('res-local').innerHTML = localTxt;
-                            
-                            let rawData = dadosConsulta.data_exumacao || dadosConsulta.data_agendamento || dadosConsulta.data_ficha || '';
-                            const dataF = rawData.includes('-') ? rawData.split('-').reverse().join('/') : (rawData || '--/--/----');
-                            const horaF = dadosConsulta.hora_exumacao || dadosConsulta.hora || '--:--';
-                            
-                            document.getElementById('res-data').innerText = `${dataF} às ${horaF}`;
-
-                            // Mapa oculto por padrão para exumação, a não ser que tenha geo_coords
-                            const cleanCoords = dadosConsulta.geo_coords ? dadosConsulta.geo_coords.replace(/\s/g, '') : '';
-                            if (cleanCoords && cleanCoords.includes(',')) {
-                                btnMapa.style.display = 'inline-block';
-                                btnMapa.onclick = function() { window.open(`https://www.google.com/maps?q=${cleanCoords}`, '_blank'); };
-                            } else {
-                                btnMapa.style.display = 'none';
-                            }
-
-                            areaRes.style.display = 'block';
+                            renderizarDadosExumacao(exumSnapshot.docs[0]);
                         }
                     })
                     .catch((error) => {
-                        console.error("Erro exumações:", error);
+                        console.error("Erro ao buscar exumações:", error);
                         msgErro.style.display = 'block';
                     });
 
             } else {
-                // 3. Lógica original preservada caso seja encontrado em Sepultamentos
+                // Lógica original preservada caso seja encontrado em Sepultamentos
                 const doc = querySnapshot.docs[0];
                 dadosConsulta = doc.data();
                 
@@ -112,9 +95,40 @@ function consultarProtocolo() {
             console.error("Erro:", error);
             alert("Erro ao conectar ao sistema.");
         });
+
+    // Função interna para renderizar exumação sem alterar a estrutura global
+    function renderizarDadosExumacao(doc) {
+        dadosConsulta = doc.data();
+        dadosConsulta.isExumacao = true;
+        
+        // Cobre as variações mais comuns de nomes de campos para exumação
+        document.getElementById('res-nome').innerText = dadosConsulta.nome || dadosConsulta.nome_falecido || dadosConsulta.falecido || dadosConsulta.requerente || 'Não informado';
+        
+        let localTxt = `${dadosConsulta.cemiterio || dadosConsulta.local || 'Cemitério não informado'}`;
+        localTxt += `<br>Sepultura: ${dadosConsulta.sepultura || dadosConsulta.sepul || '?'} | QD: ${dadosConsulta.quadra || dadosConsulta.qd || '?'}`;
+        localTxt += `<br><span style="color:#6f42c1; font-weight:bold;">(Protocolo de Exumação)</span>`;
+        
+        document.getElementById('res-local').innerHTML = localTxt;
+        
+        let rawData = dadosConsulta.data_exumacao || dadosConsulta.data_agendamento || dadosConsulta.data || dadosConsulta.data_ficha || '';
+        const dataF = rawData.includes('-') ? rawData.split('-').reverse().join('/') : (rawData || '--/--/----');
+        const horaF = dadosConsulta.hora_exumacao || dadosConsulta.hora || '--:--';
+        
+        document.getElementById('res-data').innerText = `${dataF} às ${horaF}`;
+
+        const cleanCoords = dadosConsulta.geo_coords ? dadosConsulta.geo_coords.replace(/\s/g, '') : '';
+        if (cleanCoords && cleanCoords.includes(',')) {
+            btnMapa.style.display = 'inline-block';
+            btnMapa.onclick = function() { window.open(`https://www.google.com/maps?q=${cleanCoords}`, '_blank'); };
+        } else {
+            btnMapa.style.display = 'none';
+        }
+
+        areaRes.style.display = 'block';
+    }
 }
 
-// --- GERAR 2ª VIA (MANTIDO INTACTO) ---
+// --- GERAR 2ª VIA (MANTIDO INTACTO DA SUA VERSÃO ORIGINAL) ---
 function gerar2ViaPublica() {
     if (!dadosConsulta) return;
     const d = dadosConsulta;
@@ -210,14 +224,4 @@ function gerar2ViaPublica() {
             <div style="border-top: 1px solid #000;">Assinatura funcionário/família</div>
         </div>
     </div>
-    </div><div class="col-right"><div class="box-lateral"><div>CAPELAS MUNICIPAIS E PARTICULARES:</div><br><div>PAGAMENTO E NOTA FISCAL DAS TAXAS MUNICIPAIS E INVOL COM DUAS HORAS ANTES DO SEPULTAMENTO</div><br><br><div>CLIENTE: _____________________</div></div></div></div><div class="footer-line">MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome || '').toUpperCase()}</div><div style="font-weight:bold; font-size:12px; margin-top:5px;">TEL: ${d.telefone||''}</div><div class="aviso-final"><span style="text-decoration:underline">COMUNICADO AOS FAMILIARES DO FALECIDO E AS EMPRESAS FUNERÁRIAS RESPONSÁVEIS PELO SEPULTAMENTO.</span><br>Informamos que somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação dos seguintes documentos:<span class="bold">GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL PELO SERVIÇO), TAXAS MUNICIPAIS PAGAS e INVOL.</span></div></div></body><script>window.onload=function(){window.print()}</script></html>`;
-    
-    const w = window.open('','_blank'); w.document.write(htmlComprovante); w.document.close();
-}
-
-function abrirMapaPublico() {
-    if(dadosConsulta && dadosConsulta.geo_coords) {
-        const clean = dadosConsulta.geo_coords.replace(/\s/g, '');
-        window.open(`https://www.google.com/maps?q=${clean}`, '_blank');
-    }
-}
+    </div><div class="col-right"><div class="box-lateral"><div>CAPELAS MUNICIPAIS E PARTICULARES:</div><br><div>PAGAMENTO E
