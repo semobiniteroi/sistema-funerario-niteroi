@@ -7,58 +7,215 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        .tab-btn.active { background-color: #0056b3 !important; color: white !important; border-bottom: 3px solid #003d80; font-weight: bold; }
-        input[type="month"] { font-family: 'Poppins', sans-serif; padding: 8px; border: 1px solid #ccc; border-radius: 5px; color: #333; cursor: pointer; }
-        
-        /* CSS DA ASSINATURA DIGITAL */
+        /* ================================================================= */
+        /* OVERRIDES DE PADRONIZAÇÃO DE DESIGN (Baseado no Processos Maruí) */
+        /* ================================================================= */
+
+        /* 1. Campos de Entrada (Inputs e Selects) */
+        input[type="text"], input[type="date"], input[type="time"], input[type="datetime-local"], 
+        input[type="email"], input[type="password"], input[type="month"], select, textarea {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-family: 'Poppins', sans-serif;
+            color: #334155;
+            font-size: 13px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+            box-shadow: none;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        input:disabled, select:disabled {
+            background-color: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+            border-color: #e2e8f0;
+        }
+
+        /* 2. Estilo Padrão de Labels (Rótulos) */
+        label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+            display: block;
+            letter-spacing: 0.3px;
+        }
+
+        /* 3. Assinatura Digital */
         canvas#signature-pad {
-            border: 2px dashed #ccc;
-            background-color: #fff;
+            border: 2px dashed #cbd5e1;
+            background-color: #f8fafc;
             touch-action: none;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: crosshair;
             width: 100%;
         }
 
-        /* AJUSTE DOS BOTÕES DO RODAPÉ */
+        /* 4. Botões do Rodapé (Modal Visualizar) */
         .modal-footer-custom {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
         }
-
         .modal-footer-custom button {
-            padding: 8px 12px;
+            padding: 9px 14px;
             font-size: 13px;
             border-radius: 6px;
             border: none;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 5px;
-            color: white;
-            font-weight: 500;
-            flex-grow: 1;
             justify-content: center;
-            max-width: 180px;
-            min-width: 120px;
+            gap: 6px;
+            font-weight: 600;
+            transition: opacity 0.2s, transform 0.1s;
         }
+        .modal-footer-custom button:hover { opacity: 0.9; }
+        .modal-footer-custom button:active { transform: scale(0.98); }
 
-        .btn-print { background-color: #555; }
-        .btn-tag { background-color: #e67e22; }
-        .btn-sign-fam { background-color: #663399; }
-        .btn-sign-func { background-color: #8e44ad; }
-        .btn-wpp { background-color: #2ecc71; }
-        .btn-sms { background-color: #3498db; }
-        .btn-close { background-color: #95a5a6; }
+        .btn-print { background-color: #ffffff !important; color: #475569 !important; border: 1px solid #cbd5e1 !important; }
+        .btn-tag { background-color: #f59e0b !important; color: white !important; }
+        .btn-sign-fam, .btn-sign-func { background-color: #7c3aed !important; color: white !important; }
+        .btn-wpp { background-color: #22c55e !important; color: white !important; }
+        .btn-sms { background-color: #3ba8ea !important; color: white !important; }
+        .btn-close { background-color: #f1f5f9 !important; color: #475569 !important; box-shadow: none !important; }
+
+        /* 5. Painel Admin - Abas (Tabs) */
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+            gap: 5px;
+        }
+        .tab-btn {
+            background: transparent !important;
+            border: none !important;
+            color: #64748b !important;
+            padding: 12px 20px !important;
+            font-weight: 600 !important;
+            font-size: 13px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent !important;
+            border-radius: 0 !important;
+            transition: all 0.2s ease;
+        }
+        .tab-btn:hover { color: #3b82f6 !important; }
+        .tab-btn.active { color: #3b82f6 !important; border-bottom: 3px solid #3b82f6 !important; }
+
+        /* 6. Painel Admin - Formulários */
+        #box-novo-usuario, #div-editar-usuario {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 8px;
+            padding: 20px !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            margin-bottom: 25px;
+        }
+        .admin-form-title {
+            color: #3b82f6;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: block;
+            font-weight: 700;
+        }
+        #box-novo-usuario label, #div-editar-usuario label { color: #3b82f6 !important; }
+        .btn-novo-usuario {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 5px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn-novo-usuario:hover { background-color: #2563eb; }
+
+        /* 7. Box Situação Membros (Formulário) */
+        .box-membros-custom {
+            border: 1px dashed #cbd5e1 !important;
+            padding: 15px !important;
+            border-radius: 8px !important;
+            background: #ffffff !important;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .box-membros-custom .titulo-membros { color: #c2410c !important; font-size: 13px !important; margin-bottom: 5px; }
+
+        /* 8. Tabela de Equipe (Design Maruí Integrado) */
+        .table-equipe-container {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            margin-top: 15px;
+        }
+        .table-equipe-header {
+            display: flex;
+            padding: 15px 20px;
+            border-bottom: 2px solid #f8fafc;
+            color: #475569;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .table-equipe-row {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.2s;
+        }
+        .table-equipe-row:last-child { border-bottom: none; }
+        .table-equipe-row:hover { background-color: #f8fafc; }
+        .avatar-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .btn-action-edit {
+            background: #ffedd5; color: #ea580c; border: none; width: 32px; height: 32px;
+            border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s;
+        }
+        .btn-action-delete {
+            background: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px;
+            border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s;
+        }
+        .btn-action-edit:hover, .btn-action-delete:hover { opacity: 0.8; }
+        
+        .col-user { flex: 2; display: flex; align-items: center; gap: 15px; min-width: 250px; }
+        .col-login { flex: 1.5; color: #475569; font-size: 13px; }
+        .col-pass { flex: 1; color: #475569; font-size: 13px; display: flex; align-items: center; gap: 10px; }
+        .col-actions { width: 100px; display: flex; gap: 8px; justify-content: flex-end; }
 
         @media (max-width: 768px) {
             .modal-footer-custom { padding-bottom: 20px; }
-            .modal-footer-custom button { max-width: 48%; }
+            .modal-footer-custom button { flex: 1 1 45%; max-width: 100%; }
+            .table-equipe-header { display: none; }
+            .table-equipe-row { flex-direction: column; align-items: flex-start; gap: 10px; position: relative; }
+            .col-actions { position: absolute; top: 15px; right: 15px; }
         }
     </style>
 </head>
@@ -71,7 +228,7 @@
             <p>Identifique-se para continuar</p>
             <input type="text" id="login-usuario" placeholder="Usuário" style="margin-bottom: 10px;">
             <input type="password" id="login-senha" placeholder="Senha" onkeypress="checarLoginEnter(event)">
-            <button onclick="fazerLogin()" class="btn-novo" style="width:100%; justify-content: center; margin-top: 15px;">🔓 Entrar</button>
+            <button onclick="fazerLogin()" class="btn-novo" style="width:100%; justify-content: center; margin-top: 15px; background-color: #3b82f6;">🔓 Entrar</button>
             <p id="msg-erro-login" style="color: red; display: none; margin-top: 10px; font-weight:bold;">Dados incorretos!</p>
         </div>
     </div>
@@ -103,7 +260,7 @@
         <div class="controles">
             <button onclick="imprimirRelatorio('portrait')" class="btn-imprimir">🖨️ Retrato</button>
             <button onclick="imprimirRelatorio('landscape')" class="btn-imprimir">🖨️ Paisagem</button>
-            <button onclick="abrirModal()" class="btn-novo">+ Novo Atendimento</button>
+            <button onclick="abrirModal()" class="btn-novo" style="background-color: #3b82f6;">+ Novo Atendimento</button>
         </div>
 
         <div class="tabela-container">
@@ -142,7 +299,7 @@
                 <div class="form-grid">
                     <div class="input-group span-4 hidden" id="div-motivo-edicao" style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; margin-bottom: 10px;">
                         <label style="color:#856404; font-weight:bold;">⚠️ Motivo da Correção (Obrigatório)</label>
-                        <input type="text" id="motivo_edicao" placeholder="Justifique a alteração..." style="border: 1px solid #e0a800;">
+                        <input type="text" id="motivo_edicao" placeholder="Justifique a alteração..." style="border: 1px solid #e0a800; background-color: #fff;">
                     </div>
 
                     <div class="input-group span-2">
@@ -156,11 +313,12 @@
                     </div>
 
                     <div class="input-group span-1"><label>Hora Sepultamento</label><select id="hora" required></select></div>
-                    <div class="input-group span-2"><label style="color:var(--primary-color);">Atendente Responsável</label><input type="text" id="atendente_sistema" readonly style="background-color: #e8e8e8; font-weight:bold; color:#555;"></div>
                     
-                    <div class="input-group span-4" style="background-color: #fce4ec; border: 1px solid #f8bbd0; padding: 5px 10px; border-radius: 5px; display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="chk_indigente" style="width: auto; height: 18px; width: 18px;">
-                        <label for="chk_indigente" style="margin: 0; color: #c2185b; font-weight: bold; cursor: pointer;">SEPULTAMENTO DE INDIGENTE (Desativa campos obrigatórios)</label>
+                    <div class="input-group span-2"><label style="color:#3b82f6;">Atendente Responsável</label><input type="text" id="atendente_sistema" readonly></div>
+                    
+                    <div class="input-group span-4" style="background-color: #f1f5f9; border: 1px dashed #cbd5e1; padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="chk_indigente" style="width: auto; height: 16px; width: 16px; margin:0;">
+                        <label for="chk_indigente" style="margin: 0; color: #475569; cursor: pointer; text-transform: none; font-size:13px;">Sepultamento de Indigente (Desativa campos obrigatórios)</label>
                     </div>
 
                     <div class="input-group span-2"><label>Nome do Responsável (Família)</label><input type="text" id="resp_nome" placeholder="Nome do familiar ou empresa" required></div>
@@ -178,12 +336,12 @@
                     
                     <div class="input-group span-1"><label>Classificação</label><select id="classificacao_obito"><option value="ADULTO">ADULTO</option><option value="ANJO">ANJO (Criança/Natimorto)</option></select></div>
                     
-                    <div class="input-group span-3" style="border: 1px dashed #bbb; padding: 5px; border-radius: 5px; background: #fafafa;">
-                        <label style="color:#c0392b; font-weight:bold;">Situação: Membros</label>
+                    <div class="input-group span-3 box-membros-custom">
+                        <label class="titulo-membros">Situação: Membros</label>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <div style="display:flex; align-items:center; gap:5px;">
-                                <input type="checkbox" id="chk_membro" style="width:auto;">
-                                <label for="chk_membro" style="margin:0; cursor:pointer;">Sepultamento de Membro</label>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" id="chk_membro" style="width:auto; height: 16px; width: 16px; margin:0;">
+                                <label for="chk_membro" style="margin:0; cursor:pointer; color:#334155; text-transform:none;">Sepultamento de Membro</label>
                             </div>
                             <select id="tipo_membro_select" disabled style="flex:1;">
                                 <option value="">Selecione o membro...</option>
@@ -232,7 +390,7 @@
 
                     <div class="input-group span-1"><label>Nº Sepul</label><input type="text" id="sepul" required></div>
                     <div class="input-group span-1"><label>QD</label><input type="text" id="qd" required></div>
-                    <div class="input-group span-1"><label>GPS</label><div style="display:flex; gap:5px;"><input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps"><button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center;">📍</button><button type="button" onclick="window.open('https://www.google.com/maps','_blank')" class="btn-imprimir" style="width:40px; padding:0; justify-content:center;">🗺️</button></div></div>
+                    <div class="input-group span-1"><label>GPS</label><div style="display:flex; gap:5px;"><input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps"><button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center; border-radius:6px;">📍</button><button type="button" onclick="window.open('https://www.google.com/maps','_blank')" class="btn-imprimir" style="width:40px; padding:0; justify-content:center; border-radius:6px;">🗺️</button></div></div>
                     <div class="input-group span-4 hidden" id="div-motivo-sepultura"><label style="color:red;">Motivo Troca</label><input type="text" id="motivo_troca_sepultura" placeholder="Explique a mudança..."></div>
                     <div class="input-group span-2"><label>Hospital / Local</label><input type="text" id="hospital" list="lista-hospitais" placeholder="Selecione..." required><datalist id="lista-hospitais"><option value="DOMICÍLIO"><option value="OUTRO HOSPITAL (DIGITE O NOME)"><option value="HMCT (CARLOS TORTELLY)"><option value="HEAL (AZEVEDO LIMA)"><option value="HUAP (ANTÔNIO PEDRO)"><option value="HOSP. ORÊNCIO DE FREITAS)"><option value="HOSP. PSIQUIÁTRICO JURUJUBA)"><option value="HOSP. OCEÂNICO)"><option value="HOSP. GETULINHO)"><option value="UPA MÁRIO MONTEIRO)"><option value="UPA FONSECA)"><option value="CHN (COMPLEXO HOSPITALAR)"><option value="HCN (CLÍNICAS DE NITERÓI)"><option value="HOSP. SANTA MARTHA)"><option value="HOSP. SÃO LUCAS)"><option value="HOSP. ICARAÍ)"><option value="HEAT (ALBERTO TORRES)"><option value="HOSP. LUIZ PALMIER)"><option value="PRONTO SOCORRO CENTRAL (SG)"><option value="HOSP. SÃO GONÇALO)"><option value="HOSP. FRANCISCANO (NS. GRAÇAS)"><option value="IML - NITERÓI)"><option value="IML - SÃO GONÇALO)"></datalist></div>
                     <div class="input-group span-2 hidden" id="div-local-domicilio" style="flex-direction: row; gap: 5px;"><div style="flex: 1;"><label>UF</label><select id="estado_obito"><option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></div><div style="flex: 2;"><label>Cidade</label><select id="cidade_obito" disabled><option value="">Selecione a UF</option></select></div></div>
@@ -244,7 +402,7 @@
                         <div style="display:flex; gap:10px; align-items:center;">
                             <input type="time" id="hora_obito">
                             <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer;">
-                                <input type="checkbox" id="chk_ignorar_hora" style="width:auto;"> <span style="font-size:10px;">IGNORAR</span>
+                                <input type="checkbox" id="chk_ignorar_hora" style="width:auto; margin:0;"> <span style="font-size:10px; color:#475569;">IGNORAR</span>
                             </label>
                         </div>
                     </div>
@@ -252,126 +410,204 @@
                     <div class="input-group span-1"><label>Sepult. < 24h?</label><select id="do_24h"><option value="NAO">NÃO</option><option value="SIM">SIM (Liberado)</option></select></div>
                     <div class="input-group span-3"><label>Observações</label><textarea id="urna_info" rows="2" placeholder="Observações gerais..."></textarea></div>
                 </div>
-                <div class="modal-footer-custom"><div class="footer-group"><button type="button" class="btn-modal btn-cancelar" onclick="fecharModal()">Cancelar</button></div><div class="footer-group"><button type="submit" class="btn-modal btn-salvar">Salvar Dados</button></div></div>
+                <div class="modal-footer-custom" style="justify-content: space-between;">
+                    <button type="button" class="btn-close" style="width: auto;" onclick="fecharModal()">Cancelar</button>
+                    <button type="submit" class="btn-novo" style="width: auto; background-color: #3b82f6;">Salvar Dados</button>
+                </div>
             </form>
         </div>
     </div>
 
-    <div id="modal-visualizar" class="modal"><div class="modal-content" style="max-width: 700px; background: #fff;"><div class="modal-header"><h3>Ficha de Atendimento</h3><span class="close" onclick="fecharModalVisualizar()">×</span></div><div class="ficha-visualizacao"><div class="ficha-header"><h2>Prefeitura Municipal de Niterói</h2><p>Coordenadoria Municipal de Serviços Funerários</p></div><div class="ficha-linha"><span class="ficha-label">PROTOCOLO:</span><span class="ficha-valor" id="view_protocolo" style="font-family:'Courier New'; letter-spacing:1px; font-size:16px;"></span></div><div class="ficha-linha"><span class="ficha-label">ATENDENTE:</span><span class="ficha-valor" id="view_atendente" style="color:var(--primary-color); font-weight:bold;"></span></div><div class="ficha-linha"><span class="ficha-label">DATA/HORA ATENDIMENTO:</span><span class="ficha-valor" id="view_data_registro" style="font-weight: bold;"></span></div><div class="ficha-linha"><span class="ficha-label">HORÁRIO SEPUL.:</span><span class="ficha-valor" id="view_hora"></span></div><div class="ficha-linha"><span class="ficha-label">FALECIDO(A):</span><span class="ficha-valor" id="view_nome"></span></div><div class="ficha-linha"><span class="ficha-label">CAUSA DA MORTE:</span><span class="ficha-valor" id="view_causa"></span></div><div class="ficha-linha"><span class="ficha-label">RESPONSÁVEL:</span><span class="ficha-valor" id="view_resp_completo"></span></div><div class="ficha-linha"><span class="ficha-label">TELEFONE:</span><span class="ficha-valor" id="view_telefone"></span></div><div class="ficha-linha"><span class="ficha-label">FUNERÁRIA:</span><span class="ficha-valor" id="view_funeraria"></span></div><div class="ficha-linha"><span class="ficha-label">ACOLHIMENTO:</span><span class="ficha-valor" id="view_isencao_completa"></span></div><div class="ficha-linha"><span class="ficha-label">DADOS DA URNA:</span><span class="ficha-valor"><span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span></span></div><div class="ficha-linha"><span class="ficha-label">SERVIÇOS EXTRAS:</span><span class="ficha-valor" id="view_servicos_adicionais"></span></div><div class="ficha-linha"><span class="ficha-label">LOCAL SEPUL.:</span><span class="ficha-valor" id="view_local_sepul"></span></div><div class="ficha-linha"><span class="ficha-label">LOCAL ÓBITO:</span><span class="ficha-valor" id="view_hospital_completo"></span></div><div class="ficha-linha"><span class="ficha-label">VELÓRIO:</span><span class="ficha-valor" id="view_cap"></span></div><div class="ficha-linha"><span class="ficha-label">DATA/HORA ÓBITO:</span><span class="ficha-valor"><span id="view_data_obito"></span> às <span id="view_hora_obito"></span><span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span></span></div><div class="ficha-linha" style="border-bottom: none;"><span class="ficha-label">OBSERVAÇÕES:</span><span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span></div><div id="view_map_container" style="display:none; margin-top: 20px;"><div class="ficha-linha" style="border-bottom:none; margin-bottom:5px;"><span class="ficha-label">Localização:</span></div><div id="mapa-frame" style="width:100%; height:250px; border:1px solid #ccc; border-radius:6px; overflow:hidden;"></div><div style="text-align:right; margin-top:5px;"><a id="link-gps" href="#" target="_blank" style="font-size:12px; font-weight:bold; color:var(--primary-color); text-decoration:none;">📍 Abrir no Google Maps</a></div></div></div>
-    
-    <div class="modal-footer-custom">
-        <button type="button" class="btn-modal btn-sign-fam" onclick="abrirModalAssinatura('responsavel')">✍️ Assinar Família</button>
-        <button type="button" class="btn-modal btn-sign-func" onclick="abrirModalAssinatura('atendente')">✍️ Assinar Equipe</button>
-        <button type="button" class="btn-modal btn-print" onclick="gerarComprovante()">📄 Comprovante</button>
-        <button type="button" class="btn-modal btn-tag" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
-        <button type="button" class="btn-modal btn-wpp" onclick="enviarWhatsapp()">📱 WhatsApp</button>
-        <button type="button" class="btn-modal btn-sms" onclick="enviarSMS()">💬 SMS</button>
-        <button type="button" class="btn-modal btn-close" onclick="fecharModalVisualizar()">Fechar</button>
+    <div id="modal-visualizar" class="modal">
+        <div class="modal-content" style="max-width: 700px; background: #fff;">
+            <div class="modal-header">
+                <h3>Ficha de Atendimento</h3>
+                <span class="close" onclick="fecharModalVisualizar()">×</span>
+            </div>
+            <div class="ficha-visualizacao">
+                <div class="ficha-header"><h2>Prefeitura Municipal de Niterói</h2><p>Coordenadoria Municipal de Serviços Funerários</p></div>
+                <div class="ficha-linha"><span class="ficha-label">PROTOCOLO:</span><span class="ficha-valor" id="view_protocolo" style="font-family:'Courier New'; letter-spacing:1px; font-size:16px;"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">ATENDENTE:</span><span class="ficha-valor" id="view_atendente" style="color:#3b82f6; font-weight:bold;"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">DATA/HORA ATENDIMENTO:</span><span class="ficha-valor" id="view_data_registro" style="font-weight: bold;"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">HORÁRIO SEPUL.:</span><span class="ficha-valor" id="view_hora"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">FALECIDO(A):</span><span class="ficha-valor" id="view_nome"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">CAUSA DA MORTE:</span><span class="ficha-valor" id="view_causa"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">RESPONSÁVEL:</span><span class="ficha-valor" id="view_resp_completo"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">TELEFONE:</span><span class="ficha-valor" id="view_telefone"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">FUNERÁRIA:</span><span class="ficha-valor" id="view_funeraria"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">ACOLHIMENTO:</span><span class="ficha-valor" id="view_isencao_completa"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">DADOS DA URNA:</span><span class="ficha-valor"><span id="view_combo_urna"></span> - <span id="view_tipo_urna_detalhe"></span></span></div>
+                <div class="ficha-linha"><span class="ficha-label">SERVIÇOS EXTRAS:</span><span class="ficha-valor" id="view_servicos_adicionais"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">LOCAL SEPUL.:</span><span class="ficha-valor" id="view_local_sepul"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">LOCAL ÓBITO:</span><span class="ficha-valor" id="view_hospital_completo"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">VELÓRIO:</span><span class="ficha-valor" id="view_cap"></span></div>
+                <div class="ficha-linha"><span class="ficha-label">DATA/HORA ÓBITO:</span><span class="ficha-valor"><span id="view_data_obito"></span> às <span id="view_hora_obito"></span><span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span></span></div>
+                <div class="ficha-linha" style="border-bottom: none;"><span class="ficha-label">OBSERVAÇÕES:</span><span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span></div>
+                <div id="view_map_container" style="display:none; margin-top: 20px;"><div class="ficha-linha" style="border-bottom:none; margin-bottom:5px;"><span class="ficha-label">Localização:</span></div><div id="mapa-frame" style="width:100%; height:250px; border:1px solid #e2e8f0; border-radius:6px; overflow:hidden;"></div><div style="text-align:right; margin-top:5px;"><a id="link-gps" href="#" target="_blank" style="font-size:12px; font-weight:bold; color:#3b82f6; text-decoration:none;">📍 Abrir no Google Maps</a></div></div>
+            </div>
+            
+            <div class="modal-footer-custom">
+                <button type="button" class="btn-print" onclick="gerarComprovante()">📄 Comprovante</button>
+                <button type="button" class="btn-tag" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
+                <button type="button" class="btn-sign-fam" onclick="abrirModalAssinatura('responsavel')">✍️ Assinar Família</button>
+                <button type="button" class="btn-sign-func" onclick="abrirModalAssinatura('atendente')">✍️ Assinar Equipe</button>
+                <button type="button" class="btn-wpp" onclick="enviarWhatsapp()">📱 WhatsApp</button>
+                <button type="button" class="btn-sms" onclick="enviarSMS()">💬 SMS</button>
+                <button type="button" class="btn-close" onclick="fecharModalVisualizar()">Fechar</button>
+            </div>
+        </div>
     </div>
-    
-    </div></div>
 
     <div id="modal-admin" class="modal">
         <div class="modal-content" style="max-width: 900px; height: 85vh; display: flex; flex-direction: column;">
-            <div class="modal-header"><h3>Painel Administrativo</h3><span class="close" onclick="fecharModalAdmin()">×</span></div>
+            <div class="modal-header" style="border-bottom: 1px solid #e2e8f0;">
+                <h3 style="color: #1e293b;">Painel Administrativo</h3>
+                <span class="close" onclick="fecharModalAdmin()">×</span>
+            </div>
             <div class="tab-header">
                 <button class="tab-btn active" onclick="abrirAba('tab-equipe')">👥 Equipe</button>
                 <button class="tab-btn" onclick="abrirAba('tab-stats')">📊 Estatísticas</button>
                 <button class="tab-btn" onclick="abrirAba('tab-logs')">🕵️ Auditoria</button>
+                <button class="tab-btn" onclick="abrirAba('tab-backup')">💾 Backup</button>
             </div>
             <div class="tab-content-area" style="flex-grow: 1; overflow-y: auto; padding: 20px;">
+                
                 <div id="tab-equipe" class="tab-pane active">
-                    <h4>Gerenciar Usuários</h4>
-                    <div id="box-novo-usuario" style="display:flex; flex-direction: column; gap:10px; margin-bottom:20px; background: #f9f9f9; padding:15px; border-radius:8px;">
-                        <strong style="color:var(--primary-color);">Novo Usuário:</strong>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px;">
-                            <input type="text" id="novo-nome" placeholder="Nome Completo">
-                            <input type="text" id="novo-login" placeholder="Login">
-                            <input type="email" id="novo-email" placeholder="E-mail">
-                            <input type="password" id="nova-senha" placeholder="Senha">
-                            <button onclick="adicionarFuncionario()" class="btn-novo" style="padding: 10px 20px;">+</button>
+                    <div id="box-novo-usuario">
+                        <span class="admin-form-title">Novo Usuário:</span>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div><label>NOME COMPLETO</label><input type="text" id="novo-nome" placeholder="Ex: João Silva"></div>
+                            <div><label>LOGIN / WHATSAPP</label><input type="text" id="novo-login" placeholder="Ex: joao.silva"></div>
+                            <div><label>E-MAIL</label><input type="email" id="novo-email" placeholder="Ex: joao@email.com"></div>
                         </div>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                             <div><label>SENHA</label><input type="password" id="nova-senha" placeholder="Senha segura"></div>
+                        </div>
+                        <button onclick="adicionarFuncionario()" class="btn-novo-usuario">+ Adicionar Usuário</button>
                     </div>
-                    <div id="div-editar-usuario" class="hidden" style="display:flex; flex-direction: column; gap:10px; margin-bottom:20px; background: #fff3cd; padding:15px; border-radius:8px; border:1px solid #ffeeba;">
-                        <strong style="color:#856404;">✏️ Editando Usuário:</strong>
+
+                    <div id="div-editar-usuario" class="hidden">
+                        <span class="admin-form-title" style="color: #f59e0b;">✏️ Editando Usuário:</span>
                         <input type="hidden" id="edit-id">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px;">
-                            <input type="text" id="edit-nome" placeholder="Nome e Sobrenome">
-                            <input type="text" id="edit-login" placeholder="Login" disabled style="background:#e9ecef; cursor:not-allowed;">
-                            <input type="email" id="edit-email" placeholder="E-mail">
-                            <input type="text" id="edit-senha" placeholder="Nova Senha">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div><label>NOME COMPLETO</label><input type="text" id="edit-nome" placeholder="Nome e Sobrenome"></div>
+                            <div><label>LOGIN</label><input type="text" id="edit-login" placeholder="Login" disabled></div>
+                            <div><label>E-MAIL</label><input type="email" id="edit-email" placeholder="E-mail"></div>
                         </div>
-                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:5px;">
-                            <button onclick="cancelarEdicao()" class="btn-modal btn-cancelar">Cancelar</button>
-                            <button onclick="salvarEdicaoUsuario()" class="btn-modal btn-salvar">Salvar Alterações</button>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                             <div><label>NOVA SENHA</label><input type="text" id="edit-senha" placeholder="Nova Senha"></div>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:15px;">
+                            <button onclick="cancelarEdicao()" class="btn-modal btn-close">Cancelar</button>
+                            <button onclick="salvarEdicaoUsuario()" class="btn-modal btn-novo-usuario" style="width:auto; margin:0;">Salvar Alterações</button>
                         </div>
                     </div>
-                    <ul id="lista-equipe" class="lista-simples"></ul>
+
+                    <div class="table-equipe-container">
+                        <div class="table-equipe-header">
+                            <div class="col-user">Usuário</div>
+                            <div class="col-login">Login / Contato</div>
+                            <div class="col-pass">Senha</div>
+                            <div class="col-actions">Ações</div>
+                        </div>
+                        <ul id="lista-equipe" style="list-style: none; padding: 0; margin: 0;"></ul>
+                    </div>
                 </div>
 
                 <div id="tab-stats" class="tab-pane">
                     <div class="controles-topo" style="margin-bottom: 20px; justify-content: center; gap: 10px; flex-wrap: wrap; align-items: center;">
-                        <button onclick="carregarEstatisticas('7')" class="btn-imprimir">7 Dias</button>
-                        <button onclick="carregarEstatisticas('14')" class="btn-imprimir">14 Dias</button>
-                        <button onclick="carregarEstatisticas('30')" class="btn-imprimir">30 Dias</button>
-                        <button onclick="carregarEstatisticas('mes')" class="btn-imprimir">Este Mês</button>
-                        <div style="width: 1px; height: 25px; background: #ccc; margin: 0 10px;"></div>
+                        <button onclick="carregarEstatisticas('7')" class="btn-close" style="padding: 8px 15px; border-radius: 6px;">7 Dias</button>
+                        <button onclick="carregarEstatisticas('14')" class="btn-close" style="padding: 8px 15px; border-radius: 6px;">14 Dias</button>
+                        <button onclick="carregarEstatisticas('30')" class="btn-close" style="padding: 8px 15px; border-radius: 6px;">30 Dias</button>
+                        <button onclick="carregarEstatisticas('mes')" class="btn-close" style="padding: 8px 15px; border-radius: 6px;">Este Mês</button>
+                        <div style="width: 1px; height: 25px; background: #e2e8f0; margin: 0 10px;"></div>
                         <div style="display: flex; align-items: center; gap: 5px;">
-                            <input type="month" id="filtro-mes-ano" class="btn-imprimir" style="padding: 5px 10px;">
-                            <button onclick="carregarEstatisticas('custom')" class="btn-novo" style="background-color: #666;" title="Filtrar">🔍</button>
+                            <input type="month" id="filtro-mes-ano" style="padding: 6px 10px; width: 150px;">
+                            <button onclick="carregarEstatisticas('custom')" class="btn-novo" style="background-color: #64748b; padding: 8px 12px; height: 34px;" title="Filtrar">🔍</button>
                         </div>
-                        <div style="width: 1px; height: 25px; background: #ccc; margin: 0 10px;"></div>
-                        <button onclick="baixarRelatorioCompleto()" class="btn-novo" style="background-color: #1e3a8a;">📊 Baixar Relatório Completo</button>
-                        <button onclick="baixarExcel()" class="btn-novo" style="background-color: #27ae60;">📥 Excel (Visual)</button>
+                        <div style="width: 1px; height: 25px; background: #e2e8f0; margin: 0 10px;"></div>
+                        <button onclick="baixarRelatorioCompleto()" class="btn-novo" style="background-color: #3b82f6; padding: 8px 15px; height: 34px;">📊 Relatório Geral</button>
+                        <button onclick="baixarExcel()" class="btn-novo" style="background-color: #22c55e; padding: 8px 15px; height: 34px;">📥 Planilha Stats</button>
                     </div>
-                    <div id="loading-stats" style="text-align:center; display:none; color:#666;">Carregando dados...</div>
+                    <div id="loading-stats" style="text-align:center; display:none; color:#64748b;">Carregando dados...</div>
                     <div style="display: flex; flex-direction: column; gap: 30px;">
-                        <div class="grafico-container" style="height: 300px;"><h5 style="text-align:center; margin-bottom:10px;">Causas de Morte</h5><canvas id="grafico-causas"></canvas></div>
-                        <div class="grafico-container" style="height: 300px;"><h5 style="text-align:center; margin-bottom:10px;">Atendimentos por Funcionário</h5><canvas id="grafico-atendentes"></canvas></div>
+                        <div class="grafico-container" style="height: 300px;"><h5 style="text-align:center; margin-bottom:10px; color:#334155;">Causas de Morte</h5><canvas id="grafico-causas"></canvas></div>
+                        <div class="grafico-container" style="height: 300px;"><h5 style="text-align:center; margin-bottom:10px; color:#334155;">Atendimentos por Funcionário</h5><canvas id="grafico-atendentes"></canvas></div>
                     </div>
                     <div id="lista-estatisticas" style="margin-top: 20px;"></div>
                 </div>
 
                 <div id="tab-logs" class="tab-pane">
                     <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;">
-                        <h4>Log de Auditoria e Alterações</h4>
+                        <h4 style="color: #334155;">Log de Auditoria e Alterações</h4>
                         <div style="display:flex; gap: 10px;">
-                            <button onclick="baixarLogsExcel()" class="btn-novo" style="background-color:#27ae60; padding: 5px 10px; font-size:12px;">📥 Excel</button>
-                            <button onclick="baixarLogsPDF()" class="btn-novo" style="background-color:#c0392b; padding: 5px 10px; font-size:12px;">📄 PDF</button>
-                            <button onclick="carregarLogs()" class="btn-imprimir">🔄 Atualizar</button>
+                            <button onclick="baixarLogsExcel()" class="btn-novo" style="background-color:#22c55e; padding: 6px 12px; font-size:12px; height:auto;">📥 Excel</button>
+                            <button onclick="baixarLogsPDF()" class="btn-novo" style="background-color:#ef4444; padding: 6px 12px; font-size:12px; height:auto;">📄 PDF</button>
+                            <button onclick="carregarLogs()" class="btn-close" style="padding: 6px 12px; font-size:12px; height:auto;">🔄 Atualizar</button>
                         </div>
                     </div>
-                    <table class="table-logs" style="width:100%; font-size:12px; border-collapse: collapse;">
+                    <table class="table-logs" style="width:100%; font-size:13px; border-collapse: collapse;">
                         <thead>
-                            <tr style="background:#eee; text-align:left;">
-                                <th style="padding:10px;">Data/Hora</th>
-                                <th style="padding:10px;">Usuário</th>
-                                <th style="padding:10px;">Ação / Detalhes</th>
+                            <tr style="background:#f8fafc; text-align:left;">
+                                <th style="padding:12px 10px; color:#64748b; font-weight:600;">Data/Hora</th>
+                                <th style="padding:12px 10px; color:#64748b; font-weight:600;">Usuário</th>
+                                <th style="padding:12px 10px; color:#64748b; font-weight:600;">Ação / Detalhes</th>
                             </tr>
                         </thead>
                         <tbody id="tabela-logs"></tbody>
                     </table>
                 </div>
+
+                <div id="tab-backup" class="tab-pane">
+                    <h4 style="color: #334155; margin-bottom: 20px;">Gerenciamento do Banco de Dados</h4>
+                    
+                    <div style="margin-bottom: 20px; padding: 20px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
+                        <h5 style="margin-bottom: 5px; color: #0284c7; font-size: 15px;">⬇️ Exportar Atendimentos (Offline)</h5>
+                        <p style="font-size: 13px; margin-bottom: 15px; color: #475569;">Baixe uma cópia de segurança legível de todos os atendimentos já registrados.</p>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="baixarTodosExcel()" class="btn-novo" style="background-color: #10b981; padding: 10px 20px; width:auto;">📥 Excel Completo</button>
+                            <button onclick="baixarTodosPDF()" class="btn-novo" style="background-color: #ef4444; padding: 10px 20px; width:auto;">📄 PDF Completo</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 20px; padding: 20px; background: #fffbeb; border-radius: 8px; border: 1px solid #fef3c7;">
+                        <h5 style="margin-bottom: 5px; color: #d97706; font-size: 15px;">💾 Backup do Sistema (JSON)</h5>
+                        <p style="font-size: 13px; margin-bottom: 15px; color: #475569;">Faça o download do banco de dados completo (Atendimentos, Equipe e Auditoria) para restauração futura.</p>
+                        <button onclick="gerarBackup()" class="btn-novo" style="background-color: #f59e0b; padding: 10px 20px; width:auto;">⬇️ Gerar Backup</button>
+                    </div>
+
+                    <div style="padding: 20px; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
+                        <h5 style="margin-bottom: 5px; color: #dc2626; font-size: 15px;">⚠️ Restauração do Banco de Dados</h5>
+                        <p style="font-size: 13px; margin-bottom: 15px; color: #dc2626; font-weight:500;">Atenção: A restauração pode sobrescrever dados existentes. Use com cuidado.</p>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="file" id="file-restore" accept=".json" style="flex: 1; max-width:400px; padding: 8px; background: white; border: 1px solid #fca5a5;">
+                            <button onclick="restaurarBackup()" class="btn-novo" style="background-color: #dc2626; padding: 10px 20px; width:auto;">⬆️ Restaurar</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
     <div id="modal-assinatura" class="modal">
-        <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <h3 id="titulo-assinatura">Assinatura</h3>
-            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Assine abaixo usando o dedo ou mouse.</p>
-            <div style="border: 2px solid #333; background: #fff; display: inline-block;">
-                <canvas id="signature-pad" width="400" height="200"></canvas>
+        <div class="modal-content" style="max-width: 500px; text-align: center; border-radius: 12px; padding: 30px;">
+            <h3 id="titulo-assinatura" style="color: #1e293b; margin-bottom: 5px;">Assinatura</h3>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Assine abaixo usando o dedo ou mouse.</p>
+            <div style="display: inline-block; width: 100%;">
+                <canvas id="signature-pad" width="400" height="200" style="width: 100%; border-radius: 8px; background-color: #f8fafc; border: 2px dashed #cbd5e1;"></canvas>
             </div>
-            <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
-                <button onclick="limparAssinatura()" class="btn-modal btn-cancelar" style="background: #f44336; color: white;">Limpar</button>
-                <button onclick="salvarAssinatura()" class="btn-modal btn-salvar">Confirmar</button>
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+                <button onclick="limparAssinatura()" class="btn-close" style="padding: 10px 20px; font-weight: 600;">Limpar</button>
+                <button onclick="salvarAssinatura()" class="btn-novo" style="background-color: #3b82f6; padding: 10px 20px;">Confirmar</button>
             </div>
-            <button onclick="fecharModalAssinatura()" class="close" style="position: absolute; top: 10px; right: 15px;">×</button>
+            <button onclick="fecharModalAssinatura()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
         </div>
     </div>
 
-    <footer style="text-align: center; padding: 20px; color: #888; font-size: 11px; margin-top: 30px; border-top: 1px solid #eee;">© 2026 Controle Funerário Niterói. Todos os direitos reservados.</footer>
+    <footer style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px; margin-top: 30px; border-top: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;">
+        © 2026 Controle Funerário Niterói. Todos os direitos reservados.
+    </footer>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
