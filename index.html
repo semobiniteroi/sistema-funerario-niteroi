@@ -91,6 +91,7 @@
         .btn-sign-fam, .btn-sign-func { background-color: #7c3aed !important; color: white !important; }
         .btn-wpp { background-color: #22c55e !important; color: white !important; }
         .btn-sms { background-color: #3ba8ea !important; color: white !important; }
+        .btn-transfer { background-color: #0ea5e9 !important; color: white !important; }
         .btn-close { background-color: #f1f5f9 !important; color: #475569 !important; box-shadow: none !important; }
 
         /* 5. Painel Admin - Abas (Tabs) */
@@ -159,7 +160,7 @@
         }
         .box-membros-custom .titulo-membros { color: #c2410c !important; font-size: 13px !important; margin-bottom: 5px; }
 
-        /* 8. Tabela de Equipe (Design Maruí Integrado) */
+        /* 8. Tabela de Equipe */
         .table-equipe-container {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -452,6 +453,7 @@
                 <button type="button" class="btn-sign-fam" onclick="abrirModalAssinatura('responsavel')">✍️ Assinar Família</button>
                 <button type="button" class="btn-sign-func" onclick="abrirModalAssinatura('atendente')">✍️ Assinar Equipe</button>
                 <button type="button" class="btn-wpp" onclick="enviarWhatsapp()">📱 WhatsApp</button>
+                <button type="button" class="btn-transfer" onclick="abrirModalTransferir()">🔄 Transferir</button>
                 <button type="button" class="btn-sms" onclick="enviarSMS()">💬 SMS</button>
                 <button type="button" class="btn-close" onclick="fecharModalVisualizar()">Fechar</button>
             </div>
@@ -587,6 +589,23 @@
                 </div>
 
             </div>
+        </div>
+    </div>
+
+    <div id="modal-transferir" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
+            <h3 style="color: #1e293b; margin-bottom: 15px;">Transferir Atendimento</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o novo cemitério destino:</p>
+            <select id="novo_cemiterio_transferencia" style="margin-bottom: 20px;">
+                <option value="CEMITÉRIO DO MARUÍ">CEMITÉRIO DO MARUÍ</option>
+                <option value="CEMITÉRIO DE SÃO FRANCISCO">CEMITÉRIO DE SÃO FRANCISCO</option>
+                <option value="CEMITÉRIO DE ITAIPU">CEMITÉRIO DE ITAIPU</option>
+            </select>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="fecharModalTransferir()" class="btn-close" style="padding: 10px 20px; font-weight: 600;">Cancelar</button>
+                <button onclick="confirmarTransferencia()" class="btn-novo" style="background-color: #0ea5e9; padding: 10px 20px;">Transferir</button>
+            </div>
+            <button onclick="fecharModalTransferir()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
         </div>
     </div>
 
