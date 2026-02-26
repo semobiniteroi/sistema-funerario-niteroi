@@ -423,9 +423,9 @@ window.renderizarTabela = function(lista) {
         }
 
         let btnMap = '';
-        const cleanCoords = item.geo_coords ? item.geo_coords.replace(/\s/g, '') : '';
+        const cleanCoords = item.geo_coords ? item.geo_coords.replace(/[^0-9.,\-]/g, '') : '';
         if (cleanCoords && cleanCoords.includes(',')) {
-             btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://www.google.com/maps?q=${cleanCoords}', '_blank')" title="Ver Localização">📍</button>`;
+             btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://maps.google.com/maps?q=${cleanCoords}', '_blank')" title="Ver Localização">📍</button>`;
         }
 
         tr.innerHTML = `
@@ -831,7 +831,7 @@ window.restaurarBackup = function() {
     reader.readAsText(file);
 }
 
-// --- GERENCIAMENTO DE EQUIPE COM NOVO DESIGN ---
+// --- GERENCIAMENTO DE EQUIPE (NOVO DESIGN BASEADO NA IMAGEM) ---
 window.listarEquipe = function() {
     const database = getDB();
     const ul = document.getElementById('lista-equipe');
@@ -851,7 +851,7 @@ window.listarEquipe = function() {
                 iniciais += names[0][1].toUpperCase();
             }
 
-            // Gerar cores baseadas no tamanho do nome para manter padrão
+            // Gerar cores baseadas no tamanho do nome para manter padrão visual
             const colors = ['#e0f2fe', '#fef3c7', '#dcfce3', '#f3e8ff', '#ffe4e6', '#ccfbf1'];
             const textColors = ['#0284c7', '#d97706', '#16a34a', '#9333ea', '#e11d48', '#0d9488'];
             const colorIndex = (u.nome || '').length % colors.length;
@@ -1257,11 +1257,11 @@ window.visualizar = function(id) {
             const mapFrame = document.getElementById('mapa-frame'); 
             const mapLink = document.getElementById('link-gps');
             if (mapContainer && mapFrame && mapLink) { 
-                const cleanCoords = d.geo_coords ? d.geo_coords.replace(/\s/g, '') : ''; 
+                const cleanCoords = d.geo_coords ? d.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
                 if (cleanCoords && cleanCoords.includes(',')) { 
                     mapContainer.style.display = 'block'; 
                     mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://maps.google.com/maps?q=${cleanCoords}&z=17&output=embed"></iframe>`; 
-                    mapLink.href = `https://www.google.com/maps?q=${cleanCoords}`; 
+                    mapLink.href = `https://maps.google.com/maps?q=${cleanCoords}`; 
                 } else { 
                     mapContainer.style.display = 'none'; 
                 } 
@@ -1295,6 +1295,7 @@ window.onclick = function(event) {
     if (t == document.getElementById('modal-estatisticas')) window.fecharModalEstatisticas(); 
     if (t == document.getElementById('modal-equipe')) window.fecharModalEquipe(); 
     if (t == document.getElementById('modal-admin')) window.fecharModalAdmin(); 
+    if (t == document.getElementById('modal-transferir')) window.fecharModalTransferir(); 
 }
 
 window.fazerLogout = function() { 
@@ -1324,61 +1325,18 @@ window.gerarEtiqueta = function() {
 window.enviarWhatsapp = function() { 
     if (!dadosAtendimentoAtual) return; 
     const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; 
-    const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : ''; 
+    const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
     if (!t) { alert("Sem telefone."); return; } 
     if (!c) { alert("Sem GPS."); return; } 
-    window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`, '_blank'); 
+    window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=' + c)}`, '_blank'); 
 }
 
 window.enviarSMS = function() { 
     if (!dadosAtendimentoAtual) return; 
     const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; 
-    const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/\s/g, '') : ''; 
+    const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
     if (!t) { alert("Sem telefone."); return; } 
-    window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`; 
-}
-
-// --- LÓGICA DE TRANSFERÊNCIA DE CEMITÉRIO ---
-window.abrirModalTransferir = function() {
-    if(!dadosAtendimentoAtual) return;
-    const select = document.getElementById('novo_cemiterio_transferencia');
-    if(select) select.value = dadosAtendimentoAtual.local || "CEMITÉRIO DO MARUÍ";
-    safeDisplay('modal-transferir', 'flex');
-}
-
-window.fecharModalTransferir = function() {
-    safeDisplay('modal-transferir', 'none');
-}
-
-window.confirmarTransferencia = function() {
-    if(!dadosAtendimentoAtual || !dadosAtendimentoAtual.id) return;
-    const novoLocal = document.getElementById('novo_cemiterio_transferencia').value;
-    const localAntigo = dadosAtendimentoAtual.local || "CEMITÉRIO DO MARUÍ";
-    
-    if(novoLocal === localAntigo) {
-        alert("O atendimento já está neste cemitério.");
-        return;
-    }
-
-    if(confirm(`Confirmar transferência de ${localAntigo} para ${novoLocal}?`)) {
-        const db = getDB();
-        db.collection("atendimentos").doc(dadosAtendimentoAtual.id).update({ local: novoLocal })
-        .then(() => {
-            db.collection("auditoria").add({ 
-                data_log: new Date().toISOString(), 
-                usuario: usuarioLogado ? usuarioLogado.nome : 'Anon', 
-                acao: "TRANSFERÊNCIA", 
-                detalhe: `ID: ${dadosAtendimentoAtual.id} | De: ${localAntigo} Para: ${novoLocal}` 
-            });
-            alert("Atendimento transferido com sucesso!");
-            window.fecharModalTransferir();
-            window.fecharModalVisualizar();
-        })
-        .catch(err => {
-            console.error("Erro na transferência:", err);
-            alert("Erro ao transferir.");
-        });
-    }
+    window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=' + c)}`; 
 }
 
 // --- GERAR COMPROVANTE ---
