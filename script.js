@@ -61,11 +61,57 @@ function safeDisplay(id, displayType) {
     if (el) el.style.display = displayType;
 }
 
+// --- BUSCA CEP E CPF ---
+window.buscarCEP = function(cep) {
+    cep = cep.replace(/\D/g, '');
+    if (cep.length === 8) {
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.erro) {
+                    document.getElementById('resp_endereco').value = data.logradouro.toUpperCase();
+                    document.getElementById('resp_bairro').value = data.bairro.toUpperCase();
+                    document.getElementById('resp_cidade').value = data.localidade.toUpperCase();
+                    document.getElementById('resp_uf').value = data.uf.toUpperCase();
+                    document.getElementById('resp_numero').focus();
+                }
+            })
+            .catch(err => console.error("Erro ao buscar CEP:", err));
+    }
+}
+
+window.buscarPorCPF = function() {
+    let cpfInput = document.getElementById('resp_cpf').value.replace(/\D/g, '');
+    if (!cpfInput) { alert("Digite um CPF válido."); return; }
+    
+    const db = getDB();
+    db.collection("atendimentos").where("resp_cpf", "==", cpfInput).limit(1).get()
+        .then(snap => {
+            if (!snap.empty) {
+                const d = snap.docs[0].data();
+                if(d.resp_nome) document.getElementById('resp_nome').value = d.resp_nome;
+                if(d.resp_rg) document.getElementById('resp_rg').value = d.resp_rg;
+                if(d.telefone) document.getElementById('telefone').value = d.telefone;
+                if(d.resp_cep) document.getElementById('resp_cep').value = d.resp_cep;
+                if(d.resp_endereco) document.getElementById('resp_endereco').value = d.resp_endereco;
+                if(d.resp_numero) document.getElementById('resp_numero').value = d.resp_numero;
+                if(d.resp_complemento) document.getElementById('resp_complemento').value = d.resp_complemento;
+                if(d.resp_bairro) document.getElementById('resp_bairro').value = d.resp_bairro;
+                if(d.resp_cidade) document.getElementById('resp_cidade').value = d.resp_cidade;
+                if(d.resp_uf) document.getElementById('resp_uf').value = d.resp_uf;
+                alert("Dados do contribuinte preenchidos com sucesso!");
+            } else {
+                alert("Nenhum cadastro prévio encontrado com este CPF.");
+            }
+        });
+}
+
 // --- LÓGICA DE INDIGENTE ---
 window.toggleIndigente = function() {
     const chk = document.getElementById('chk_indigente');
     const camposObrigatorios = [
-        'resp_nome', 'telefone', 'funeraria', 'isencao', 'tipo_sepultura', 
+        'resp_nome', 'resp_cpf', 'resp_endereco', 'resp_numero', 'resp_bairro', 'resp_cidade',
+        'telefone', 'funeraria', 'isencao', 'tipo_sepultura', 
         'sepul', 'qd', 'hospital', 'cap', 'data_obito', 'nome', 'causa', 'hora'
     ];
 
@@ -557,13 +603,268 @@ window.abrirAba = function(id) {
     buttons.forEach(btn => btn.classList.remove('active'));
     
     if (id === 'tab-equipe') buttons[0].classList.add('active');
-    if (id === 'tab-stats') buttons[1].classList.add('active');
-    if (id === 'tab-logs') buttons[2].classList.add('active');
-    if (id === 'tab-backup') buttons[3].classList.add('active');
+    if (id === 'tab-contribuintes') buttons[1].classList.add('active');
+    if (id === 'tab-backup') buttons[2].classList.add('active');
+    if (id === 'tab-stats') buttons[3].classList.add('active');
+    if (id === 'tab-logs') buttons[4].classList.add('active');
 
     if(id==='tab-equipe') window.listarEquipe();
     if(id==='tab-logs') window.carregarLogs();
     if(id==='tab-stats') window.carregarEstatisticas('7');
+}
+
+// --- ESTATÍSTICAS ---
+window.carregarEstatisticas = function(modo) {
+    const database = getDB();
+    if(!database) return;
+    
+    let dInicio = new Date();
+    let dString = "";
+
+    if (modo === 'custom') {
+        const inputMonth = document.getElementById('filtro-mes-ano');
+        if(inputMonth && inputMonth.value) {
+            dString = inputMonth.value; 
+        } else { 
+            alert("Selecione Mês e Ano."); 
+            return; 
+        }
+    } else {
+        if (modo === 'mes') {
+            dInicio = new Date(dInicio.getFullYear(), dInicio.getMonth(), 1);
+        } else {
+            dInicio.setDate(dInicio.getDate() - parseInt(modo));
+        }
+        dString = dInicio.toISOString().split('T')[0];
+    }
+    
+    database.collection("atendimentos").where("data_ficha", ">=", dString).onSnapshot(snap => {
+        let causas = {};
+        let atendentes = {};
+        
+        snap.forEach(doc => {
+            const d = doc.data();
+            
+            if (modo === 'custom') { 
+                const checkStr = document.getElementById('filtro-mes-ano').value;
+                if (!d.data_ficha.startsWith(checkStr)) return; 
+            }
+            
+            // Contagem Causas
+            if(d.causa) { 
+                d.causa.split('/').forEach(c => { 
+                    const k = c.trim().toUpperCase(); 
+                    if(k) causas[k] = (causas[k] || 0) + 1; 
+                }); 
+            }
+
+            // Contagem Atendentes
+            if(d.atendente_sistema) {
+                const func = d.atendente_sistema.trim().toUpperCase();
+                if(func) atendentes[func] = (atendentes[func] || 0) + 1;
+            }
+        });
+        
+        // Renderizar Gráfico de Causas
+        const ctxCausas = document.getElementById('grafico-causas');
+        if(ctxCausas && window.Chart) {
+            const sortedCausas = Object.entries(causas).sort((a,b) => b[1] - a[1]).slice(0, 10);
+            if(chartInstances['causas']) chartInstances['causas'].destroy();
+            chartInstances['causas'] = new Chart(ctxCausas, {
+                type: 'bar',
+                data: { 
+                    labels: sortedCausas.map(x => x[0]), 
+                    datasets: [{ label: 'Top 10 Causas', data: sortedCausas.map(x => x[1]), backgroundColor: '#3b82f6' }] 
+                },
+                options: { indexAxis: 'y', maintainAspectRatio: false }
+            });
+            dadosEstatisticasExportacao = sortedCausas.map(([c,q]) => ({"Causa": c, "Qtd": q}));
+        }
+
+        // Renderizar Gráfico de Atendentes
+        const ctxAtend = document.getElementById('grafico-atendentes');
+        if(ctxAtend && window.Chart) {
+            const sortedAtend = Object.entries(atendentes).sort((a,b) => b[1] - a[1]);
+            if(chartInstances['atendentes']) chartInstances['atendentes'].destroy();
+            chartInstances['atendentes'] = new Chart(ctxAtend, {
+                type: 'bar',
+                data: { 
+                    labels: sortedAtend.map(x => x[0]), 
+                    datasets: [{ label: 'Atendimentos por Funcionário', data: sortedAtend.map(x => x[1]), backgroundColor: '#10b981' }] 
+                },
+                options: { indexAxis: 'y', maintainAspectRatio: false }
+            });
+        }
+    });
+}
+
+// --- BUSCA CONTRIBUINTES (ADMIN) ---
+window.buscarContribuintes = function() {
+    const termo = document.getElementById('input-busca-contribuinte').value.trim().toUpperCase();
+    const ul = document.getElementById('lista-contribuintes');
+    
+    if (!termo) {
+        ul.innerHTML = '<li style="padding: 20px; text-align: center; color: #64748b; font-weight: 500;">Digite um termo para buscar.</li>';
+        return;
+    }
+
+    ul.innerHTML = '<li style="padding: 20px; text-align: center; color: #64748b;">Buscando...</li>';
+
+    const db = getDB();
+    db.collection("atendimentos").get().then(snap => {
+        let contribuintesMap = {};
+
+        snap.forEach(doc => {
+            let d = doc.data();
+            let cpf = d.resp_cpf ? d.resp_cpf.replace(/\D/g, '') : '';
+            let nome = (d.resp_nome || '').toUpperCase();
+            let rg = d.resp_rg || '';
+            let tel = d.telefone || '';
+
+            if (cpf.includes(termo.replace(/\D/g, '')) || nome.includes(termo) || rg.includes(termo) || tel.includes(termo)) {
+                let key = cpf || nome;
+                if (key && !contribuintesMap[key]) {
+                    contribuintesMap[key] = {
+                        id: doc.id, 
+                        cpf: d.resp_cpf || '',
+                        nome: d.resp_nome || '',
+                        rg: d.resp_rg || '',
+                        telefone: d.telefone || '',
+                        endereco: d.resp_endereco || '',
+                        numero: d.resp_numero || '',
+                        bairro: d.resp_bairro || '',
+                        cidade: d.resp_cidade || '',
+                        uf: d.resp_uf || '',
+                        cep: d.resp_cep || '',
+                        complemento: d.resp_complemento || ''
+                    };
+                }
+            }
+        });
+
+        let results = Object.values(contribuintesMap);
+        
+        ul.innerHTML = '';
+        if (results.length === 0) {
+            ul.innerHTML = '<li style="padding: 20px; text-align: center; color: #64748b;">Nenhum contribuinte encontrado.</li>';
+            return;
+        }
+
+        results.forEach(c => {
+            let enderecoCompleto = c.endereco ? `${c.endereco}, ${c.numero} - ${c.bairro}` : 'Não informado';
+            ul.innerHTML += `
+            <li class="table-equipe-row">
+                <div style="flex: 2; font-weight: 600; color: #1e293b;">${c.nome}</div>
+                <div style="flex: 1.5; color: #475569; font-size: 13px;">${c.cpf} <br> <span style="font-size: 11px; color: #94a3b8;">RG: ${c.rg || '-'}</span></div>
+                <div style="flex: 1.5; color: #475569; font-size: 13px;">${c.telefone}</div>
+                <div style="flex: 2; color: #475569; font-size: 12px; line-height: 1.2;">${enderecoCompleto}</div>
+                <div style="width: 60px; display: flex; justify-content: flex-end;">
+                    <button class="btn-action-edit" onclick="editarContribuinte('${c.cpf}', '${c.nome}')" title="Editar Contribuinte">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                </div>
+            </li>`;
+        });
+    });
+}
+
+window.editarContribuinte = function(cpf, nome) {
+    const db = getDB();
+    let query = db.collection("atendimentos");
+    
+    if (cpf) {
+        query = query.where("resp_cpf", "==", cpf);
+    } else {
+        query = query.where("resp_nome", "==", nome);
+    }
+
+    query.limit(1).get().then(snap => {
+        if (!snap.empty) {
+            let d = snap.docs[0].data();
+            document.getElementById('edit-contribuinte-cpf-original').value = cpf || nome; 
+            
+            document.getElementById('edit-contribuinte-nome').value = d.resp_nome || '';
+            document.getElementById('edit-contribuinte-cpf').value = d.resp_cpf || '';
+            document.getElementById('edit-contribuinte-rg').value = d.resp_rg || '';
+            document.getElementById('edit-contribuinte-telefone').value = d.telefone || '';
+            document.getElementById('edit-contribuinte-cep').value = d.resp_cep || '';
+            document.getElementById('edit-contribuinte-endereco').value = d.resp_endereco || '';
+            document.getElementById('edit-contribuinte-numero').value = d.resp_numero || '';
+            document.getElementById('edit-contribuinte-complemento').value = d.resp_complemento || '';
+            document.getElementById('edit-contribuinte-bairro').value = d.resp_bairro || '';
+            document.getElementById('edit-contribuinte-cidade').value = d.resp_cidade || '';
+            document.getElementById('edit-contribuinte-uf').value = d.resp_uf || '';
+
+            document.getElementById('div-tabela-contribuintes').classList.add('hidden');
+            document.getElementById('box-busca-contribuinte').classList.add('hidden');
+            document.getElementById('div-editar-contribuinte').classList.remove('hidden');
+        }
+    });
+}
+
+window.cancelarEdicaoContribuinte = function() {
+    document.getElementById('div-editar-contribuinte').classList.add('hidden');
+    document.getElementById('div-tabela-contribuintes').classList.remove('hidden');
+    document.getElementById('box-busca-contribuinte').classList.remove('hidden');
+}
+
+window.buscarCEPEdicao = function(cep) {
+    cep = cep.replace(/\D/g, '');
+    if (cep.length === 8) {
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.erro) {
+                    document.getElementById('edit-contribuinte-endereco').value = data.logradouro.toUpperCase();
+                    document.getElementById('edit-contribuinte-bairro').value = data.bairro.toUpperCase();
+                    document.getElementById('edit-contribuinte-cidade').value = data.localidade.toUpperCase();
+                    document.getElementById('edit-contribuinte-uf').value = data.uf.toUpperCase();
+                    document.getElementById('edit-contribuinte-numero').focus();
+                }
+            });
+    }
+}
+
+window.salvarEdicaoContribuinte = function() {
+    const originalKey = document.getElementById('edit-contribuinte-cpf-original').value;
+    
+    const novoDados = {
+        resp_nome: document.getElementById('edit-contribuinte-nome').value,
+        resp_rg: document.getElementById('edit-contribuinte-rg').value,
+        telefone: document.getElementById('edit-contribuinte-telefone').value,
+        resp_cep: document.getElementById('edit-contribuinte-cep').value,
+        resp_endereco: document.getElementById('edit-contribuinte-endereco').value,
+        resp_numero: document.getElementById('edit-contribuinte-numero').value,
+        resp_complemento: document.getElementById('edit-contribuinte-complemento').value,
+        resp_bairro: document.getElementById('edit-contribuinte-bairro').value,
+        resp_cidade: document.getElementById('edit-contribuinte-cidade').value,
+        resp_uf: document.getElementById('edit-contribuinte-uf').value,
+    };
+
+    const db = getDB();
+    let query = db.collection("atendimentos");
+    
+    if (originalKey.match(/\d/)) {
+        query = query.where("resp_cpf", "==", originalKey);
+    } else {
+        query = query.where("resp_nome", "==", originalKey);
+    }
+
+    query.get().then(snap => {
+        let batch = db.batch();
+        snap.forEach(doc => {
+            batch.update(doc.ref, novoDados);
+        });
+        
+        batch.commit().then(() => {
+            alert("Dados do contribuinte atualizados em todos os atendimentos vinculados!");
+            cancelarEdicaoContribuinte();
+            buscarContribuintes(); 
+        }).catch(err => {
+            console.error("Erro ao atualizar contribuinte", err);
+            alert("Erro ao atualizar.");
+        });
+    });
 }
 
 // --- AUDITORIA ---
@@ -831,30 +1132,37 @@ window.restaurarBackup = function() {
     reader.readAsText(file);
 }
 
-// --- GERENCIAMENTO DE EQUIPE COM NOVO DESIGN ---
+// --- GERENCIAMENTO DE EQUIPE ---
 window.listarEquipe = function() {
     const database = getDB();
     const ul = document.getElementById('lista-equipe');
     if(!database || !ul) return;
     
+    if (equipeUnsubscribe) equipeUnsubscribe();
+
     equipeUnsubscribe = database.collection("equipe").orderBy("nome").onSnapshot(snap => {
         ul.innerHTML = '';
         snap.forEach(doc => {
             const u = doc.data();
             
             // Lógica para capturar as Iniciais do Nome
-            const names = (u.nome || 'Usuário').trim().split(' ');
-            let iniciais = names[0][0].toUpperCase();
-            if (names.length > 1) {
-                iniciais += names[names.length - 1][0].toUpperCase();
-            } else if (names[0].length > 1) {
-                iniciais += names[0][1].toUpperCase();
+            let nomeSeguro = (u.nome || '').trim();
+            if (!nomeSeguro) nomeSeguro = 'Usuário';
+
+            const names = nomeSeguro.split(' ').filter(n => n.length > 0);
+            let iniciais = 'U';
+            if (names.length > 0) {
+                iniciais = names[0][0].toUpperCase();
+                if (names.length > 1) {
+                    iniciais += names[names.length - 1][0].toUpperCase();
+                } else if (names[0].length > 1) {
+                    iniciais += names[0][1].toUpperCase();
+                }
             }
 
-            // Gerar cores baseadas no tamanho do nome para manter padrão visual
             const colors = ['#e0f2fe', '#fef3c7', '#dcfce3', '#f3e8ff', '#ffe4e6', '#ccfbf1'];
             const textColors = ['#0284c7', '#d97706', '#16a34a', '#9333ea', '#e11d48', '#0d9488'];
-            const colorIndex = (u.nome || '').length % colors.length;
+            const colorIndex = nomeSeguro.length % colors.length;
             const bgColor = colors[colorIndex];
             const txtColor = textColors[colorIndex];
 
@@ -867,11 +1175,11 @@ window.listarEquipe = function() {
                         ${iniciais}
                     </div>
                     <div style="display: flex; flex-direction: column;">
-                        <span style="color:#1e293b; font-size:14px; font-weight:600;">${u.nome}</span>
+                        <span style="color:#1e293b; font-size:14px; font-weight:600;">${nomeSeguro}</span>
                         <span style="color:#94a3b8; font-size:12px;">${emailText}</span>
                     </div>
                 </div>
-                <div class="col-login">${u.login}</div>
+                <div class="col-login">${u.login || 'S/ Login'}</div>
                 <div class="col-pass">
                     <span style="letter-spacing: 2px;">••••••</span>
                     <button class="btn-icon" style="background:#f8fafc; padding:6px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Visualizar Senha" onclick="alert('Senha: ${u.senha}')">
@@ -1216,6 +1524,8 @@ window.visualizar = function(id) {
                 'view_nome': d.nome, 
                 'view_causa': d.causa, 
                 'view_resp_completo': d.resp_nome + (d.parentesco ? ` (${d.parentesco})` : ''), 
+                'view_resp_cpf': d.resp_cpf || '-',
+                'view_resp_rg': d.resp_rg || '-',
                 'view_telefone': d.telefone, 
                 'view_funeraria': d.funeraria, 
                 'view_atendente': d.atendente_sistema, 
@@ -1339,6 +1649,149 @@ window.enviarSMS = function() {
     window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`; 
 }
 
+// --- GERAR AUTORIZAÇÃO PARA FUNERAL (ATUALIZADA E REORGANIZADA) ---
+window.gerarAutorizacao = function() {
+    if (!dadosAtendimentoAtual) return;
+    const d = dadosAtendimentoAtual;
+    const fd = (dataStr) => { if (!dataStr) return ""; const p = dataStr.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+    
+    let blocoAssinaturaFamilia = "";
+    if (assinaturaResponsavelImg) {
+        blocoAssinaturaFamilia = `<div style="text-align:center; height:50px;"><img src="${assinaturaResponsavelImg}" style="max-height:45px; max-width:80%;"></div>`;
+    } else {
+        blocoAssinaturaFamilia = `<div style="height:50px;"></div>`;
+    }
+
+    const hoje = new Date();
+    const mesNomes = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+    const diaAtual = hoje.getDate().toString().padStart(2, '0');
+    const mesAtual = mesNomes[hoje.getMonth()];
+    const anoAtual = hoje.getFullYear();
+
+    let txtSep = (d.tipo_sepultura || "").toUpperCase(); 
+    const co = d.classificacao_obito || "ADULTO"; 
+    let classificacao = co; 
+    if (txtSep.includes("ANJO")) classificacao = "ANJO";
+    
+    let condicaoSepultura = "ALUGUEL (3 ANOS)";
+    if (txtSep.includes("PERPETUA") || txtSep.includes("PERPETUO")) { 
+        txtSep = `${txtSep} - ${classificacao}`; 
+        condicaoSepultura = `PERPÉTUA (LIVRO: ${d.livro_perpetua||'-'} / FOLHA: ${d.folha_perpetua||'-'})`;
+    } else if (txtSep.includes("MEMBRO")) { 
+        txtSep = `MEMBRO AMPUTADO (${d.tipo_membro || d.tipo_membro_select || 'Não informado'})`; 
+        condicaoSepultura = "N/A";
+    } else { 
+        txtSep = `${txtSep} - ${classificacao}`; 
+    }
+
+    const htmlAutorizacao = `
+    <html>
+    <head>
+        <title>Autorização para Funeral</title>
+        <style>
+            @page { size: A4 portrait; margin: 15mm; } 
+            body { font-family: Arial, sans-serif; font-size: 13px; margin: 0; padding: 0; line-height: 1.5; color: #000; text-align: justify; } 
+            .header { text-align: center; margin-bottom: 20px; } 
+            .header img { max-height: 60px; margin-bottom: 10px; }
+            .header h2 { font-size: 18px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; } 
+            .content { margin-top: 10px; }
+            .bold { font-weight: bold; text-transform: uppercase; }
+            .assinatura-area { margin-top: 15px; text-align: center; width: 50%; margin-left: auto; margin-right: auto; }
+            .ass-linha { border-top: 1px solid #000; padding-top: 5px; font-weight: normal; font-size: 12px; display: inline-block; width: 100%; }
+            p { margin: 8px 0; }
+            h3 { font-size: 13px; text-decoration: underline; margin-top: 15px; margin-bottom: 5px; text-align: left; }
+            .info-box { margin: 15px 0; padding: 12px; border: 1px solid #333; background: #fafafa; border-radius: 4px; }
+            .info-box h4 { margin: 0 0 10px 0; font-size: 13px; text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 5px; text-transform: uppercase; color: #333; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+            .info-grid-full { grid-column: span 2; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png">
+            <h2>AUTORIZAÇÃO PARA TRÂMITES DE FUNERAL</h2>
+        </div>
+        <div class="content">
+            <p>Eu, <span class="bold">${d.resp_nome || '___________________________________'}</span>, 
+            RG: <span class="bold">${d.resp_rg || '_______________'}</span> CPF n° <span class="bold">${d.resp_cpf || '_______________'}</span>, 
+            residente na <span class="bold">${d.resp_endereco || '___________________________________'}</span> n° <span class="bold">${d.resp_numero || '_____'}</span> 
+            complemento <span class="bold">${d.resp_complemento || '_____'}</span> bairro <span class="bold">${d.resp_bairro || '_______________'}</span> 
+            Município <span class="bold">${d.resp_cidade || '_______________'}</span> Estado <span class="bold">${d.resp_uf || '___'}</span> 
+            CEP: <span class="bold">${d.resp_cep || '_________'}</span>, telefones de contato: <span class="bold">${d.telefone || '________________'}</span>, 
+            grau de parentesco <span class="bold">${(d.parentesco || '_______________').toUpperCase()}</span>, 
+            a tratar junto à Agência Funerária dos Cemitérios Municipais de Niterói do Sepultamento do(a) Sr(a) qualificado(a) abaixo:</p>
+
+            <div class="info-box">
+                <h4>Dados do Falecido</h4>
+                <div class="info-grid">
+                    <div class="info-grid-full"><strong>NOME:</strong> ${d.nome.toUpperCase()}</div>
+                    <div><strong>DATA DO ÓBITO:</strong> ${fd(d.data_obito)}</div>
+                    <div><strong>LOCAL DO ÓBITO:</strong> ${d.hospital || '_________________________'}</div>
+                    <div class="info-grid-full"><strong>CAUSA DA MORTE:</strong> ${d.causa.toUpperCase()}</div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h4>Dados do Sepultamento</h4>
+                <div class="info-grid">
+                    <div class="info-grid-full"><strong>CEMITÉRIO:</strong> ${(d.local || '_________________________').toUpperCase()}</div>
+                    <div><strong>DATA PREVISTA:</strong> ${fd(d.data_ficha) || '___/___/_____'}</div>
+                    <div><strong>HORÁRIO PREVISTO:</strong> ${d.hora || '_____'} HORAS</div>
+                    <div class="info-grid-full"><strong>TIPO DE SEPULTURA:</strong> ${txtSep}</div>
+                    <div><strong>Nº SEPULTURA:</strong> ${d.sepul || '______'}</div>
+                    <div><strong>QUADRA / RUA:</strong> ${d.qd || '______'}</div>
+                    <div><strong>CONDIÇÃO:</strong> ${condicaoSepultura}</div>
+                    <div><strong>AUTORIZAÇÃO P/ SEPULTAR < 24 HORAS:</strong> ${(d.do_24h === 'SIM' ? 'SIM' : 'NÃO')}</div>
+                </div>
+            </div>
+
+            <p style="font-weight:bold; text-align:center; margin: 10px 0;">* ESTOU CIENTE E ACEITO A SEPULTURA DISPONÍVEL.</p>
+
+            <p>Por meio deste documento, <span class="bold">AUTORIZO</span> a agência funerária <span class="bold">${(d.funeraria || '_________________________').toUpperCase()}</span> a realizar a remoção, o preparo e todos os demais trâmites legais e logísticos necessários para o sepultamento do corpo acima identificado, junto à Coordenadoria Municipal de Serviços Funerários e à administração do Cemitério Municipal.</p>
+            
+            <p>Declaro assumir inteira responsabilidade civil e criminal pela veracidade das informações ora prestadas e pela presente autorização.</p>
+
+            <p style="text-align: right; margin-top: 15px; font-style: italic;">Niterói, ${diaAtual} de ${mesAtual} de ${anoAtual}</p>
+
+            <div class="assinatura-area">
+                ${blocoAssinaturaFamilia}
+                <div class="ass-linha">Assinatura do(a) autorizador(a)</div>
+            </div>
+
+            <div style="border-top: 1px dashed #999; margin: 20px 0;"></div>
+
+            <h3>AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</h3>
+            <p>Autorizo a Funerária <span class="bold">${(d.funeraria || '_________________________').toUpperCase()}</span> a entregar toda e qualquer documentação exigida, bem como a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), agendamento e liberação de corpo na agência para o Cemitério de destino.</p>
+            
+            <div class="assinatura-area" style="margin-top: 20px;">
+                ${blocoAssinaturaFamilia}
+                <div class="ass-linha">Assinatura do(a) autorizador(a)</div>
+            </div>
+
+            <div style="border-top: 1px dashed #999; margin: 20px 0;"></div>
+
+            <h3>NÃO AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</h3>
+            <p>NÃO autorizo a Funerária <span class="bold">${(d.funeraria || '_________________________').toUpperCase()}</span> a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), sendo de minha inteira responsabilidade efetuar o pagamento das taxas bem como entregar a documentação exigida para liberação do corpo na agência para o Cemitério de destino. Importante frisar que toda a documentação posterior ao pagamento, a família deverá entregar a Funerária para que seja autorizado junto ao Cemitério a entrada do corpo na capela do Cemitério escolhido.</p>
+            <p>Sendo de responsabilidade da Funerária contratada tão somente a entrega dos documentos obrigatórios da empresa, bem como realizar o agendamento do sepultamento.</p>
+
+            <div class="assinatura-area" style="margin-top: 20px;">
+                ${blocoAssinaturaFamilia}
+                <div class="ass-linha">Assinatura do(a) autorizador(a)<br><span style="font-size: 10px; font-weight: normal;">(Apenas se não autorizar o pagamento pela Funerária)</span></div>
+            </div>
+
+            <div style="margin-top: 20px; font-size: 10px; padding: 10px; background: #eee; border: 1px solid #ccc; border-radius: 4px;">
+                <p style="margin: 0 0 5px 0;"><b>OBS.:</b> Importante frisar que a Funerária ou a Família terá o prazo de no MÁXIMO 01 (uma) hora antes do sepultamento para pagar as taxas. Caso não seja cumprido no horário o pagamento o sepultamento será SUSPENSO.</p>
+                <p style="margin: 0;"><b>OBS.:</b> Em se tratando do Cemitério de Itaipu e São Francisco, o pagamento das taxas deverão ser pagos no ato da liberação do corpo na Agência, tendo em vista se tratar de Cemitérios longe da Agência recebedora. Caso não seja realizado o pagamento, os Cemitérios não autorizarão a entrada de corpo.</p>
+            </div>
+        </div>
+    </body>
+    </html>`;
+    
+    const w = window.open('','_blank'); 
+    w.document.write(htmlAutorizacao); 
+    w.document.close();
+}
+
 // --- GERAR COMPROVANTE ---
 window.gerarComprovante = function() {
     if (!dadosAtendimentoAtual) return;
@@ -1431,7 +1884,7 @@ window.gerarComprovante = function() {
             .header h2 { font-size: 20px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; color: #000; } 
             .protocolo { position: absolute; top: -5px; right: 0; font-size: 14px; font-weight: bold; border: 2px solid #000; padding: 5px 10px; } 
             .content { width: 100%; } 
-            .line { margin-bottom: 4px; white-space: normal; overflow: visible; } 
+            .line { margin-bottom: 4px; white-space: normal; word-wrap: break-word; overflow: visible; } 
             .bold { font-weight: 900; } 
             .red { color: red; font-weight: bold; } 
             .section-title { font-weight: 900; margin-top: 15px; margin-bottom: 2px; text-transform: uppercase; font-size: 14px; } 
