@@ -831,7 +831,7 @@ window.restaurarBackup = function() {
     reader.readAsText(file);
 }
 
-// --- GERENCIAMENTO DE EQUIPE (NOVO DESIGN BASEADO NA IMAGEM) ---
+// --- GERENCIAMENTO DE EQUIPE COM NOVO DESIGN ---
 window.listarEquipe = function() {
     const database = getDB();
     const ul = document.getElementById('lista-equipe');
@@ -1328,7 +1328,7 @@ window.enviarWhatsapp = function() {
     const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
     if (!t) { alert("Sem telefone."); return; } 
     if (!c) { alert("Sem GPS."); return; } 
-    window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=' + c)}`, '_blank'); 
+    window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`, '_blank'); 
 }
 
 window.enviarSMS = function() { 
@@ -1336,7 +1336,7 @@ window.enviarSMS = function() {
     const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; 
     const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
     if (!t) { alert("Sem telefone."); return; } 
-    window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=' + c)}`; 
+    window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`; 
 }
 
 // --- GERAR COMPROVANTE ---
@@ -1431,7 +1431,7 @@ window.gerarComprovante = function() {
             .header h2 { font-size: 20px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; color: #000; } 
             .protocolo { position: absolute; top: -5px; right: 0; font-size: 14px; font-weight: bold; border: 2px solid #000; padding: 5px 10px; } 
             .content { width: 100%; } 
-            .line { margin-bottom: 4px; white-space: nowrap; overflow: hidden; } 
+            .line { margin-bottom: 4px; white-space: normal; overflow: visible; } 
             .bold { font-weight: 900; } 
             .red { color: red; font-weight: bold; } 
             .section-title { font-weight: 900; margin-top: 15px; margin-bottom: 2px; text-transform: uppercase; font-size: 14px; } 
@@ -1486,6 +1486,10 @@ window.gerarComprovante = function() {
                 <span class="bold">PREVISÃO DE EXUMAÇÃO:</span> A partir de <span class="red" style="font-size:16px;">${dataExumacao}</span><br>
                 <span style="font-size:10px;">(Legislação: 3 anos para Adultos / 2 anos para Crianças até 11 anos)</span>
                 
+                <div style="margin-top: 12px; margin-bottom: 8px; border: 2px dashed #000; padding: 8px; text-align: center; font-weight: 900; font-size: 13px;">
+                    ⚠️ ATENÇÃO: COMPAREÇA OU ENTRE EM CONTATO NO PRAZO MÍNIMO DE 90 DIAS ANTES DA DATA DE EXUMAÇÃO PARA ABERTURA DE PROCESSO.
+                </div>
+
                 <div style="margin-top: 15px; text-align: center;">
                     ${blocoAssinaturaFamilia}
                     <div style="border-top: 1px solid #000; width: 60%; margin: 0 auto;">Assinatura do Responsável (Ciência do Prazo)</div>
