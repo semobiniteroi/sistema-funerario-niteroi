@@ -11,80 +11,21 @@
         /* OVERRIDES DE PADRONIZAÇÃO DE DESIGN (Baseado no Processos Maruí) */
         /* ================================================================= */
 
-        /* 1. Campos de Entrada (Inputs e Selects) */
         input[type="text"], input[type="date"], input[type="time"], input[type="datetime-local"], 
         input[type="email"], input[type="password"], input[type="month"], select, textarea {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-family: 'Poppins', sans-serif;
-            color: #334155;
-            font-size: 13px;
-            width: 100%;
-            box-sizing: border-box;
-            transition: all 0.2s ease;
-            box-shadow: none;
-            min-height: 38px;
-            line-height: normal;
+            background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px;
+            font-family: 'Poppins', sans-serif; color: #334155; font-size: 13px; width: 100%; box-sizing: border-box;
+            transition: all 0.2s ease; box-shadow: none; min-height: 38px; line-height: normal;
         }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #3b82f6;
-            background-color: #ffffff;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        input:disabled, select:disabled {
-            background-color: #f1f5f9;
-            color: #94a3b8;
-            cursor: not-allowed;
-            border-color: #e2e8f0;
-        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        input:disabled, select:disabled { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; border-color: #e2e8f0; }
 
-        /* 2. Estilo Padrão de Labels (Rótulos) */
-        label {
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #475569;
-            margin-bottom: 6px;
-            display: block;
-            letter-spacing: 0.3px;
-        }
+        label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #475569; margin-bottom: 6px; display: block; letter-spacing: 0.3px; }
 
-        /* 3. Assinatura Digital */
-        canvas#signature-pad {
-            border: 2px dashed #cbd5e1;
-            background-color: #f8fafc;
-            touch-action: none;
-            border-radius: 6px;
-            cursor: crosshair;
-            width: 100%;
-        }
+        canvas#signature-pad { border: 2px dashed #cbd5e1; background-color: #f8fafc; touch-action: none; border-radius: 6px; cursor: crosshair; width: 100%; }
 
-        /* 4. Botões do Rodapé (Modal Visualizar) */
-        .modal-footer-custom {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .modal-footer-custom button {
-            padding: 9px 14px;
-            font-size: 13px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            font-weight: 600;
-            transition: opacity 0.2s, transform 0.1s;
-        }
+        .modal-footer-custom { display: flex; justify-content: center; align-items: center; padding-top: 20px; border-top: 1px solid #e2e8f0; flex-wrap: wrap; gap: 10px; }
+        .modal-footer-custom button { padding: 9px 14px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; transition: opacity 0.2s, transform 0.1s; }
         .modal-footer-custom button:hover { opacity: 0.9; }
         .modal-footer-custom button:active { transform: scale(0.98); }
 
@@ -96,138 +37,31 @@
         .btn-transfer { background-color: #0ea5e9 !important; color: white !important; }
         .btn-close { background-color: #f1f5f9 !important; color: #475569 !important; box-shadow: none !important; }
 
-        /* 5. Painel Admin - Abas (Tabs) */
-        .tab-header {
-            display: flex;
-            flex-wrap: wrap;
-            border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 20px;
-            gap: 2px;
-            overflow: visible;
-            background-color: #f8fafc;
-            border-radius: 8px 8px 0 0;
-        }
-        .tab-btn {
-            background: transparent !important;
-            border: none !important;
-            color: #64748b !important;
-            padding: 12px 15px !important;
-            font-weight: 600 !important;
-            font-size: 13px;
-            cursor: pointer;
-            border-bottom: 3px solid transparent !important;
-            border-radius: 0 !important;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .tab-header { display: flex; flex-wrap: wrap; border-bottom: 1px solid #e2e8f0; margin-bottom: 20px; gap: 2px; overflow: visible; background-color: #f8fafc; border-radius: 8px 8px 0 0; }
+        .tab-btn { background: transparent !important; border: none !important; color: #64748b !important; padding: 12px 15px !important; font-weight: 600 !important; font-size: 13px; cursor: pointer; border-bottom: 3px solid transparent !important; border-radius: 0 !important; transition: all 0.2s ease; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
         .tab-btn:hover { color: #3b82f6 !important; background-color: #f1f5f9 !important; }
-        .tab-btn.active { 
-            color: #3b82f6 !important; 
-            border-bottom: 3px solid #3b82f6 !important; 
-            background-color: #eff6ff !important;
-        }
+        .tab-btn.active { color: #3b82f6 !important; border-bottom: 3px solid #3b82f6 !important; background-color: #eff6ff !important; }
 
-        /* 6. Painel Admin - Formulários */
-        #box-novo-usuario, #div-editar-usuario, #div-editar-contribuinte {
-            background: #ffffff !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 8px;
-            padding: 20px !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-            margin-bottom: 25px;
-        }
-        .admin-form-title {
-            color: #3b82f6;
-            font-size: 16px;
-            margin-bottom: 15px;
-            display: block;
-            font-weight: 700;
-        }
+        #box-novo-usuario, #div-editar-usuario, #div-editar-contribuinte { background: #ffffff !important; border: 1px solid #e2e8f0 !important; border-radius: 8px; padding: 20px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 25px; }
+        .admin-form-title { color: #3b82f6; font-size: 16px; margin-bottom: 15px; display: block; font-weight: 700; }
         #box-novo-usuario label, #div-editar-usuario label, #div-editar-contribuinte label { color: #3b82f6 !important; }
-        .btn-novo-usuario {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 5px;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
+        .btn-novo-usuario { background-color: #3b82f6; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 5px; font-size: 14px; transition: background 0.2s; }
         .btn-novo-usuario:hover { background-color: #2563eb; }
 
-        /* 7. Box Situação Membros */
-        .box-membros-custom {
-            border: 1px dashed #cbd5e1 !important;
-            padding: 15px !important;
-            border-radius: 8px !important;
-            background: #ffffff !important;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        .box-membros-custom { border: 1px dashed #cbd5e1 !important; padding: 15px !important; border-radius: 8px !important; background: #ffffff !important; display: flex; flex-direction: column; gap: 10px; }
         .box-membros-custom .titulo-membros { color: #c2410c !important; font-size: 13px !important; margin-bottom: 5px; }
 
-        .form-section-divider {
-            margin-top: 15px;
-            margin-bottom: 10px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .form-section-title { color: #1e293b; margin: 0; font-size: 14px; padding-bottom: 5px; }
+        .form-section-divider { margin-top: 15px; margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; display: flex; align-items: center; gap: 8px; }
 
-        /* 8. Tabela Estilizada */
-        .table-equipe-container {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-            margin-top: 15px;
-        }
-        .table-equipe-header {
-            display: flex;
-            padding: 15px 20px;
-            border-bottom: 2px solid #f8fafc;
-            color: #475569;
-            font-size: 13px;
-            font-weight: 700;
-        }
-        .table-equipe-row {
-            display: flex;
-            align-items: center;
-            padding: 15px 20px;
-            border-bottom: 1px solid #f1f5f9;
-            transition: background 0.2s;
-        }
+        .table-equipe-container { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-top: 15px; }
+        .table-equipe-header { display: flex; padding: 15px 20px; border-bottom: 2px solid #f8fafc; color: #475569; font-size: 13px; font-weight: 700; }
+        .table-equipe-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f1f5f9; transition: background 0.2s; }
         .table-equipe-row:last-child { border-bottom: none; }
         .table-equipe-row:hover { background-color: #f8fafc; }
-        .avatar-circle {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-        .btn-action-edit {
-            background: #ffedd5; color: #ea580c; border: none; width: 32px; height: 32px;
-            border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s;
-        }
-        .btn-action-delete {
-            background: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px;
-            border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s;
-        }
+        .avatar-circle { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+        .btn-action-edit { background: #ffedd5; color: #ea580c; border: none; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+        .btn-action-delete { background: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
         .btn-action-edit:hover, .btn-action-delete:hover { opacity: 0.8; }
         
         .col-user { flex: 2; display: flex; align-items: center; gap: 15px; min-width: 250px; }
@@ -235,12 +69,24 @@
         .col-pass { flex: 1; color: #475569; font-size: 13px; display: flex; align-items: center; gap: 10px; }
         .col-actions { width: 100px; display: flex; gap: 8px; justify-content: flex-end; }
 
+        .btn-nav-dashboard { background: none; border: none; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; padding: 5px 10px; border-radius: 6px; transition: 0.2s; }
+        .btn-nav-dashboard:hover { background: #e2e8f0; color: #1e293b; }
+        .btn-nav-dashboard.active { background: #3b82f6; color: #fff; }
+
+        .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .badge-pendente { background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; }
+        .badge-sucesso { background-color: #bbf7d0; color: #166534; border: 1px solid #86efac; }
+        
+        .doc-chip { font-size: 9px; background: #e2e8f0; padding: 2px 5px; border-radius: 3px; color: #334155; font-weight: bold; margin-right: 3px; display: inline-block; margin-bottom: 3px; }
+        .doc-chip.tem { background: #3b82f6; color: white; }
+
         @media (max-width: 768px) {
             .modal-footer-custom { padding-bottom: 20px; }
             .modal-footer-custom button { flex: 1 1 45%; max-width: 100%; }
             .table-equipe-header { display: none; }
             .table-equipe-row { flex-direction: column; align-items: flex-start; gap: 10px; position: relative; }
             .col-actions { position: absolute; top: 15px; right: 15px; }
+            .tab-header { padding-bottom: 5px; }
         }
     </style>
 </head>
@@ -262,7 +108,10 @@
         <div class="logo-area">
             <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" alt="Prefeitura de Niterói" id="logo-principal">
             <div class="titulo-area">
-                <h3 style="margin-left: 10px; border-left: 2px solid #999; padding-left: 15px;">Serviços Funerários</h3>
+                <div style="display: flex; gap: 10px; margin-left: 15px; border-left: 2px solid #999; padding-left: 15px; align-items: center;">
+                    <button id="nav-btn-acolhimento" class="btn-nav-dashboard active" onclick="alternarDashboard('acolhimento')">🏠 Acolhimento</button>
+                    <button id="nav-btn-agencia" class="btn-nav-dashboard" onclick="alternarDashboard('agencia')">🏢 Agência</button>
+                </div>
             </div>
         </div>
         
@@ -281,7 +130,7 @@
         </div>
     </header>
 
-    <div class="main-content">
+    <div id="dashboard-acolhimento" class="main-content">
         <div class="controles">
             <button onclick="imprimirRelatorio('portrait')" class="btn-imprimir">🖨️ Retrato</button>
             <button onclick="imprimirRelatorio('landscape')" class="btn-imprimir">🖨️ Paisagem</button>
@@ -305,10 +154,103 @@
                         <th style="text-align: right; min-width: 120px;">Ações</th>
                     </tr>
                 </thead>
-                <tbody id="tabela-corpo"></tbody>
+                <tbody id="tabela-corpo-acolhimento"></tbody>
             </table>
         </div>
     </div>
+
+    <div id="dashboard-agencia" class="main-content hidden">
+        <div class="controles" style="justify-content: space-between;">
+            <h3 style="color: #1e293b; margin: 0;">Gestão Documental e Processos (Agência)</h3>
+            <div>
+                <button onclick="imprimirRelatorio('landscape')" class="btn-imprimir">🖨️ Imprimir Relação</button>
+            </div>
+        </div>
+
+        <div class="tabela-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Falecido(a)</th>
+                        <th>Responsável / Empresa</th>
+                        <th>Registro E-CIGA</th>
+                        <th>Status GRM</th>
+                        <th style="min-width: 180px;">Anexos ao Processo</th>
+                        <th>Liberação</th>
+                        <th style="text-align: right; min-width: 100px;">Gestão</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-corpo-agencia"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal-agencia" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Trâmites da Agência Funerária</h3>
+                <span class="close" onclick="fecharModalAgencia()">×</span>
+            </div>
+            
+            <form id="form-agencia">
+                <input type="hidden" id="agencia_docId"> 
+                
+                <div class="form-grid">
+                    <div class="input-group span-4" style="background: #f1f5f9; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                        <span style="font-size: 11px; font-weight:bold; color:#64748b;">FALECIDO(A):</span>
+                        <div id="agencia_nome_falecido" style="font-weight: 800; color: #1e293b; font-size: 16px;"></div>
+                    </div>
+
+                    <div class="input-group span-4 form-section-divider">
+                        <h4 class="form-section-title">Abertura de Processos</h4>
+                    </div>
+
+                    <div class="input-group span-2">
+                        <label>Nº Processo E-CIGA</label>
+                        <input type="text" id="agencia_processo" placeholder="000/000000/2026">
+                    </div>
+                    <div class="input-group span-2">
+                        <label>Status GRM</label>
+                        <select id="agencia_grm">
+                            <option value="PENDENTE">Pendente</option>
+                            <option value="GERADA">Gerada</option>
+                            <option value="ENTREGUE">Entregue (Família/Funerária)</option>
+                            <option value="ISENTO">Isento (Gratuidade)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group span-4 form-section-divider">
+                        <h4 class="form-section-title">Anexos Físicos/Digitais</h4>
+                    </div>
+
+                    <div class="input-group span-4" style="display: flex; gap: 15px; flex-wrap: wrap; background: #fff; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px;">
+                        <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;"><input type="checkbox" id="agencia_chk_invol" style="width:auto; margin:0;"> Guia INVOL</label>
+                        <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;"><input type="checkbox" id="agencia_chk_nf" style="width:auto; margin:0;"> Nota Fiscal</label>
+                        <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;"><input type="checkbox" id="agencia_chk_tanato" style="width:auto; margin:0;"> Cert. Tanato</label>
+                        <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;"><input type="checkbox" id="agencia_chk_comprovante" style="width:auto; margin:0;"> Comp. Pagamento</label>
+                    </div>
+
+                    <div class="input-group span-4 form-section-divider">
+                        <h4 class="form-section-title">Finalização</h4>
+                    </div>
+
+                    <div class="input-group span-4">
+                        <label>Status da Liberação p/ Cemitério</label>
+                        <select id="agencia_status_liberacao" style="font-weight: bold;">
+                            <option value="PENDENTE">AGUARDANDO TRÂMITES</option>
+                            <option value="LIBERADO">LIBERADO PARA SEPULTAMENTO</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer-custom" style="justify-content: space-between;">
+                    <button type="button" class="btn-close" style="width: auto;" onclick="fecharModalAgencia()">Cancelar</button>
+                    <button type="button" class="btn-novo" style="width: auto; background-color: #10b981;" onclick="salvarDadosAgencia()">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <div id="modal" class="modal">
         <div class="modal-content" style="max-width: 850px;">
@@ -505,9 +447,8 @@
                 <button type="button" class="btn-tag" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
                 <button type="button" class="btn-sign-fam" onclick="abrirModalAssinatura('responsavel')">✍️ Assinar Família</button>
                 <button type="button" class="btn-sign-func" onclick="abrirModalAssinatura('atendente')">✍️ Assinar Equipe</button>
-                <button type="button" class="btn-wpp" onclick="enviarWhatsapp()">📱 WhatsApp</button>
+                <button type="button" class="btn-wpp" onclick="abrirModalWpp()">📱 WhatsApp</button>
                 <button type="button" class="btn-transfer" onclick="abrirModalTransferir()">🔄 Transferir</button>
-                <button type="button" class="btn-sms" onclick="enviarSMS()">💬 SMS</button>
                 <button type="button" class="btn-close" onclick="fecharModalVisualizar()">Fechar</button>
             </div>
         </div>
@@ -675,13 +616,12 @@
 
                     <div style="margin-bottom: 20px; padding: 20px; background: #fffbeb; border-radius: 8px; border: 1px solid #fef3c7;">
                         <h5 style="margin-bottom: 5px; color: #d97706; font-size: 15px;">💾 Backup do Sistema (JSON)</h5>
-                        <p style="font-size: 13px; margin-bottom: 15px; color: #475569;">Faça o download do banco de dados completo (Atendimentos, Equipe e Auditoria) para restauração futura.</p>
+                        <p style="font-size: 13px; margin-bottom: 15px; color: #475569;">Faça o download do banco de dados completo para restauração futura.</p>
                         <button onclick="gerarBackup()" class="btn-novo" style="background-color: #f59e0b; padding: 10px 20px; width:auto;">⬇️ Gerar Backup</button>
                     </div>
 
                     <div style="padding: 20px; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
                         <h5 style="margin-bottom: 5px; color: #dc2626; font-size: 15px;">⚠️ Restauração do Banco de Dados</h5>
-                        <p style="font-size: 13px; margin-bottom: 15px; color: #dc2626; font-weight:500;">Atenção: A restauração pode sobrescrever dados existentes. Use com cuidado.</p>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <input type="file" id="file-restore" accept=".json" style="flex: 1; max-width:400px; padding: 8px; background: white; border: 1px solid #fca5a5;">
                             <button onclick="restaurarBackup()" class="btn-novo" style="background-color: #dc2626; padding: 10px 20px; width:auto;">⬆️ Restaurar</button>
@@ -710,10 +650,23 @@
         </div>
     </div>
 
+    <div id="modal-whatsapp" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
+            <h3 style="color: #1e293b; margin-bottom: 15px;">Enviar WhatsApp</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o tipo de mensagem que deseja enviar ao contribuinte:</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button onclick="enviarWppTemplate('info')" class="btn-novo" style="background-color: #0ea5e9; width: 100%;">📋 Inf. Úteis do Atendimento</button>
+                <button onclick="enviarWppTemplate('convite')" class="btn-novo" style="background-color: #8b5cf6; width: 100%;">🕊️ Informações para Familiares</button>
+                <button onclick="enviarWppTemplate('gps')" class="btn-novo" style="background-color: #22c55e; width: 100%;">📍 Localização da Sepultura</button>
+            </div>
+            <button onclick="fecharModalWpp()" class="btn-close" style="margin-top: 15px; width: 100%;">Cancelar</button>
+            <button onclick="fecharModalWpp()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
+        </div>
+    </div>
+
     <div id="modal-assinatura" class="modal">
         <div class="modal-content" style="max-width: 500px; text-align: center; border-radius: 12px; padding: 30px;">
             <h3 id="titulo-assinatura" style="color: #1e293b; margin-bottom: 5px;">Assinatura</h3>
-            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Assine abaixo usando o dedo ou mouse.</p>
             <div style="display: inline-block; width: 100%;">
                 <canvas id="signature-pad" width="400" height="200" style="width: 100%; border-radius: 8px; background-color: #f8fafc; border: 2px dashed #cbd5e1;"></canvas>
             </div>

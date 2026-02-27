@@ -19,12 +19,13 @@ let dadosEstatisticasExportacao = [];
 let chartInstances = {}; 
 let usuarioLogado = null; 
 
-// VARIÁVEIS GLOBAIS PARA ASSINATURA
+// VARIÁVEIS GLOBAIS PARA ASSINATURA E DASHBOARD
 let signaturePad = null;
 let isDrawing = false;
 let assinaturaResponsavelImg = null;
 let assinaturaAtendenteImg = null;
 let tipoAssinaturaAtual = ''; 
+let dashboardAtual = 'acolhimento'; // Controla qual painel está ativo
 
 try {
     if (typeof firebase !== 'undefined') {
@@ -59,6 +60,32 @@ const dimensoesUrna = {
 function safeDisplay(id, displayType) {
     const el = document.getElementById(id);
     if (el) el.style.display = displayType;
+}
+
+// --- NAVEGAÇÃO DE DASHBOARDS (ACOLHIMENTO x AGÊNCIA) ---
+window.alternarDashboard = function(dash) {
+    dashboardAtual = dash;
+    const btnAcolhimento = document.getElementById('nav-btn-acolhimento');
+    const btnAgencia = document.getElementById('nav-btn-agencia');
+    const divAcolhimento = document.getElementById('dashboard-acolhimento');
+    const divAgencia = document.getElementById('dashboard-agencia');
+
+    if (dash === 'agencia') {
+        btnAcolhimento.classList.remove('active');
+        btnAgencia.classList.add('active');
+        divAcolhimento.classList.add('hidden');
+        divAgencia.classList.remove('hidden');
+    } else {
+        btnAgencia.classList.remove('active');
+        btnAcolhimento.classList.add('active');
+        divAgencia.classList.add('hidden');
+        divAcolhimento.classList.remove('hidden');
+    }
+
+    // Força a atualização da lista ativa para renderizar a tabela certa
+    const dataFiltro = document.getElementById('filtro-data').value;
+    const localFiltro = document.getElementById('filtro-local').value;
+    window.atualizarListener(dataFiltro, localFiltro);
 }
 
 // --- BUSCA CEP E CPF ---
@@ -376,15 +403,17 @@ window.carregarListaHorarios = function() {
     });
 }
 
-// --- 3. CORE (TABELA PRINCIPAL) ---
+// --- 3. CORE (TABELAS PRINCIPAIS) ---
+
+// Renderiza a Tabela do Acolhimento
 window.renderizarTabela = function(lista) {
-    const tbody = document.getElementById('tabela-corpo'); 
+    const tbody = document.getElementById('tabela-corpo-acolhimento'); 
     if(!tbody) return;
     
     tbody.innerHTML = ''; 
     
     if (lista.length === 0) { 
-        tbody.innerHTML = '<tr><td colspan="11" style="padding:40px; text-align:center;">Nenhum registro.</td></tr>'; 
+        tbody.innerHTML = '<tr><td colspan="11" style="padding:40px; text-align:center;">Nenhum registro encontrado no acolhimento.</td></tr>'; 
         return; 
     }
 
@@ -497,6 +526,52 @@ window.renderizarTabela = function(lista) {
     });
 }
 
+// Renderiza a Tabela da Agência Funerária
+window.renderizarTabelaAgencia = function(lista) {
+    const tbody = document.getElementById('tabela-corpo-agencia'); 
+    if(!tbody) return;
+    
+    tbody.innerHTML = ''; 
+    
+    if (lista.length === 0) { 
+        tbody.innerHTML = '<tr><td colspan="7" style="padding:40px; text-align:center;">Nenhum registro para a Agência.</td></tr>'; 
+        return; 
+    }
+
+    lista.forEach(item => {
+        const tr = document.createElement('tr');
+        
+        let statusGRM = item.agencia_grm || 'PENDENTE';
+        let badgeGRM = `<span class="badge-status ${statusGRM === 'PENDENTE' ? 'badge-pendente' : 'badge-sucesso'}">${statusGRM}</span>`;
+        
+        let statusLib = item.agencia_status_liberacao || 'PENDENTE';
+        let badgeLib = `<span class="badge-status ${statusLib === 'PENDENTE' ? 'badge-pendente' : 'badge-sucesso'}">${statusLib === 'LIBERADO' ? 'LIBERADO' : 'AGUARDANDO'}</span>`;
+
+        let docsHTML = "";
+        docsHTML += `<span class="doc-chip ${item.agencia_chk_invol ? 'tem' : ''}">INVOL</span>`;
+        docsHTML += `<span class="doc-chip ${item.agencia_chk_nf ? 'tem' : ''}">NF</span>`;
+        docsHTML += `<span class="doc-chip ${item.agencia_chk_tanato ? 'tem' : ''}">TANATO</span>`;
+        docsHTML += `<span class="doc-chip ${item.agencia_chk_comprovante ? 'tem' : ''}">COMP. PGTO</span>`;
+
+        tr.innerHTML = `
+            <td style="vertical-align:middle; font-weight:bold; color:#1e293b;">${(item.nome || 'N/I').toUpperCase()}<br><span style="font-size:10px; color:#64748b; font-weight:normal;">${item.data_ficha || ''} às ${item.hora || ''}</span></td>
+            <td style="vertical-align:middle;">${(item.resp_nome || 'N/I').toUpperCase()}<br><span style="font-size:10px; color:#64748b;">${(item.funeraria || '').toUpperCase()}</span></td>
+            <td style="text-align: center; vertical-align:middle; font-family:monospace; font-size:13px; font-weight:bold;">${item.agencia_processo || 'S/ PROC.'}</td>
+            <td style="text-align: center; vertical-align:middle;">${badgeGRM}</td>
+            <td style="vertical-align:middle;">${docsHTML}</td>
+            <td style="text-align: center; vertical-align:middle;">${badgeLib}</td>
+            <td style="text-align:right; vertical-align:middle;">
+                <div style="display:flex; gap:5px; justify-content:flex-end;">
+                    <button class="btn-icon" style="background:#ffedd5; color:#ea580c; border-radius:4px;" onclick="event.stopPropagation(); window.abrirModalAgencia('${item.id}')" title="Trâmites E-Ciga / GRM">✏️</button>
+                    <button class="btn-icon" style="background:#dcfce3; color:#16a34a; border-radius:4px;" onclick="event.stopPropagation(); window.gerarLiberacao('${item.id}')" title="Imprimir Liberação" ${statusLib !== 'LIBERADO' ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : ''}>✅</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+
 // FUNÇÃO DE BUSCA
 window.realizarBusca = function() {
     const termo = document.getElementById('input-busca').value.trim().toUpperCase();
@@ -522,10 +597,15 @@ window.realizarBusca = function() {
                 d.id = doc.id;
                 lista.push(d);
             });
-            window.renderizarTabela(lista);
+            if (dashboardAtual === 'acolhimento') {
+                window.renderizarTabela(lista);
+            } else {
+                window.renderizarTabelaAgencia(lista);
+            }
         });
 }
 
+// OUVINTE PRINCIPAL (Alimenta os dois painéis dependendo da aba ativa)
 window.atualizarListener = function(data, local) {
     const database = getDB(); 
     if(!database) return;
@@ -544,7 +624,12 @@ window.atualizarListener = function(data, local) {
                 }
             });
             lista.sort((a,b) => (a.hora < b.hora ? -1 : 1));
-            window.renderizarTabela(lista);
+            
+            if (dashboardAtual === 'acolhimento') {
+                window.renderizarTabela(lista);
+            } else {
+                window.renderizarTabelaAgencia(lista);
+            }
         });
 }
 
@@ -650,7 +735,6 @@ window.carregarEstatisticas = function(modo) {
                 if (!d.data_ficha.startsWith(checkStr)) return; 
             }
             
-            // Contagem Causas
             if(d.causa) { 
                 d.causa.split('/').forEach(c => { 
                     const k = c.trim().toUpperCase(); 
@@ -658,14 +742,12 @@ window.carregarEstatisticas = function(modo) {
                 }); 
             }
 
-            // Contagem Atendentes
             if(d.atendente_sistema) {
                 const func = d.atendente_sistema.trim().toUpperCase();
                 if(func) atendentes[func] = (atendentes[func] || 0) + 1;
             }
         });
         
-        // Renderizar Gráfico de Causas
         const ctxCausas = document.getElementById('grafico-causas');
         if(ctxCausas && window.Chart) {
             const sortedCausas = Object.entries(causas).sort((a,b) => b[1] - a[1]).slice(0, 10);
@@ -681,7 +763,6 @@ window.carregarEstatisticas = function(modo) {
             dadosEstatisticasExportacao = sortedCausas.map(([c,q]) => ({"Causa": c, "Qtd": q}));
         }
 
-        // Renderizar Gráfico de Atendentes
         const ctxAtend = document.getElementById('grafico-atendentes');
         if(ctxAtend && window.Chart) {
             const sortedAtend = Object.entries(atendentes).sort((a,b) => b[1] - a[1]);
@@ -1145,7 +1226,6 @@ window.listarEquipe = function() {
         snap.forEach(doc => {
             const u = doc.data();
             
-            // Lógica para capturar as Iniciais do Nome
             let nomeSeguro = (u.nome || '').trim();
             if (!nomeSeguro) nomeSeguro = 'Usuário';
 
@@ -1273,7 +1353,7 @@ window.cancelarEdicao = function() {
     document.getElementById('box-novo-usuario').classList.remove('hidden');
 }
 
-// --- MODAIS E AÇÕES PRINCIPAIS ---
+// --- MODAIS E AÇÕES PRINCIPAIS (ACOLHIMENTO) ---
 window.abrirModal = function() {
     document.getElementById('form-atendimento').reset();
     document.getElementById('docId').value = ""; 
@@ -1378,9 +1458,9 @@ window.fecharModal = function() {
     safeDisplay('modal', 'none'); 
 }
 
-const form = document.getElementById('form-atendimento');
-if(form) {
-    form.onsubmit = (e) => {
+const formAcolhimento = document.getElementById('form-atendimento');
+if(formAcolhimento) {
+    formAcolhimento.onsubmit = (e) => {
         e.preventDefault();
         const database = getDB();
         const id = document.getElementById('docId').value;
@@ -1388,7 +1468,7 @@ if(form) {
         const tipoSep = document.getElementById('tipo_sepultura').value;
         let dados = {};
         
-        Array.from(form.elements).forEach(el => {
+        Array.from(formAcolhimento.elements).forEach(el => {
             if(el.id && el.type !== 'submit' && el.type !== 'button') {
                 if(el.type === 'checkbox') dados[el.id.replace('chk_', '')] = el.checked ? 'SIM' : 'NAO';
                 else dados[el.id] = el.value;
@@ -1440,6 +1520,135 @@ if(form) {
             database.collection("atendimentos").add(dados).then(() => window.fecharModal());
         }
     }
+}
+
+// --- FUNÇÕES DA AGÊNCIA FUNERÁRIA ---
+window.abrirModalAgencia = function(id) {
+    const database = getDB();
+    if(!database) return;
+
+    database.collection("atendimentos").doc(id).get().then(doc => {
+        if(doc.exists) {
+            const d = doc.data();
+            document.getElementById('agencia_docId').value = doc.id;
+            document.getElementById('agencia_nome_falecido').innerText = (d.nome || 'Nome Não Informado').toUpperCase();
+            
+            document.getElementById('agencia_processo').value = d.agencia_processo || '';
+            document.getElementById('agencia_grm').value = d.agencia_grm || 'PENDENTE';
+            document.getElementById('agencia_status_liberacao').value = d.agencia_status_liberacao || 'PENDENTE';
+            
+            document.getElementById('agencia_chk_invol').checked = (d.agencia_chk_invol === true);
+            document.getElementById('agencia_chk_nf').checked = (d.agencia_chk_nf === true);
+            document.getElementById('agencia_chk_tanato').checked = (d.agencia_chk_tanato === true);
+            document.getElementById('agencia_chk_comprovante').checked = (d.agencia_chk_comprovante === true);
+
+            safeDisplay('modal-agencia', 'block');
+        }
+    });
+}
+
+window.fecharModalAgencia = function() {
+    safeDisplay('modal-agencia', 'none');
+}
+
+window.salvarDadosAgencia = function() {
+    const id = document.getElementById('agencia_docId').value;
+    if(!id) return;
+
+    const database = getDB();
+    const dadosAtualizados = {
+        agencia_processo: document.getElementById('agencia_processo').value,
+        agencia_grm: document.getElementById('agencia_grm').value,
+        agencia_status_liberacao: document.getElementById('agencia_status_liberacao').value,
+        agencia_chk_invol: document.getElementById('agencia_chk_invol').checked,
+        agencia_chk_nf: document.getElementById('agencia_chk_nf').checked,
+        agencia_chk_tanato: document.getElementById('agencia_chk_tanato').checked,
+        agencia_chk_comprovante: document.getElementById('agencia_chk_comprovante').checked,
+    };
+
+    database.collection("atendimentos").doc(id).update(dadosAtualizados).then(() => {
+        database.collection("auditoria").add({ 
+            data_log: new Date().toISOString(), 
+            usuario: usuarioLogado ? usuarioLogado.nome : 'Anon', 
+            acao: "ATUALIZAÇÃO AGÊNCIA", 
+            detalhe: `Processo: ${dadosAtualizados.agencia_processo} | Status Liberação: ${dadosAtualizados.agencia_status_liberacao}` 
+        });
+        window.fecharModalAgencia();
+    }).catch(e => {
+        alert("Erro ao salvar trâmites da agência.");
+        console.error(e);
+    });
+}
+
+window.gerarLiberacao = function(id) {
+    const database = getDB();
+    database.collection("atendimentos").doc(id).get().then(doc => {
+        if(doc.exists) {
+            const d = doc.data();
+            if(d.agencia_status_liberacao !== 'LIBERADO') {
+                alert("O atendimento não está marcado como LIBERADO.");
+                return;
+            }
+
+            const fd = (dataStr) => { if (!dataStr) return ""; const p = dataStr.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+            const hoje = new Date();
+            const dataAtual = `${hoje.getDate().toString().padStart(2, '0')}/${(hoje.getMonth()+1).toString().padStart(2, '0')}/${hoje.getFullYear()}`;
+
+            let docsHTML = "<ul>";
+            if (d.agencia_chk_invol) docsHTML += "<li>GUIA DE INVOL</li>";
+            if (d.agencia_chk_nf) docsHTML += "<li>NOTA FISCAL DE SERVIÇOS FUNERÁRIOS</li>";
+            if (d.agencia_chk_tanato) docsHTML += "<li>CERTIFICADO DE TANATOPRAXIA</li>";
+            if (d.agencia_chk_comprovante) docsHTML += "<li>COMPROVANTE DE PAGAMENTO DE TAXAS (GRM)</li>";
+            docsHTML += "</ul>";
+            if(docsHTML === "<ul></ul>") docsHTML = "<p>NENHUM DOCUMENTO ANEXADO.</p>";
+
+            const htmlLiberacao = `
+            <html>
+            <head>
+                <title>Termo de Liberação</title>
+                <style>
+                    @page { size: A4 portrait; margin: 20mm; } 
+                    body { font-family: Arial, sans-serif; font-size: 14px; margin: 0; padding: 0; line-height: 1.6; color: #000; text-align: justify; } 
+                    .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 10px; } 
+                    .header img { max-height: 80px; margin-bottom: 10px; }
+                    .header h2 { font-size: 20px; margin: 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; } 
+                    .content { margin-top: 20px; }
+                    .bold { font-weight: bold; text-transform: uppercase; }
+                    .assinatura-area { margin-top: 80px; text-align: center; width: 60%; margin-left: auto; margin-right: auto; }
+                    .ass-linha { border-top: 1px solid #000; padding-top: 5px; font-weight: bold; font-size: 14px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png">
+                    <h2>TERMO DE LIBERAÇÃO DE CORPO E DOCUMENTAÇÃO</h2>
+                    <div>AGÊNCIA FUNERÁRIA MUNICIPAL</div>
+                </div>
+                <div class="content">
+                    <p>A Agência Funerária Municipal de Niterói atesta, para os devidos fins legais e administrativos, a <strong>LIBERAÇÃO</strong> do corpo e do processo de sepultamento referente ao(a) Sr(a) <span class="bold">${(d.nome || '').toUpperCase()}</span>, falecido(a) em <span class="bold">${fd(d.data_obito)}</span>.</p>
+                    
+                    <p>Informamos que o <strong>Processo E-CIGA Nº <span class="bold">${d.agencia_processo || 'NÃO INFORMADO'}</span></strong> foi devidamente instruído e as documentações obrigatórias pertinentes ao sepultamento agendado para o <span class="bold">${(d.local || '').toUpperCase()}</span>, no dia <span class="bold">${fd(d.data_ficha)}</span> às <span class="bold">${d.hora || ''}</span>, estão anexadas a este termo.</p>
+
+                    <h3 style="text-decoration: underline; margin-top: 30px;">DOCUMENTOS CONFERIDOS E ANEXADOS:</h3>
+                    ${docsHTML}
+
+                    <p style="margin-top: 30px;">O Responsável / Funerária fica encarregado(a) de apresentar este Termo de Liberação juntamente com os documentos listados acima na administração do Cemitério Municipal para autorização final de entrada na capela e sepultamento.</p>
+
+                    <p style="text-align: right; margin-top: 60px;">Niterói, ${dataAtual}.</p>
+
+                    <div class="assinatura-area">
+                        <div class="ass-linha">AGÊNCIA FUNERÁRIA MUNICIPAL<br><span style="font-size: 11px; font-weight: normal;">(Assinatura e Carimbo)</span></div>
+                    </div>
+                </div>
+            </body>
+            <script>window.onload=function(){setTimeout(function(){window.print()},500)}</script>
+            </html>`;
+            
+            const w = window.open('','_blank'); 
+            w.document.write(htmlLiberacao); 
+            w.document.close();
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1606,6 +1815,8 @@ window.onclick = function(event) {
     if (t == document.getElementById('modal-equipe')) window.fecharModalEquipe(); 
     if (t == document.getElementById('modal-admin')) window.fecharModalAdmin(); 
     if (t == document.getElementById('modal-transferir')) window.fecharModalTransferir(); 
+    if (t == document.getElementById('modal-whatsapp')) window.fecharModalWpp(); 
+    if (t == document.getElementById('modal-agencia')) window.fecharModalAgencia(); 
 }
 
 window.fazerLogout = function() { 
@@ -1632,13 +1843,73 @@ window.gerarEtiqueta = function() {
     if(w) { w.document.write(h); w.document.close(); } 
 }
 
-window.enviarWhatsapp = function() { 
-    if (!dadosAtendimentoAtual) return; 
-    const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; 
-    const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
-    if (!t) { alert("Sem telefone."); return; } 
-    if (!c) { alert("Sem GPS."); return; } 
-    window.open(`https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`, '_blank'); 
+// --- WHATSAPP TEMPLATES ---
+window.abrirModalWpp = function() {
+    if (!dadosAtendimentoAtual) return;
+    safeDisplay('modal-whatsapp', 'flex');
+}
+
+window.fecharModalWpp = function() {
+    safeDisplay('modal-whatsapp', 'none');
+}
+
+window.enviarWppTemplate = function(tipo) {
+    if (!dadosAtendimentoAtual) return;
+    const d = dadosAtendimentoAtual;
+    let t = d.telefone ? d.telefone.replace(/\D/g, '') : '';
+    
+    let texto = "";
+    const fd = (dataStr) => { if (!dataStr) return ""; const p = dataStr.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+
+    if (tipo === 'gps') {
+        const c = d.geo_coords ? d.geo_coords.replace(/[^0-9.,\-]/g, '') : '';
+        if (!t) { alert("Sem telefone cadastrado."); return; }
+        if (!c) { alert("Sem GPS cadastrado."); return; }
+        texto = `Localização da Sepultura: https://maps.google.com/maps?q=${c}`;
+    } 
+    else if (tipo === 'info') {
+        if (!t) { alert("Sem telefone cadastrado."); return; }
+        
+        let dataExumacao = ""; 
+        if (d.data_ficha) { 
+            const parts = d.data_ficha.split('-'); 
+            let ano = parseInt(parts[0]); 
+            const mes = parts[1]; 
+            const dia = parts[2]; 
+            const addAnos = (d.classificacao_obito === 'ANJO') ? 2 : 3; 
+            dataExumacao = `${dia}/${mes}/${ano + addAnos}`; 
+        }
+
+        texto = `*PREFEITURA MUNICIPAL DE NITERÓI*\n`+
+                `_Serviços Funerários_\n\n`+
+                `Olá, seguem as informações úteis do seu atendimento:\n\n`+
+                `📄 *Protocolo:* ${d.protocolo || '-'}\n`+
+                `👤 *Falecido(a):* ${d.nome || '-'}\n`+
+                `⚰️ *Local:* ${d.local || '-'}\n`+
+                `✝️ *Capela:* ${d.cap || '-'}\n`+
+                `🕒 *Horário Previsto:* ${d.hora || '-'}\n`+
+                `📍 *Sepultura:* ${d.sepul || '-'} | *QD/Rua:* ${d.qd || '-'}\n\n`+
+                `⏳ *Previsão de Exumação:* A partir de ${dataExumacao}\n\n`+
+                `⚠️ *ATENÇÃO:* Compareça ou entre em contato no prazo mínimo de *90 dias ANTES* da data de exumação para abertura de processo.\n\n`+
+                `Agradecemos a compreensão.`;
+    } 
+    else if (tipo === 'convite') {
+        texto = `Informamos com pesar o falecimento de *${d.nome || '_______________'}*.\n\n`+
+                `O velório e sepultamento serão realizados conforme abaixo:\n\n`+
+                `📍 *Cemitério:* ${d.local || '-'}\n`+
+                `✝️ *Capela:* ${d.cap || '-'}\n`+
+                `📅 *Data:* ${fd(d.data_ficha)}\n`+
+                `🕒 *Horário do Sepultamento:* ${d.hora || '-'}\n\n`+
+                `Agradecemos a todos que puderem comparecer para prestar as últimas homenagens.`;
+    }
+
+    let url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+    if (t) {
+        url = `https://api.whatsapp.com/send?phone=55${t}&text=${encodeURIComponent(texto)}`;
+    }
+    
+    window.open(url, '_blank');
+    fecharModalWpp();
 }
 
 window.enviarSMS = function() { 
@@ -1649,18 +1920,12 @@ window.enviarSMS = function() {
     window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/maps?q=$' + c)}`; 
 }
 
-// --- GERAR AUTORIZAÇÃO PARA FUNERAL (ATUALIZADA E REORGANIZADA) ---
 window.gerarAutorizacao = function() {
     if (!dadosAtendimentoAtual) return;
     const d = dadosAtendimentoAtual;
     const fd = (dataStr) => { if (!dataStr) return ""; const p = dataStr.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
     
-    let blocoAssinaturaFamilia = "";
-    if (assinaturaResponsavelImg) {
-        blocoAssinaturaFamilia = `<div style="text-align:center; height:50px;"><img src="${assinaturaResponsavelImg}" style="max-height:45px; max-width:80%;"></div>`;
-    } else {
-        blocoAssinaturaFamilia = `<div style="height:50px;"></div>`;
-    }
+    let blocoAssinaturaFamilia = `<div style="height:40px;"></div>`;
 
     const hoje = new Date();
     const mesNomes = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -1689,20 +1954,20 @@ window.gerarAutorizacao = function() {
     <head>
         <title>Autorização para Funeral</title>
         <style>
-            @page { size: A4 portrait; margin: 15mm; } 
-            body { font-family: Arial, sans-serif; font-size: 13px; margin: 0; padding: 0; line-height: 1.5; color: #000; text-align: justify; } 
-            .header { text-align: center; margin-bottom: 20px; } 
-            .header img { max-height: 60px; margin-bottom: 10px; }
-            .header h2 { font-size: 18px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; } 
-            .content { margin-top: 10px; }
+            @page { size: A4 portrait; margin: 10mm; } 
+            body { font-family: Arial, sans-serif; font-size: 12px; margin: 0; padding: 0; line-height: 1.2; color: #000; text-align: justify; } 
+            .header { text-align: center; margin-bottom: 10px; } 
+            .header img { max-height: 50px; margin-bottom: 5px; }
+            .header h2 { font-size: 16px; text-decoration: underline; margin: 0; font-weight: bold; text-transform: uppercase; } 
+            .content { margin-top: 5px; }
             .bold { font-weight: bold; text-transform: uppercase; }
-            .assinatura-area { margin-top: 15px; text-align: center; width: 50%; margin-left: auto; margin-right: auto; }
-            .ass-linha { border-top: 1px solid #000; padding-top: 5px; font-weight: normal; font-size: 12px; display: inline-block; width: 100%; }
-            p { margin: 8px 0; }
-            h3 { font-size: 13px; text-decoration: underline; margin-top: 15px; margin-bottom: 5px; text-align: left; }
-            .info-box { margin: 15px 0; padding: 12px; border: 1px solid #333; background: #fafafa; border-radius: 4px; }
-            .info-box h4 { margin: 0 0 10px 0; font-size: 13px; text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 5px; text-transform: uppercase; color: #333; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+            .assinatura-area { margin-top: 15px; text-align: center; width: 60%; margin-left: auto; margin-right: auto; }
+            .ass-linha { border-top: 1px solid #000; padding-top: 3px; font-weight: normal; font-size: 11px; display: inline-block; width: 100%; }
+            p { margin: 5px 0; }
+            h3 { font-size: 12px; text-decoration: underline; margin-top: 10px; margin-bottom: 5px; text-align: left; }
+            .info-box { margin: 8px 0; padding: 8px; border: 1px solid #333; background: #fafafa; border-radius: 4px; }
+            .info-box h4 { margin: 0 0 5px 0; font-size: 12px; text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 3px; text-transform: uppercase; color: #333; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 11px; }
             .info-grid-full { grid-column: span 2; }
         </style>
     </head>
@@ -1758,33 +2023,34 @@ window.gerarAutorizacao = function() {
                 <div class="ass-linha">Assinatura do(a) autorizador(a)</div>
             </div>
 
-            <div style="border-top: 1px dashed #999; margin: 20px 0;"></div>
+            <div style="border-top: 1px dashed #999; margin: 10px 0;"></div>
 
             <h3>AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</h3>
             <p>Autorizo a Funerária <span class="bold">${(d.funeraria || '_________________________').toUpperCase()}</span> a entregar toda e qualquer documentação exigida, bem como a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), agendamento e liberação de corpo na agência para o Cemitério de destino.</p>
             
-            <div class="assinatura-area" style="margin-top: 20px;">
+            <div class="assinatura-area" style="margin-top: 15px;">
                 ${blocoAssinaturaFamilia}
                 <div class="ass-linha">Assinatura do(a) autorizador(a)</div>
             </div>
 
-            <div style="border-top: 1px dashed #999; margin: 20px 0;"></div>
+            <div style="border-top: 1px dashed #999; margin: 10px 0;"></div>
 
             <h3>NÃO AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</h3>
             <p>NÃO autorizo a Funerária <span class="bold">${(d.funeraria || '_________________________').toUpperCase()}</span> a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), sendo de minha inteira responsabilidade efetuar o pagamento das taxas bem como entregar a documentação exigida para liberação do corpo na agência para o Cemitério de destino. Importante frisar que toda a documentação posterior ao pagamento, a família deverá entregar a Funerária para que seja autorizado junto ao Cemitério a entrada do corpo na capela do Cemitério escolhido.</p>
             <p>Sendo de responsabilidade da Funerária contratada tão somente a entrega dos documentos obrigatórios da empresa, bem como realizar o agendamento do sepultamento.</p>
 
-            <div class="assinatura-area" style="margin-top: 20px;">
+            <div class="assinatura-area" style="margin-top: 15px;">
                 ${blocoAssinaturaFamilia}
-                <div class="ass-linha">Assinatura do(a) autorizador(a)<br><span style="font-size: 10px; font-weight: normal;">(Apenas se não autorizar o pagamento pela Funerária)</span></div>
+                <div class="ass-linha">Assinatura do(a) autorizador(a)<br><span style="font-size: 9px; font-weight: normal;">(Apenas se não autorizar o pagamento pela Funerária)</span></div>
             </div>
 
-            <div style="margin-top: 20px; font-size: 10px; padding: 10px; background: #eee; border: 1px solid #ccc; border-radius: 4px;">
+            <div style="margin-top: 10px; font-size: 9px; padding: 6px; background: #eee; border: 1px solid #ccc; border-radius: 4px;">
                 <p style="margin: 0 0 5px 0;"><b>OBS.:</b> Importante frisar que a Funerária ou a Família terá o prazo de no MÁXIMO 01 (uma) hora antes do sepultamento para pagar as taxas. Caso não seja cumprido no horário o pagamento o sepultamento será SUSPENSO.</p>
                 <p style="margin: 0;"><b>OBS.:</b> Em se tratando do Cemitério de Itaipu e São Francisco, o pagamento das taxas deverão ser pagos no ato da liberação do corpo na Agência, tendo em vista se tratar de Cemitérios longe da Agência recebedora. Caso não seja realizado o pagamento, os Cemitérios não autorizarão a entrada de corpo.</p>
             </div>
         </div>
     </body>
+    <script>window.onload=function(){setTimeout(function(){window.print()},500)}</script>
     </html>`;
     
     const w = window.open('','_blank'); 
@@ -1792,7 +2058,6 @@ window.gerarAutorizacao = function() {
     w.document.close();
 }
 
-// --- GERAR COMPROVANTE ---
 window.gerarComprovante = function() {
     if (!dadosAtendimentoAtual) return;
     const d = dadosAtendimentoAtual;
@@ -1988,7 +2253,7 @@ window.gerarComprovante = function() {
             </div>
         </div>
     </body>
-    <script>window.onload=function(){window.print()}</script>
+    <script>window.onload=function(){setTimeout(function(){window.print()},500)}</script>
     </html>`;
     
     const w = window.open('','_blank'); 
