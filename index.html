@@ -54,6 +54,7 @@
         .form-section-title { color: #1e293b; margin: 0; font-size: 14px; padding-bottom: 5px; }
         .form-section-divider { margin-top: 15px; margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; display: flex; align-items: center; gap: 8px; }
 
+        /* TABELA EQUIPE/CONTRIBUINTES */
         .table-equipe-container { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-top: 15px; }
         .table-equipe-header { display: flex; padding: 15px 20px; border-bottom: 2px solid #f8fafc; color: #475569; font-size: 13px; font-weight: 700; }
         .table-equipe-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f1f5f9; transition: background 0.2s; }
@@ -79,6 +80,20 @@
         
         .doc-chip { font-size: 9px; background: #e2e8f0; padding: 2px 5px; border-radius: 3px; color: #334155; font-weight: bold; margin-right: 3px; display: inline-block; margin-bottom: 3px; }
         .doc-chip.tem { background: #3b82f6; color: white; }
+
+        /* NOVO LAYOUT DA AGÊNCIA (CARDS) */
+        .agencia-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding: 10px 0; }
+        .agencia-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; border-top: 4px solid #3b82f6; transition: transform 0.2s; }
+        .agencia-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .agencia-card-header { padding: 15px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; }
+        .agencia-card-title { font-size: 15px; font-weight: 800; color: #1e293b; margin-bottom: 5px; }
+        .agencia-card-subtitle { font-size: 11px; color: #64748b; font-weight: 500; }
+        .agencia-card-body { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
+        .agencia-info-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 6px; }
+        .agencia-info-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .agencia-info-label { color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; }
+        .agencia-info-value { color: #334155; font-weight: 700; text-align: right; }
+        .agencia-card-footer { padding: 15px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
 
         @media (max-width: 768px) {
             .modal-footer-custom { padding-bottom: 20px; }
@@ -160,28 +175,29 @@
     </div>
 
     <div id="dashboard-agencia" class="main-content hidden">
-        <div class="controles" style="justify-content: space-between;">
-            <h3 style="color: #1e293b; margin: 0;">Gestão Documental e Processos (Agência)</h3>
+        <div class="controles" style="justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px;">
+            <div>
+                <h3 style="color: #1e293b; margin: 0; font-size: 18px;">🏢 Gestão Documental e Processos</h3>
+                <p style="font-size: 12px; color: #64748b; margin: 5px 0 0 0;">Painel exclusivo da Agência Funerária para trâmites no E-CIGA e Liberação</p>
+            </div>
             <div>
                 <button onclick="imprimirRelatorio('landscape')" class="btn-imprimir">🖨️ Imprimir Relação</button>
             </div>
         </div>
 
-        <div class="tabela-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Falecido(a)</th>
-                        <th>Responsável / Empresa</th>
-                        <th>Registro E-CIGA</th>
-                        <th>Status GRM</th>
-                        <th style="min-width: 180px;">Anexos ao Processo</th>
-                        <th>Liberação</th>
-                        <th style="text-align: right; min-width: 100px;">Gestão</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-corpo-agencia"></tbody>
-            </table>
+        <div id="tabela-corpo-agencia" class="agencia-grid"></div>
+    </div>
+
+    <div id="modal-liberacao" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
+            <h3 style="color: #1e293b; margin-bottom: 15px;">Imprimir Liberação</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o modelo do formulário correspondente:</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button onclick="gerarFormularioLiberacao('municipal')" class="btn-novo" style="background-color: #3b82f6; width: 100%;">📄 Liberação - Cemitérios Municipais</button>
+                <button onclick="gerarFormularioLiberacao('outros')" class="btn-novo" style="background-color: #8b5cf6; width: 100%;">📄 Liberação - Outros / Crematório</button>
+            </div>
+            <button onclick="fecharModalLiberacao()" class="btn-close" style="margin-top: 15px; width: 100%;">Cancelar</button>
+            <button onclick="fecharModalLiberacao()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
         </div>
     </div>
 
@@ -196,9 +212,18 @@
                 <input type="hidden" id="agencia_docId"> 
                 
                 <div class="form-grid">
-                    <div class="input-group span-4" style="background: #f1f5f9; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
-                        <span style="font-size: 11px; font-weight:bold; color:#64748b;">FALECIDO(A):</span>
-                        <div id="agencia_nome_falecido" style="font-weight: 800; color: #1e293b; font-size: 16px;"></div>
+                    <div class="input-group span-4" style="background: #f1f5f9; padding: 10px; border-radius: 6px; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-size: 11px; font-weight:bold; color:#64748b;">FALECIDO(A):</span>
+                            <div id="agencia_nome_falecido" style="font-weight: 800; color: #1e293b; font-size: 16px;"></div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size: 11px; font-weight:bold; color:#64748b; display:flex; align-items:center; gap:5px;">
+                                RESPONSÁVEL (AGÊNCIA): 
+                                <button type="button" onclick="assumirProcessoAgenciaModal()" style="border:none; background:none; cursor:pointer; font-size:14px;" title="Assumir para mim">🔄</button>
+                            </span>
+                            <div id="agencia_atendente_modal" style="font-weight: 800; color: #10b981; font-size: 13px;"></div>
+                        </div>
                     </div>
 
                     <div class="input-group span-4 form-section-divider">
@@ -622,6 +647,7 @@
 
                     <div style="padding: 20px; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
                         <h5 style="margin-bottom: 5px; color: #dc2626; font-size: 15px;">⚠️ Restauração do Banco de Dados</h5>
+                        <p style="font-size: 13px; margin-bottom: 15px; color: #dc2626; font-weight:500;">Atenção: A restauração pode sobrescrever dados existentes. Use com cuidado.</p>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <input type="file" id="file-restore" accept=".json" style="flex: 1; max-width:400px; padding: 8px; background: white; border: 1px solid #fca5a5;">
                             <button onclick="restaurarBackup()" class="btn-novo" style="background-color: #dc2626; padding: 10px 20px; width:auto;">⬆️ Restaurar</button>
@@ -667,6 +693,7 @@
     <div id="modal-assinatura" class="modal">
         <div class="modal-content" style="max-width: 500px; text-align: center; border-radius: 12px; padding: 30px;">
             <h3 id="titulo-assinatura" style="color: #1e293b; margin-bottom: 5px;">Assinatura</h3>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Assine abaixo usando o dedo ou mouse.</p>
             <div style="display: inline-block; width: 100%;">
                 <canvas id="signature-pad" width="400" height="200" style="width: 100%; border-radius: 8px; background-color: #f8fafc; border: 2px dashed #cbd5e1;"></canvas>
             </div>
