@@ -78,12 +78,13 @@
         .badge-pendente { background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; }
         .badge-sucesso { background-color: #bbf7d0; color: #166534; border: 1px solid #86efac; }
         
-        .doc-chip { font-size: 9px; background: #e2e8f0; padding: 2px 5px; border-radius: 3px; color: #334155; font-weight: bold; margin-right: 3px; display: inline-block; margin-bottom: 3px; }
+        .doc-chip { font-size: 9px; background: #e2e8f0; padding: 4px 6px; border-radius: 4px; color: #334155; font-weight: bold; margin-right: 3px; display: inline-block; margin-bottom: 3px; transition: 0.2s; }
         .doc-chip.tem { background: #3b82f6; color: white; }
+        .doc-chip.tem:hover { opacity: 0.8; }
 
         /* NOVO LAYOUT DA AGÊNCIA (CARDS) */
         .agencia-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding: 10px 0; }
-        .agencia-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; border-top: 4px solid #3b82f6; transition: transform 0.2s; }
+        .agencia-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; border-top: 4px solid #3b82f6; transition: transform 0.2s; cursor: pointer; }
         .agencia-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .agencia-card-header { padding: 15px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; }
         .agencia-card-title { font-size: 15px; font-weight: 800; color: #1e293b; margin-bottom: 5px; }
@@ -93,7 +94,8 @@
         .agencia-info-row:last-child { border-bottom: none; padding-bottom: 0; }
         .agencia-info-label { color: #64748b; font-weight: 600; font-size: 11px; text-transform: uppercase; }
         .agencia-info-value { color: #334155; font-weight: 700; text-align: right; }
-        .agencia-card-footer { padding: 15px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+        .agencia-card-footer { padding: 15px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 10px; }
+        .agencia-card-footer .actions { display: flex; gap: 5px; flex-wrap: wrap; }
 
         @media (max-width: 768px) {
             .modal-footer-custom { padding-bottom: 20px; }
@@ -201,8 +203,23 @@
         </div>
     </div>
 
+    <div id="modal-transferir-responsavel" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
+            <h3 style="color: #1e293b; margin-bottom: 15px;">Repassar Processo</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o novo responsável por este atendimento na Agência:</p>
+            <select id="novo_responsavel_agencia" style="margin-bottom: 20px; font-weight: bold;">
+                <option value="">Carregando equipe...</option>
+            </select>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="fecharModalTransferirResponsavel()" class="btn-close" style="padding: 10px 20px; font-weight: 600;">Cancelar</button>
+                <button onclick="confirmarTransferenciaResponsavel()" class="btn-novo" style="background-color: #8b5cf6; padding: 10px 20px;">Confirmar Repasse</button>
+            </div>
+            <button onclick="fecharModalTransferirResponsavel()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
+        </div>
+    </div>
+
     <div id="modal-agencia" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 650px;">
             <div class="modal-header">
                 <h3>Trâmites da Agência Funerária</h3>
                 <span class="close" onclick="fecharModalAgencia()">×</span>
@@ -218,9 +235,10 @@
                             <div id="agencia_nome_falecido" style="font-weight: 800; color: #1e293b; font-size: 16px;"></div>
                         </div>
                         <div style="text-align:right;">
-                            <span style="font-size: 11px; font-weight:bold; color:#64748b; display:flex; align-items:center; gap:5px;">
-                                RESPONSÁVEL (AGÊNCIA): 
+                            <span style="font-size: 11px; font-weight:bold; color:#64748b; display:flex; align-items:center; gap:5px; justify-content:flex-end;">
+                                RESP. AGÊNCIA: 
                                 <button type="button" onclick="assumirProcessoAgenciaModal()" style="border:none; background:none; cursor:pointer; font-size:14px;" title="Assumir para mim">🔄</button>
+                                <button type="button" onclick="abrirModalTransferirResponsavelModal()" style="border:none; background:none; cursor:pointer; font-size:14px;" title="Repassar para outro colaborador">👤</button>
                             </span>
                             <div id="agencia_atendente_modal" style="font-weight: 800; color: #10b981; font-size: 13px;"></div>
                         </div>
@@ -245,14 +263,46 @@
                     </div>
 
                     <div class="input-group span-4 form-section-divider">
-                        <h4 class="form-section-title">Anexos Físicos/Digitais</h4>
+                        <h4 class="form-section-title">Anexos (Links de Nuvem)</h4>
+                        <span style="font-size:10px; color:#64748b; font-weight:normal; margin-left:10px;">Cole o link compartilhado do seu OneDrive ou Google Drive</span>
                     </div>
 
-                    <div class="input-group span-4" style="display: flex; gap: 15px; flex-wrap: wrap; background: #fff; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px;">
-                        <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;"><input type="checkbox" id="agencia_chk_invol" style="width:auto; margin:0;"> Guia INVOL</label>
-                        <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;"><input type="checkbox" id="agencia_chk_nf" style="width:auto; margin:0;"> Nota Fiscal</label>
-                        <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;"><input type="checkbox" id="agencia_chk_tanato" style="width:auto; margin:0;"> Cert. Tanato</label>
-                        <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;"><input type="checkbox" id="agencia_chk_comprovante" style="width:auto; margin:0;"> Comp. Pagamento</label>
+                    <div class="input-group span-4" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #fff; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px;">
+                        
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;">
+                                <input type="checkbox" id="agencia_chk_invol" style="width:auto; margin:0;"> Guia INVOL
+                            </label>
+                            <input type="text" id="link_input_invol" placeholder="Cole o link do OneDrive aqui..." style="font-size:11px; padding:6px;" oninput="document.getElementById('agencia_chk_invol').checked = this.value.trim() !== '';">
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;">
+                                <input type="checkbox" id="agencia_chk_nf" style="width:auto; margin:0;"> Nota Fiscal
+                            </label>
+                            <input type="text" id="link_input_nf" placeholder="Cole o link do OneDrive aqui..." style="font-size:11px; padding:6px;" oninput="document.getElementById('agencia_chk_nf').checked = this.value.trim() !== '';">
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;">
+                                <input type="checkbox" id="agencia_chk_tanato" style="width:auto; margin:0;"> Cert. Tanato
+                            </label>
+                            <input type="text" id="link_input_tanato" placeholder="Cole o link do OneDrive aqui..." style="font-size:11px; padding:6px;" oninput="document.getElementById('agencia_chk_tanato').checked = this.value.trim() !== '';">
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;">
+                                <input type="checkbox" id="agencia_chk_comprovante" style="width:auto; margin:0;"> Comp. Pagamento
+                            </label>
+                            <input type="text" id="link_input_comprovante" placeholder="Cole o link do OneDrive aqui..." style="font-size:11px; padding:6px;" oninput="document.getElementById('agencia_chk_comprovante').checked = this.value.trim() !== '';">
+                        </div>
+                        
+                        <div style="display:flex; flex-direction:column; gap:5px; grid-column: 1 / -1;">
+                            <label style="display:flex; align-items:center; gap:5px; margin:0; cursor:pointer; font-weight:600; color:#334155; text-transform:none;">
+                                <input type="checkbox" id="agencia_chk_guia_grm" style="width:auto; margin:0;"> Guia GRM
+                            </label>
+                            <input type="text" id="link_input_guia_grm" placeholder="Cole o link do OneDrive aqui..." style="font-size:11px; padding:6px;" oninput="document.getElementById('agencia_chk_guia_grm').checked = this.value.trim() !== '';">
+                        </div>
                     </div>
 
                     <div class="input-group span-4 form-section-divider">
@@ -440,7 +490,7 @@
     <div id="modal-visualizar" class="modal">
         <div class="modal-content" style="max-width: 700px; background: #fff;">
             <div class="modal-header">
-                <h3>Ficha de Atendimento</h3>
+                <h3>Ficha de Atendimento / Resumo</h3>
                 <span class="close" onclick="fecharModalVisualizar()">×</span>
             </div>
             <div class="ficha-visualizacao">
@@ -463,6 +513,12 @@
                 <div class="ficha-linha"><span class="ficha-label">VELÓRIO:</span><span class="ficha-valor" id="view_cap"></span></div>
                 <div class="ficha-linha"><span class="ficha-label">DATA/HORA ÓBITO:</span><span class="ficha-valor"><span id="view_data_obito"></span> às <span id="view_hora_obito"></span><span id="view_do_24h" style="margin-left:10px; color:var(--danger); font-weight:900;"></span></span></div>
                 <div class="ficha-linha" style="border-bottom: none;"><span class="ficha-label">OBSERVAÇÕES:</span><span class="ficha-valor" id="view_urna_info" style="display: block; margin-top: 5px;"></span></div>
+                
+                <div class="ficha-linha" id="linha_anexos_view" style="display:none; align-items:center; border-top: 1px solid #e2e8f0; margin-top: 10px; padding-top: 10px;">
+                    <span class="ficha-label">ANEXOS DIGITAIS:</span>
+                    <span class="ficha-valor" id="view_anexos_links" style="display: flex; gap: 10px; flex-wrap: wrap;"></span>
+                </div>
+
                 <div id="view_map_container" style="display:none; margin-top: 20px;"><div class="ficha-linha" style="border-bottom:none; margin-bottom:5px;"><span class="ficha-label">Localização:</span></div><div id="mapa-frame" style="width:100%; height:250px; border:1px solid #e2e8f0; border-radius:6px; overflow:hidden;"></div><div style="text-align:right; margin-top:5px;"><a id="link-gps" href="#" target="_blank" style="font-size:12px; font-weight:bold; color:#3b82f6; text-decoration:none;">📍 Abrir no Google Maps</a></div></div>
             </div>
             
