@@ -75,7 +75,6 @@
         .agencia-info-value { color: #334155; font-weight: 700; text-align: right; }
         .agencia-card-footer { padding: 15px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 10px; }
         .agencia-card-footer .actions { display: flex; gap: 5px; flex-wrap: wrap; }
-
         @media (max-width: 768px) {
             .modal-footer-custom { padding-bottom: 20px; }
             .modal-footer-custom button { flex: 1 1 45%; max-width: 100%; }
@@ -182,15 +181,11 @@
                 <h3 style="margin: 0; color: #1e293b; font-size: 16px;">Trâmites da Agência Funerária</h3>
                 <span class="close" onclick="fecharModalAgencia()" style="font-size: 24px; cursor: pointer; color: #64748b;">×</span>
             </div>
-            
             <form id="form-agencia" style="padding: 20px;">
                 <input type="hidden" id="agencia_docId"> 
                 <div class="form-grid">
                     <div class="input-group span-4" style="background: linear-gradient(135deg, #f8fafc, #f1f5f9); padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; border-right: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-bottom: 15px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                        <div>
-                            <span style="font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">FALECIDO(A)</span>
-                            <div id="agencia_nome_falecido" style="font-weight: 800; color: #1e293b; font-size: 17px; margin-top: 2px;"></div>
-                        </div>
+                        <div><span style="font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">FALECIDO(A)</span><div id="agencia_nome_falecido" style="font-weight: 800; color: #1e293b; font-size: 17px; margin-top: 2px;"></div></div>
                         <div style="text-align:right;">
                             <div style="display:flex; align-items:center; gap:8px; justify-content:flex-end;">
                                 <span style="font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase;">RESP. AGÊNCIA</span>
@@ -202,17 +197,14 @@
                             <div id="agencia_atendente_modal" style="font-weight: 800; color: #10b981; font-size: 14px; margin-top: 4px;"></div>
                         </div>
                     </div>
-
                     <div class="input-group span-4 form-section-divider"><h4 class="form-section-title" style="color: #0f172a;">Abertura de Processos</h4></div>
                     <div class="input-group span-2"><label>Nº Processo E-CIGA</label><input type="text" id="agencia_processo" placeholder="000/000000/2026"></div>
                     <div class="input-group span-1"><label>Status GRM</label><select id="agencia_grm"><option value="PENDENTE">Pendente</option><option value="GERADA">Gerada</option><option value="ENTREGUE">Entregue</option><option value="ISENTO">Isento</option></select></div>
                     <div class="input-group span-1"><label>Valor GRM (R$)</label><input type="number" step="0.01" id="agencia_valor_grm" placeholder="0.00" style="font-weight:bold; color:#10b981;"></div>
-
                     <div class="input-group span-4 form-section-divider" style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 5px;">
                         <div><h4 class="form-section-title" style="color: #0f172a; margin-bottom: 2px;">Anexos Digitais</h4><span style="font-size:10px; color:#64748b;">Cole o link do OneDrive</span></div>
                         <button type="button" class="btn-novo" style="background-color: #0ea5e9; padding: 6px 12px; font-size: 11px; height: auto; width: auto; margin: 0;" onclick="abrirModalOneDrive()">☁️ Abrir Nuvem</button>
                     </div>
-
                     <div class="input-group span-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; background: #fafafa; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px;">
                         <div style="display: flex; flex-direction: column; gap: 6px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"><label style="font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="agencia_chk_invol" style="margin:0;"> Guia INVOL</label><input type="text" id="link_input_invol" placeholder="Colar link..." style="font-size:11px; padding: 6px; border: 1px solid #cbd5e1;" oninput="document.getElementById('agencia_chk_invol').checked = this.value.trim() !== '';"></div>
                         <div style="display: flex; flex-direction: column; gap: 6px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"><label style="font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="agencia_chk_nf" style="margin:0;"> Nota Fiscal</label><input type="text" id="link_input_nf" placeholder="Colar link..." style="font-size:11px; padding: 6px; border: 1px solid #cbd5e1;" oninput="document.getElementById('agencia_chk_nf').checked = this.value.trim() !== '';"></div>
@@ -220,11 +212,9 @@
                         <div style="display: flex; flex-direction: column; gap: 6px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;"><label style="font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="agencia_chk_comprovante" style="margin:0;"> Comp. Pagamento</label><input type="text" id="link_input_comprovante" placeholder="Colar link..." style="font-size:11px; padding: 6px; border: 1px solid #cbd5e1;" oninput="document.getElementById('agencia_chk_comprovante').checked = this.value.trim() !== '';"></div>
                         <div style="display: flex; flex-direction: column; gap: 6px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; grid-column: 1 / -1;"><label style="font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="agencia_chk_guia_grm" style="margin:0;"> Guia GRM</label><input type="text" id="link_input_guia_grm" placeholder="Colar link..." style="font-size:11px; padding: 6px; border: 1px solid #cbd5e1;" oninput="document.getElementById('agencia_chk_guia_grm').checked = this.value.trim() !== '';"></div>
                     </div>
-
                     <div class="input-group span-4 form-section-divider"><h4 class="form-section-title" style="color: #0f172a;">Finalização</h4></div>
                     <div class="input-group span-4"><label>Status da Liberação p/ Cemitério</label><select id="agencia_status_liberacao" style="font-weight: bold;"><option value="PENDENTE">AGUARDANDO TRÂMITES</option><option value="LIBERADO">LIBERADO PARA SEPULTAMENTO</option></select></div>
                 </div>
-
                 <div class="modal-footer-custom" style="justify-content: space-between; padding: 15px 20px; background: #f8fafc; margin: 0 -20px -20px -20px; border-radius: 0 0 12px 12px;">
                     <button type="button" class="btn-close" style="width: auto;" onclick="fecharModalAgencia()">Cancelar</button>
                     <button type="button" class="btn-novo" style="width: auto; background-color: #10b981;" onclick="salvarDadosAgencia()">Salvar Alterações</button>
@@ -233,7 +223,7 @@
         </div>
     </div>
 
-    <div id="modal-onedrive" class="modal">
+    <div id="modal-onedrive" class="modal" style="z-index: 9999;">
         <div class="modal-content" style="max-width: 900px; height: 85vh; display: flex; flex-direction: column; padding: 0;">
             <div class="modal-header" style="padding: 15px 20px;"><h3 style="margin:0;">Gerenciador de Nuvem (OneDrive / SharePoint)</h3><span class="close" onclick="fecharModalOneDrive()">×</span></div>
             <div style="padding: 15px 20px; background: #f0f9ff; border-bottom: 1px solid #bae6fd; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -251,11 +241,9 @@
                 <h3 style="margin: 0; color: #1e293b; font-size: 16px;">Checklist de Documentos Anexados</h3>
                 <span class="close" onclick="fecharModalDocsAcolhimento()" style="font-size: 24px; cursor: pointer; color: #64748b;">×</span>
             </div>
-            
             <form id="form-checklist" style="padding: 20px; margin:0;">
                 <input type="hidden" id="docs_acolhimento_id">
                 <p style="font-size: 12px; color: #64748b; margin-bottom: 15px; line-height:1.4;">Marque os documentos que foram escaneados e enviados para a agência em um único arquivo PDF:</p>
-                
                 <div class="form-grid" style="gap: 15px;">
                     <div class="input-group span-4 form-section-divider" style="margin-top:0;"><h4 class="form-section-title" style="color: #3b82f6;">📄 Documentos Básicos / Óbito</h4></div>
                     <div class="input-group span-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
@@ -266,7 +254,6 @@
                         <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="chk_doc_residencia" style="margin:0;"> Comprovante de Residência</label>
                         <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="chk_doc_guia_cartorio" style="margin:0;"> Guia de Sepultamento (Cartório)</label>
                     </div>
-
                     <div class="input-group span-4 form-section-divider"><h4 class="form-section-title" style="color: #10b981;">💰 Comprovantes de Desconto</h4></div>
                     <div class="input-group span-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
                         <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="chk_doc_moeda" style="margin:0;"> Moeda Araribóia</label>
@@ -275,7 +262,6 @@
                         <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="chk_doc_cadunico" style="margin:0;"> Cadastro Único</label>
                         <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="chk_doc_cras" style="margin:0;"> Declaração de Isenção (CRAS)</label>
                     </div>
-
                     <div class="input-group span-4 form-section-divider"><h4 class="form-section-title" style="color: #f59e0b;">➕ Documentos Adicionais</h4></div>
                     <div class="input-group span-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
                         <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="chk_doc_parentesco" style="margin:0;"> RG/CPF (Comprovar Parentesco)</label>
@@ -283,13 +269,11 @@
                         <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="chk_doc_locacao" style="margin:0;"> Contrato de Locação</label>
                         <label style="display:flex; align-items:center; gap:6px; font-weight:600; color:#334155; font-size: 12px;"><input type="checkbox" id="chk_doc_procuracao" style="margin:0;"> Procuração / Tutela / Curatela</label>
                     </div>
-
                     <div class="input-group span-4 form-section-divider" style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px;">
                         <div><h4 class="form-section-title" style="color: #0f172a; margin-bottom: 2px;">🔗 Link Único (OneDrive)</h4><span style="font-size:10px; color:#64748b;">Cole o link da pasta ou do PDF gerado</span></div>
                         <button type="button" class="btn-novo" style="background-color: #0ea5e9; padding: 6px 12px; font-size: 11px; height: auto; width: auto; margin: 0;" onclick="abrirModalOneDrive()">☁️ Abrir Nuvem</button>
                     </div>
                     <div class="input-group span-4" style="background: #fff; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px;"><input type="text" id="link_docs_acolhimento" placeholder="Cole o link do OneDrive aqui..." style="font-size:11px; padding:6px; border:none; background:transparent; width:100%; outline:none;"></div>
-
                     <div class="input-group span-4 form-section-divider"><h4 class="form-section-title" style="color: #0ea5e9;">🛠️ Ferramenta: Mesclar PDFs</h4></div>
                     <div class="input-group span-4" style="background: #f0f9ff; padding: 12px; border-radius: 8px; border: 1px dashed #bae6fd;">
                         <span style="font-size:10px; color:#64748b; margin-bottom: 10px; display:block; line-height:1.3;">Selecione os PDFs escaneados separadamente. O sistema irá juntá-los e renomear com Protocolo e Nome.</span>
@@ -299,7 +283,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="modal-footer-custom" style="justify-content: space-between; padding: 15px 20px; background: #f8fafc; margin: 20px -20px -20px -20px; border-radius: 0 0 12px 12px; border-top: 1px solid #e2e8f0;">
                     <button type="button" class="btn-close" style="width: auto;" onclick="fecharModalDocsAcolhimento()">Cancelar</button>
                     <button type="button" class="btn-novo" style="width: auto; background-color: #3b82f6;" onclick="salvarDocsAcolhimento()">Salvar Checklist</button>
@@ -316,7 +299,7 @@
                 <div class="form-grid">
                     <div class="input-group span-4 hidden" id="div-motivo-edicao" style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; margin-bottom: 10px;"><label style="color:#856404; font-weight:bold;">⚠️ Motivo da Correção (Obrigatório)</label><input type="text" id="motivo_edicao" placeholder="Justifique a alteração..." style="border: 1px solid #e0a800; background-color: #fff;"></div>
                     <div class="input-group span-2"><label>Data/Hora Atendimento (Registro)</label><input type="datetime-local" id="data_hora_atendimento" required></div>
-                    <div class="input-group span-1"><label>Data Sepultamento</label><input type="date" id="data_ficha_modal" required></div>
+                    <div class="input-group span-1"><label>Data Sepultamento</label><input type="date" id="data_ficha" required></div>
                     <div class="input-group span-1"><label>Hora Sepultamento</label><select id="hora" required></select></div>
                     <div class="input-group span-2"><label style="color:#3b82f6;">Atendente Responsável</label><input type="text" id="atendente_sistema" readonly></div>
                     <div class="input-group span-4" style="background-color: #f1f5f9; border: 1px dashed #cbd5e1; padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 10px;"><input type="checkbox" id="chk_indigente" style="width: auto; height: 16px; width: 16px; margin:0;"><label for="chk_indigente" style="margin: 0; color: #475569; cursor: pointer; text-transform: none; font-size:13px;">Sepultamento de Indigente (Desativa campos obrigatórios)</label></div>
@@ -357,7 +340,7 @@
                     <div class="input-group span-2 hidden" id="div-membro"><input type="hidden" id="membro_amputado"></div>
                     <div class="input-group span-1"><label>Nº Sepul</label><input type="text" id="sepul" required></div>
                     <div class="input-group span-1"><label>QD</label><input type="text" id="qd" required></div>
-                    <div class="input-group span-1"><label>GPS</label><div style="display:flex; gap:5px;"><input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps"><button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center; border-radius:6px;">📍</button><button type="button" onclick="window.open('https://maps.google.com/')" class="btn-imprimir" style="width:40px; padding:0; justify-content:center; border-radius:6px;">🗺️</button></div></div>
+                    <div class="input-group span-1"><label>GPS</label><div style="display:flex; gap:5px;"><input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps"><button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center; border-radius:6px;">📍</button><button type="button" onclick="window.open('https://maps.google.com/maps', '_blank')" class="btn-imprimir" style="width:40px; padding:0; justify-content:center; border-radius:6px;">🗺️</button></div></div>
                     <div class="input-group span-4 hidden" id="div-motivo-sepultura"><label style="color:red;">Motivo Troca</label><input type="text" id="motivo_troca_sepultura" placeholder="Explique a mudança..."></div>
                     <div class="input-group span-2"><label>Hospital / Local</label><input type="text" id="hospital" list="lista-hospitais" placeholder="Selecione..." required><datalist id="lista-hospitais"><option value="DOMICÍLIO"><option value="OUTRO HOSPITAL (DIGITE O NOME)"><option value="HMCT (CARLOS TORTELLY)"><option value="HEAL (AZEVEDO LIMA)"><option value="HUAP (ANTÔNIO PEDRO)"><option value="HOSP. ORÊNCIO DE FREITAS)"><option value="HOSP. PSIQUIÁTRICO JURUJUBA)"><option value="HOSP. OCEÂNICO)"><option value="HOSP. GETULINHO)"><option value="UPA MÁRIO MONTEIRO)"><option value="UPA FONSECA)"><option value="CHN (COMPLEXO HOSPITALAR)"><option value="HCN (CLÍNICAS DE NITERÓI)"><option value="HOSP. SANTA MARTHA)"><option value="HOSP. SÃO LUCAS)"><option value="HOSP. ICARAÍ)"><option value="HEAT (ALBERTO TORRES)"><option value="HOSP. LUIZ PALMIER)"><option value="PRONTO SOCORRO CENTRAL (SG)"><option value="HOSP. SÃO GONÇALO)"><option value="HOSP. FRANCISCANO (NS. GRAÇAS)"><option value="IML - NITERÓI)"><option value="IML - SÃO GONÇALO)"></datalist></div>
                     <div class="input-group span-2 hidden" id="div-local-domicilio" style="flex-direction: row; gap: 5px;"><div style="flex: 1;"><label>UF</label><select id="estado_obito"><option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></div><div style="flex: 2;"><label>Cidade</label><select id="cidade_obito" disabled><option value="">Selecione a UF</option></select></div></div>
@@ -699,6 +682,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js?v=13"></script>
+    <script src="script.js?v=14"></script>
+    <script>
+        window.pegarLocalizacaoGPS = function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        document.getElementById('geo_coords').value = `${lat}, ${lon}`;
+                        alert("Localização obtida com sucesso!");
+                    },
+                    (err) => { alert("Erro ao obter localização: " + err.message); },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                alert("Geolocalização não suportada pelo navegador.");
+            }
+        };
+    </script>
 </body>
 </html>
