@@ -7,12 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ================================================================= */
-        /* OVERRIDES DE PADRONIZAÇÃO DE DESIGN */
-        /* ================================================================= */
-        input[type="text"], input[type="date"], input[type="time"], input[type="datetime-local"], input[type="email"], input[type="password"], input[type="month"], input[type="number"], select, textarea {
-            background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; font-family: 'Poppins', sans-serif; color: #334155; font-size: 13px; width: 100%; box-sizing: border-box; transition: all 0.2s ease; box-shadow: none; min-height: 38px; line-height: normal;
-        }
+        input[type="text"], input[type="date"], input[type="time"], input[type="datetime-local"], input[type="email"], input[type="password"], input[type="month"], input[type="number"], select, textarea { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; font-family: 'Poppins', sans-serif; color: #334155; font-size: 13px; width: 100%; box-sizing: border-box; transition: all 0.2s ease; box-shadow: none; min-height: 38px; line-height: normal; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         input:disabled, select:disabled { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; border-color: #e2e8f0; }
         label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #475569; margin-bottom: 6px; display: block; letter-spacing: 0.3px; }
@@ -46,8 +41,8 @@
         .table-equipe-row:last-child { border-bottom: none; }
         .table-equipe-row:hover { background-color: #f8fafc; }
         .avatar-circle { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
-        .btn-action-edit { background: #ffedd5; color: #ea580c; border: none; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
-        .btn-action-delete { background: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+        .btn-action-edit, .btn-action-delete { border: none; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+        .btn-action-edit { background: #ffedd5; color: #ea580c; } .btn-action-delete { background: #fee2e2; color: #ef4444; }
         .btn-action-edit:hover, .btn-action-delete:hover { opacity: 0.8; }
         .col-user { flex: 2; display: flex; align-items: center; gap: 15px; min-width: 250px; }
         .col-login { flex: 1.5; color: #475569; font-size: 13px; }
@@ -60,8 +55,7 @@
         .badge-pendente { background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; }
         .badge-sucesso { background-color: #bbf7d0; color: #166534; border: 1px solid #86efac; }
         .doc-chip { font-size: 9px; background: #e2e8f0; padding: 4px 6px; border-radius: 4px; color: #334155; font-weight: bold; margin-right: 3px; display: inline-block; margin-bottom: 3px; transition: 0.2s; }
-        .doc-chip.tem { background: #3b82f6; color: white; }
-        .doc-chip.tem:hover { opacity: 0.8; }
+        .doc-chip.tem { background: #3b82f6; color: white; } .doc-chip.tem:hover { opacity: 0.8; }
         .agencia-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding: 10px 0; }
         .agencia-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; border-top: 4px solid #3b82f6; transition: transform 0.2s; cursor: pointer; }
         .agencia-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
@@ -76,13 +70,9 @@
         .agencia-card-footer { padding: 15px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 10px; }
         .agencia-card-footer .actions { display: flex; gap: 5px; flex-wrap: wrap; }
         @media (max-width: 768px) {
-            .modal-footer-custom { padding-bottom: 20px; }
-            .modal-footer-custom button { flex: 1 1 45%; max-width: 100%; }
-            .table-equipe-header { display: none; }
-            .table-equipe-row { flex-direction: column; align-items: flex-start; gap: 10px; position: relative; }
-            .col-actions { position: absolute; top: 15px; right: 15px; }
-            .tab-header { padding-bottom: 5px; }
-            .modal-resumo-grid { grid-template-columns: 1fr !important; }
+            .modal-footer-custom { padding-bottom: 20px; } .modal-footer-custom button { flex: 1 1 45%; max-width: 100%; }
+            .table-equipe-header { display: none; } .table-equipe-row { flex-direction: column; align-items: flex-start; gap: 10px; position: relative; }
+            .col-actions { position: absolute; top: 15px; right: 15px; } .tab-header { padding-bottom: 5px; } .modal-resumo-grid { grid-template-columns: 1fr !important; }
         }
     </style>
 </head>
@@ -91,8 +81,7 @@
     <div id="tela-bloqueio" class="bloqueio-container">
         <div class="bloqueio-box">
             <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" alt="Logo">
-            <h3>Controle de Acesso</h3>
-            <p>Identifique-se para continuar</p>
+            <h3>Controle de Acesso</h3><p>Identifique-se para continuar</p>
             <input type="text" id="login-usuario" placeholder="Usuário" style="margin-bottom: 10px;">
             <input type="password" id="login-senha" placeholder="Senha" onkeypress="checarLoginEnter(event)">
             <button onclick="fazerLogin()" class="btn-novo" style="width:100%; justify-content: center; margin-top: 15px; background-color: #3b82f6;">🔓 Entrar</button>
@@ -185,13 +174,13 @@
                 <input type="hidden" id="agencia_docId"> 
                 <div class="form-grid">
                     <div class="input-group span-4" style="background: linear-gradient(135deg, #f8fafc, #f1f5f9); padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; border-right: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-bottom: 15px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                        <div><span style="font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">FALECIDO(A)</span><div id="agencia_nome_falecido" style="font-weight: 800; color: #1e293b; font-size: 17px; margin-top: 2px;"></div></div>
+                        <div><span style="font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase;">FALECIDO(A)</span><div id="agencia_nome_falecido" style="font-weight: 800; color: #1e293b; font-size: 17px; margin-top: 2px;"></div></div>
                         <div style="text-align:right;">
                             <div style="display:flex; align-items:center; gap:8px; justify-content:flex-end;">
-                                <span style="font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase;">RESP. AGÊNCIA</span>
+                                <span style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">RESP. AGÊNCIA</span>
                                 <div style="display:flex; gap:4px;">
-                                    <button type="button" onclick="assumirProcessoAgenciaModal()" style="border:none; background:#e0f2fe; color:#0284c7; border-radius:4px; padding:4px 6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.2s;" title="Assumir para mim">🔄</button>
-                                    <button type="button" onclick="abrirModalTransferirResponsavelModal()" style="border:none; background:#ede9fe; color:#7c3aed; border-radius:4px; padding:4px 6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.2s;" title="Repassar">👤</button>
+                                    <button type="button" onclick="assumirProcessoAgenciaModal()" style="border:none; background:#e0f2fe; color:#0284c7; border-radius:4px; padding:4px 6px; cursor:pointer;" title="Assumir para mim">🔄</button>
+                                    <button type="button" onclick="abrirModalTransferirResponsavelModal()" style="border:none; background:#ede9fe; color:#7c3aed; border-radius:4px; padding:4px 6px; cursor:pointer;" title="Repassar">👤</button>
                                 </div>
                             </div>
                             <div id="agencia_atendente_modal" style="font-weight: 800; color: #10b981; font-size: 14px; margin-top: 4px;"></div>
@@ -228,10 +217,15 @@
             <div class="modal-header" style="padding: 15px 20px;"><h3 style="margin:0;">Gerenciador de Nuvem (OneDrive / SharePoint)</h3><span class="close" onclick="fecharModalOneDrive()">×</span></div>
             <div style="padding: 15px 20px; background: #f0f9ff; border-bottom: 1px solid #bae6fd; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                 <div><span style="font-size: 11px; color: #0369a1; font-weight: bold; text-transform: uppercase;">Padrão de Nome:</span><div id="onedrive_nome_pasta" style="font-family: 'Courier New', monospace; font-size: 16px; font-weight: 900; color: #0f172a;">PROTOCOLO_NOME</div></div>
-                <div style="display:flex; gap:10px;"><button type="button" onclick="copiarNomePasta()" class="btn-novo" style="background-color: #0284c7; padding: 8px 15px; width:auto;">📋 Copiar Nome</button><a href="https://onedrive.live.com/" target="_blank" class="btn-novo" style="background-color: #10b981; padding: 8px 15px; text-decoration:none; width:auto;">🔗 Abrir em Nova Aba</a></div>
+                <div style="display:flex; gap:10px;"><button type="button" onclick="copiarNomePasta()" class="btn-novo" style="background-color: #0284c7; padding: 8px 15px; width:auto;">📋 Copiar Nome</button><a href="https://onedrive.live.com/" id="btn_nova_aba_onedrive" target="_blank" class="btn-novo" style="background-color: #10b981; padding: 8px 15px; text-decoration:none; width:auto;">🔗 Abrir em Nova Aba</a></div>
             </div>
-            <div style="padding: 10px 20px; background: #fffbeb; border-bottom: 1px solid #fef3c7; font-size:11px; color: #b45309;"><strong>Nota:</strong> Como a Microsoft bloqueia iframes, se a tela ficar branca, use o botão verde "Abrir em Nova Aba".</div>
-            <div style="flex-grow: 1; position: relative;"><iframe src="https://onedrive.live.com/" style="width: 100%; height: 100%; border: none; background: #f8fafc;"></iframe></div>
+            <div style="padding: 10px 20px; background: #e0f2fe; border-bottom: 1px solid #bae6fd; display: flex; gap: 10px; align-items: center;">
+                <span style="font-size:11px; font-weight:bold; color:#0369a1; white-space:nowrap;">📁 Link da sua Pasta Raiz:</span>
+                <input type="text" id="input_root_onedrive" placeholder="Cole aqui o link da pasta principal do OneDrive/Sharepoint..." style="flex:1; font-size:11px; padding:6px; border:1px solid #7dd3fc; border-radius:4px;">
+                <button type="button" onclick="salvarRootOneDrive()" class="btn-novo" style="background:#0284c7; padding:6px 12px; font-size:11px; width:auto; margin:0;">💾 Salvar Padrão</button>
+            </div>
+            <div style="padding: 10px 20px; background: #fffbeb; border-bottom: 1px solid #fef3c7; font-size:11px; color: #b45309;"><strong>Dica:</strong> Para evitar logins repetidos na janelinha abaixo, clique no botão verde <b>"Abrir em Nova Aba"</b>.</div>
+            <div style="flex-grow: 1; position: relative;"><iframe id="iframe_onedrive" src="https://onedrive.live.com/" style="width: 100%; height: 100%; border: none; background: #f8fafc;"></iframe></div>
         </div>
     </div>
 
@@ -682,7 +676,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js?v=14"></script>
+    <script src="script.js?v=16"></script>
     <script>
         window.pegarLocalizacaoGPS = function() {
             if (navigator.geolocation) {
