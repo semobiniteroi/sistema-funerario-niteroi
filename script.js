@@ -101,7 +101,7 @@ window.liberarAcesso = function() {
     safeDisplay('tela-bloqueio', 'none'); 
     sessionStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado)); 
     
-    // Controle de Acesso (RBAC)
+    // Controle de Acesso Visual (RBAC)
     const btnAcolhimento = document.getElementById('nav-btn-acolhimento');
     const btnAgencia = document.getElementById('nav-btn-agencia');
     const btnAdmin = document.querySelector('.btn-admin');
@@ -111,7 +111,7 @@ window.liberarAcesso = function() {
     if(btnAgencia) btnAgencia.style.display = '';
     if(btnAdmin) btnAdmin.style.display = '';
 
-    let nivelAcesso = usuarioLogado.nivel || 'COMPLETO'; // Garante que contas antigas tenham acesso
+    let nivelAcesso = usuarioLogado.nivel || 'COMPLETO'; // Garante que contas antigas tenham acesso total
     
     if (nivelAcesso === 'ACOLHIMENTO') {
         if(btnAgencia) btnAgencia.style.display = 'none';
@@ -122,7 +122,8 @@ window.liberarAcesso = function() {
         if(btnAdmin) btnAdmin.style.display = 'none';
         window.alternarDashboard('agencia');
     } else {
-        // COMPLETO mantém tudo visível
+        // COMPLETO mantém tudo visível e inicia pelo acolhimento
+        window.alternarDashboard('acolhimento');
     }
 
     const filtroLocal = document.getElementById('filtro-local'); 
@@ -188,10 +189,34 @@ function inicializarSistema() {
         });
     }
     
+    // CORREÇÃO DE ACESSO: Valida o cache da sessão cruzando com o banco em tempo real
     const sessao = sessionStorage.getItem('usuarioLogado'); 
     if (sessao) { 
-        usuarioLogado = JSON.parse(sessao); 
-        window.liberarAcesso(); 
+        const uTemp = JSON.parse(sessao); 
+        if(uTemp.login === 'admin') {
+            usuarioLogado = uTemp;
+            window.liberarAcesso();
+        } else {
+            const dbInst = getDB();
+            if(dbInst) {
+                // Checa no Firebase as permissões mais recentes do usuário
+                dbInst.collection("equipe").where("login", "==", uTemp.login).get().then(snap => {
+                    if (!snap.empty) {
+                        usuarioLogado = snap.docs[0].data(); // Atualiza com os dados frescos do Firestore
+                        window.liberarAcesso();
+                    } else {
+                        window.fazerLogout();
+                    }
+                }).catch(e => {
+                    // Se der erro de conexão momentâneo, libera com o cache
+                    usuarioLogado = uTemp;
+                    window.liberarAcesso();
+                });
+            } else {
+                usuarioLogado = uTemp;
+                window.liberarAcesso();
+            }
+        }
     }
     
     setTimeout(() => { 
@@ -218,6 +243,11 @@ if (document.readyState === 'loading') {
 // NAVEGAÇÃO E DASHBOARD
 // ============================================================================
 window.alternarDashboard = function(dash) {
+    // TRAVA RÍGIDA DE ACESSO: Evita bypass do HTML
+    let nivelAcesso = (usuarioLogado && usuarioLogado.nivel) ? usuarioLogado.nivel : 'COMPLETO';
+    if (dash === 'agencia' && nivelAcesso === 'ACOLHIMENTO') return;
+    if (dash === 'acolhimento' && nivelAcesso === 'AGENCIA') return;
+
     dashboardAtual = dash; 
     const btnAcolhimento = document.getElementById('nav-btn-acolhimento');
     const btnAgencia = document.getElementById('nav-btn-agencia');
@@ -653,7 +683,7 @@ window.renderizarTabela = function(lista) {
         let btnMap = ''; 
         const clCoords = item.geo_coords ? item.geo_coords.replace(/[^0-9.,\-]/g, '') : '';
         if (clCoords.includes(',')) {
-            btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://www.google.com/maps?q=${clCoords}', '_blank')" title="Ver Localização">📍</button>`;
+            btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://www.google.com/maps?q=...${clCoords}', '_blank')" title="Ver Localização">📍</button>`;
         }
         
         tr.innerHTML = `
@@ -2076,8 +2106,8 @@ window.visualizar = function(id) {
                 const cleanCoords = d.geo_coords ? d.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
                 if (cleanCoords && cleanCoords.includes(',')) { 
                     mapContainer.style.display = 'block'; 
-                    mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://maps.google.com/maps?q=${cleanCoords}&z=17&output=embed"></iframe>`; 
-                    mapLink.href = `https://www.google.com/maps?q=${cleanCoords}`; 
+                    mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://www.google.com/maps?q=...${cleanCoords}&z=17&output=embed"></iframe>`; 
+                    mapLink.href = `https://www.google.com/maps?q=...${cleanCoords}`; 
                 } else { 
                     mapContainer.style.display = 'none'; 
                 } 
@@ -2113,13 +2143,13 @@ window.enviarWppTemplate = function(tipo) {
     if (d.local) {
         if (d.local.includes('MARUÍ')) {
             enderecoStr = "Rua General Castrioto, 414 - Barreto, Niterói - RJ";
-            mapaStr = "https://www.google.com/maps/search/?api=1&query=Rua+General+Castrioto,+414+-+Barreto,+Niterói+-+RJ";
+            mapaStr = "https://www.google.com/maps?q=...";
         } else if (d.local.includes('FRANCISCO')) {
             enderecoStr = "Rua Tapajós, 75 - São Francisco, Niterói - RJ";
-            mapaStr = "https://www.google.com/maps/search/?api=1&query=Rua+Tapajós,+75+-+São+Francisco,+Niterói+-+RJ";
+            mapaStr = "https://www.google.com/maps?q=...";
         } else if (d.local.includes('ITAIPU')) {
             enderecoStr = "Rua Paulina Rabello, 78 - Itaipu, Niterói - RJ";
-            mapaStr = "https://www.google.com/maps/search/?api=1&query=Rua+Paulina+Rabello,+78+-+Itaipu,+Niterói+-+RJ";
+            mapaStr = "https://www.google.com/maps?q=...";
         }
     }
     
@@ -2127,7 +2157,7 @@ window.enviarWppTemplate = function(tipo) {
         const c = d.geo_coords ? d.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
         if (!t) { alert("Sem telefone cadastrado."); return; } 
         if (!c) { alert("Sem GPS cadastrado."); return; }
-        texto = `Localização exata da Sepultura: https://www.google.com/maps?q=${c}`;
+        texto = `Localização exata da Sepultura: https://www.google.com/maps?q=...${c}`;
     } else if (tipo === 'info') {
         if (!t) { alert("Sem telefone cadastrado."); return; } 
         let dataExumacao = ""; 
@@ -2154,7 +2184,7 @@ window.enviarSMS = function() {
     const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
     
     if (!t) { alert("Sem telefone cadastrado."); return; } 
-    window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://www.google.com/maps?q=' + c)}`; 
+    window.location.href = `sms:55${t}?body=${encodeURIComponent('Localização da Sepultura: https://www.google.com/maps?q=...' + c)}`; 
 }
 
 window.fecharModalVisualizar = function() { safeDisplay('modal-visualizar', 'none'); };
