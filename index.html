@@ -244,36 +244,6 @@
         </div>
     </div>
 
-    <div id="modal-liberacao" class="modal">
-        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
-            <h3 style="color: #1e293b; margin-bottom: 15px;">Imprimir Liberação</h3>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o modelo do formulário correspondente:</p>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button onclick="gerarFormularioLiberacao('municipal')" class="btn-novo" style="background-color: #3b82f6; width: 100%;">📄 Liberação - Cemitérios Municipais</button>
-                <button onclick="gerarFormularioLiberacao('outros')" class="btn-novo" style="background-color: #8b5cf6; width: 100%;">📄 Liberação - Outros / Crematório</button>
-            </div>
-            <button onclick="fecharModalLiberacao()" class="btn-close" style="margin-top: 15px; width: 100%;">Cancelar</button>
-            <button onclick="fecharModalLiberacao()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
-        </div>
-    </div>
-
-    <div id="modal-transferir-responsavel" class="modal">
-        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
-            <h3 style="color: #1e293b; margin-bottom: 15px;">Repassar Processo</h3>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o novo responsável por este atendimento na Agência:</p>
-            <select id="novo_responsavel_agencia" style="margin-bottom: 15px; font-weight: bold; width: 100%;"><option value="">Carregando equipe...</option></select>
-            
-            <label style="text-align: left; margin-bottom: 5px; display: block; color: #475569; font-size: 12px; font-weight: 600;">Justificativa do Repasse (Obrigatório):</label>
-            <textarea id="justificativa_repasse" rows="3" placeholder="Informe o motivo da transferência..." style="margin-bottom: 20px; width: 100%; resize: none;"></textarea>
-            
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="fecharModalTransferirResponsavel()" class="btn-close" style="padding: 10px 20px; font-weight: 600;">Cancelar</button>
-                <button onclick="confirmarTransferenciaResponsavel()" class="btn-novo" style="background-color: #8b5cf6; padding: 10px 20px;">Confirmar Repasse</button>
-            </div>
-            <button onclick="fecharModalTransferirResponsavel()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
-        </div>
-    </div>
-
     <div id="modal-agencia" class="modal">
         <div class="modal-content" style="max-width: 650px; background: #fff; padding: 0;">
             <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 12px 12px 0 0;">
@@ -788,6 +758,36 @@
         </div>
     </div>
 
+    <div id="modal-whatsapp" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
+            <h3 style="color: #1e293b; margin-bottom: 15px;">Enviar Mensagem</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o tipo de mensagem que deseja enviar ao responsável:</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button onclick="enviarWppTemplate('info')" class="btn-novo" style="background-color: #0ea5e9; width: 100%;">📋 Inf. Úteis do Atendimento (WPP)</button>
+                <button onclick="enviarWppTemplate('convite')" class="btn-novo" style="background-color: #8b5cf6; width: 100%;">🕊️ Convite para Familiares (WPP)</button>
+                <button onclick="enviarWppTemplate('gps')" class="btn-novo" style="background-color: #22c55e; width: 100%;">📍 Localização da Sepultura (WPP)</button>
+                <button onclick="enviarSMS()" class="btn-novo" style="background-color: #f59e0b; width: 100%;">📱 Enviar Localização por SMS</button>
+            </div>
+            <button onclick="fecharModalWpp()" class="btn-close" style="margin-top: 15px; width: 100%;">Cancelar</button>
+            <button onclick="fecharModalWpp()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
+        </div>
+    </div>
+
+    <div id="modal-assinatura" class="modal">
+        <div class="modal-content" style="max-width: 500px; text-align: center; border-radius: 12px; padding: 30px;">
+            <h3 id="titulo-assinatura" style="color: #1e293b; margin-bottom: 5px;">Assinatura</h3>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Assine abaixo usando o dedo ou mouse.</p>
+            <div style="display: inline-block; width: 100%;">
+                <canvas id="signature-pad" width="400" height="200" style="width: 100%; border-radius: 8px; background-color: #f8fafc; border: 2px dashed #cbd5e1; touch-action: none;"></canvas>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+                <button onclick="limparAssinatura()" class="btn-close" style="padding: 10px 20px; font-weight: 600;">Limpar</button>
+                <button onclick="salvarAssinatura()" class="btn-novo" style="background-color: #3b82f6; padding: 10px 20px;">Salvar Assinatura</button>
+            </div>
+            <button onclick="fecharModalAssinatura()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -795,6 +795,246 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js?v=23"></script>
+    <script src="script.js?v=25"></script>
+    <script>
+        window.pegarLocalizacaoGPS = function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        document.getElementById('geo_coords').value = `${lat}, ${lon}`;
+                        alert("Localização obtida com sucesso!");
+                    },
+                    (err) => { alert("Erro ao obter localização: " + err.message); },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                alert("Geolocalização não suportada pelo navegador.");
+            }
+        };
+
+        window.carregarEstatisticas = function(modo) {
+            const database = getDB(); 
+            if(!database) return; 
+            
+            let dInicio = new Date(); 
+            let dString = "";
+            
+            if (modo === 'custom') { 
+                const inputMonth = document.getElementById('filtro-mes-ano'); 
+                if(inputMonth && inputMonth.value) {
+                    dString = inputMonth.value; 
+                } else { 
+                    alert("Selecione Mês e Ano."); 
+                    return; 
+                } 
+            } else { 
+                if (modo === 'mes') { 
+                    dInicio = new Date(dInicio.getFullYear(), dInicio.getMonth(), 1); 
+                } else { 
+                    dInicio.setDate(dInicio.getDate() - parseInt(modo)); 
+                } 
+                let localDate = new Date(dInicio.getTime() - (dInicio.getTimezoneOffset() * 60000));
+                dString = localDate.toISOString().split('T')[0]; 
+            }
+            
+            database.collection("atendimentos").where("data_ficha", ">=", dString).onSnapshot(snap => {
+                let causas = {}, atendentes = {}, sepulturas = {}, funerarias = {};
+                let tempos = {"Menos de 12h":0, "12h a 24h":0, "24h a 48h":0, "Mais de 48h":0};
+                let isencoes = {"PAGO":0, "GRATUIDADE (100%)":0, "DESCONTO (50%)":0};
+                let quadras = {}, hospitais = {}, bairros = {}, municipios = {};
+                let valores = {"Até R$ 500":0, "R$ 501 a R$ 1000":0, "R$ 1001 a R$ 2000":0, "Acima de R$ 2000":0}; 
+                let totalValores = 0, qtdValores = 0;
+                
+                let cemiterios = {"MARUÍ":0, "SÃO FRANCISCO":0, "ITAIPU":0};
+                let linhasTempo = {};
+
+                let totalAcolhimento = 0;
+                let totalAgencia = 0;
+
+                snap.forEach(doc => {
+                    const d = doc.data(); 
+                    if (modo === 'custom' && !d.data_ficha.startsWith(document.getElementById('filtro-mes-ano').value)) return;
+                    
+                    totalAcolhimento++;
+                    if (d.agencia_atendente || d.agencia_processo || d.tipo_registro === 'PARTICULAR') {
+                        totalAgencia++;
+                    }
+
+                    if(d.causa) { d.causa.split('/').forEach(c => { const k = c.trim().toUpperCase(); if(k) causas[k] = (causas[k] || 0) + 1; }); }
+                    if(d.atendente_sistema) { const func = d.atendente_sistema.trim().toUpperCase(); if(func) atendentes[func] = (atendentes[func] || 0) + 1; }
+                    if(d.tipo_sepultura) { const t = d.tipo_sepultura.trim().toUpperCase(); if(t) sepulturas[t] = (sepulturas[t] || 0) + 1; }
+                    if(d.funeraria) { const f = d.funeraria.trim().toUpperCase(); if(f) funerarias[f] = (funerarias[f] || 0) + 1; }
+                    if(d.isencao) { if(d.isencao === 'SIM') isencoes["GRATUIDADE (100%)"]++; else if(d.isencao === '50') isencoes["DESCONTO (50%)"]++; else isencoes["PAGO"]++; }
+                    if(d.qd) { const q = d.qd.trim().toUpperCase(); if(q) quadras[q] = (quadras[q] || 0) + 1; }
+                    if(d.hospital) { const h = d.hospital.trim().toUpperCase(); if(h) hospitais[h] = (hospitais[h] || 0) + 1; }
+                    if(d.resp_bairro) { const b = d.resp_bairro.trim().toUpperCase(); if(b) bairros[b] = (bairros[b] || 0) + 1; }
+                    if(d.resp_cidade) { const c = d.resp_cidade.trim().toUpperCase(); if(c) municipios[c] = (municipios[c] || 0) + 1; }
+                    
+                    if(d.local) {
+                        if(d.local.includes("MARUÍ")) cemiterios["MARUÍ"]++;
+                        else if(d.local.includes("FRANCISCO")) cemiterios["SÃO FRANCISCO"]++;
+                        else if(d.local.includes("ITAIPU")) cemiterios["ITAIPU"]++;
+                    } else {
+                        cemiterios["MARUÍ"]++; 
+                    }
+
+                    if(d.data_ficha) {
+                        let dataStr = d.data_ficha.split('-').reverse().join('/');
+                        linhasTempo[dataStr] = (linhasTempo[dataStr] || 0) + 1;
+                    }
+                    
+                    if(d.agencia_valor_grm) { 
+                        let v = parseFloat(d.agencia_valor_grm); 
+                        if(!isNaN(v)) { 
+                            totalValores += v; 
+                            qtdValores++; 
+                            if(v <= 500) valores["Até R$ 500"]++; 
+                            else if(v <= 1000) valores["R$ 501 a R$ 1000"]++; 
+                            else if(v <= 2000) valores["R$ 1001 a R$ 2000"]++; 
+                            else valores["Acima de R$ 2000"]++; 
+                        } 
+                    }
+                    
+                    if(d.data_hora_atendimento && d.data_ficha && d.hora) {
+                        const start = new Date(d.data_hora_atendimento);
+                        const end = new Date(d.data_ficha + 'T' + d.hora);
+                        if(!isNaN(start) && !isNaN(end)) { 
+                            const diffHrs = (end - start) / 3600000; 
+                            if(diffHrs < 12) tempos["Menos de 12h"]++; 
+                            else if(diffHrs <= 24) tempos["12h a 24h"]++; 
+                            else if(diffHrs <= 48) tempos["24h a 48h"]++; 
+                            else tempos["Mais de 48h"]++; 
+                        }
+                    }
+                });
+
+                const elKpiAcolhimento = document.getElementById('kpi-acolhimento');
+                if (elKpiAcolhimento) elKpiAcolhimento.innerText = totalAcolhimento;
+                
+                const elKpiAgencia = document.getElementById('kpi-agencia');
+                if (elKpiAgencia) elKpiAgencia.innerText = totalAgencia;
+
+                window.dadosGraficosAtuais = {
+                    Cemiterios: cemiterios,
+                    Volume_Periodo: linhasTempo,
+                    Causas: causas,
+                    Atendentes: atendentes,
+                    Sepulturas: sepulturas,
+                    Funerarias: funerarias,
+                    Tempo_Resolucao: tempos,
+                    Isencoes: isencoes,
+                    Quadras: quadras,
+                    Hospitais: hospitais,
+                    Bairros: bairros,
+                    Municipios: municipios,
+                    Valores_GRM: valores
+                };
+
+                const draw = (id, dataObj, lbl, type='bar', color='#3b82f6') => {
+                    const ctx = document.getElementById(id); 
+                    if(!ctx || !window.Chart) return;
+                    
+                    let sorted = [];
+                    if(id === 'grafico-linhas') {
+                        sorted = Object.entries(dataObj).sort((a,b) => {
+                            let da = a[0].split('/').reverse().join('-');
+                            let db = b[0].split('/').reverse().join('-');
+                            return new Date(da) - new Date(db);
+                        });
+                    } else {
+                        sorted = Object.entries(dataObj).sort((a,b) => b[1] - a[1]).slice(0, 10);
+                    }
+                    
+                    if(chartInstances[id]) chartInstances[id].destroy();
+                    
+                    chartInstances[id] = new Chart(ctx, { 
+                        type: type, 
+                        data: { 
+                            labels: sorted.map(x=>x[0]), 
+                            datasets: [{ 
+                                label: lbl, 
+                                data: sorted.map(x=>x[1]), 
+                                backgroundColor: (type==='doughnut'||type==='pie') ? ['#10b981','#3b82f6','#f59e0b','#ef4444'] : color,
+                                borderColor: type==='line' ? color : undefined,
+                                fill: type==='line' ? false : true,
+                                tension: type==='line' ? 0.1 : 0
+                            }] 
+                        }, 
+                        options: { indexAxis: type==='bar'?'y':'x', maintainAspectRatio: false } 
+                    });
+                    
+                    if(id === 'grafico-causas') {
+                        dadosEstatisticasExportacao = sorted.map(([c,q]) => ({"Causa": c, "Qtd": q}));
+                    }
+                };
+                
+                draw('grafico-cemiterios', cemiterios, 'Sepultamentos por Cemitério', 'doughnut');
+                draw('grafico-linhas', linhasTempo, 'Volume de Sepultamentos', 'line', '#8b5cf6');
+                draw('grafico-causas', causas, 'Top 10 Causas', 'bar', '#3b82f6'); 
+                draw('grafico-atendentes', atendentes, 'Atendimentos por Funcionário', 'bar', '#10b981'); 
+                draw('grafico-sepulturas', sepulturas, 'Tipos de Sepultura', 'bar', '#f59e0b'); 
+                draw('grafico-funerarias', funerarias, 'Top Funerárias', 'bar', '#8b5cf6'); 
+                draw('grafico-tempo-resolucao', tempos, 'Tempo de Resolução', 'doughnut'); 
+                draw('grafico-isencao', isencoes, 'Perfil Social (Isenções)', 'pie');
+                draw('grafico-quadras', quadras, 'Quadras Mais Utilizadas', 'bar', '#0ea5e9'); 
+                draw('grafico-hospitais', hospitais, 'Hospitais (Local Óbito)', 'bar', '#ec4899'); 
+                draw('grafico-bairros', bairros, 'Bairros dos Contribuintes', 'bar', '#14b8a6'); 
+                draw('grafico-municipios', municipios, 'Municípios', 'bar', '#f43f5e');
+                
+                let mediaValor = qtdValores > 0 ? (totalValores / qtdValores).toFixed(2) : "0.00";
+                const elT = document.getElementById('titulo-grafico-valores'); 
+                if(elT) elT.innerText = `Faixas de Valores Pagos (Média: R$ ${mediaValor})`;
+                draw('grafico-valores', valores, `Valores Pagos GRM`, 'bar', '#eab308');
+            });
+        };
+
+        window.baixarDadosGraficosExcel = function() {
+            if(typeof XLSX === 'undefined') { alert("Biblioteca Excel não carregada. Verifique a conexão com a internet."); return; }
+            if(!window.dadosGraficosAtuais) { alert("Aguarde o carregamento das estatísticas antes de exportar."); return; }
+
+            const wb = XLSX.utils.book_new();
+
+            const formatData = (obj, keyName) => {
+                let arr = Object.entries(obj).map(([k, v]) => ({ [keyName]: k, "Quantidade": v }));
+                if(keyName === 'Data') {
+                    arr.sort((a,b) => {
+                        let da = a['Data'].split('/').reverse().join('-');
+                        let db = b['Data'].split('/').reverse().join('-');
+                        return new Date(da) - new Date(db);
+                    });
+                } else {
+                    arr.sort((a,b) => b.Quantidade - a.Quantidade);
+                }
+                return arr;
+            };
+
+            const sheetsInfo = [
+                { name: 'Cemitérios', data: formatData(window.dadosGraficosAtuais.Cemiterios, 'Cemitério') },
+                { name: 'Volume por Período', data: formatData(window.dadosGraficosAtuais.Volume_Periodo, 'Data') },
+                { name: 'Causas de Morte', data: formatData(window.dadosGraficosAtuais.Causas, 'Causa') },
+                { name: 'Atendentes', data: formatData(window.dadosGraficosAtuais.Atendentes, 'Atendente') },
+                { name: 'Tipos de Sepultura', data: formatData(window.dadosGraficosAtuais.Sepulturas, 'Sepultura') },
+                { name: 'Funerárias', data: formatData(window.dadosGraficosAtuais.Funerarias, 'Funerária') },
+                { name: 'Tempo de Resolução', data: formatData(window.dadosGraficosAtuais.Tempo_Resolucao, 'Tempo') },
+                { name: 'Isenções', data: formatData(window.dadosGraficosAtuais.Isencoes, 'Perfil de Isenção') },
+                { name: 'Quadras', data: formatData(window.dadosGraficosAtuais.Quadras, 'Quadra') },
+                { name: 'Hospitais', data: formatData(window.dadosGraficosAtuais.Hospitais, 'Hospital/Local') },
+                { name: 'Bairros', data: formatData(window.dadosGraficosAtuais.Bairros, 'Bairro') },
+                { name: 'Municípios', data: formatData(window.dadosGraficosAtuais.Municipios, 'Município') },
+                { name: 'Valores GRM', data: formatData(window.dadosGraficosAtuais.Valores_GRM, 'Faixa de Valor') }
+            ];
+
+            sheetsInfo.forEach(s => {
+                if(s.data.length > 0) {
+                    const ws = XLSX.utils.json_to_sheet(s.data);
+                    XLSX.utils.book_append_sheet(wb, ws, s.name.substring(0, 31));
+                }
+            });
+
+            XLSX.writeFile(wb, "Dados_Graficos_Estatisticas.xlsx");
+        };
+    </script>
 </body>
 </html>
