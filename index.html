@@ -244,6 +244,36 @@
         </div>
     </div>
 
+    <div id="modal-liberacao" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
+            <h3 style="color: #1e293b; margin-bottom: 15px;">Imprimir Liberação</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o modelo do formulário correspondente:</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button onclick="gerarFormularioLiberacao('municipal')" class="btn-novo" style="background-color: #3b82f6; width: 100%;">📄 Liberação - Cemitérios Municipais</button>
+                <button onclick="gerarFormularioLiberacao('outros')" class="btn-novo" style="background-color: #8b5cf6; width: 100%;">📄 Liberação - Outros / Crematório</button>
+            </div>
+            <button onclick="fecharModalLiberacao()" class="btn-close" style="margin-top: 15px; width: 100%;">Cancelar</button>
+            <button onclick="fecharModalLiberacao()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
+        </div>
+    </div>
+
+    <div id="modal-transferir-responsavel" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
+            <h3 style="color: #1e293b; margin-bottom: 15px;">Repassar Processo</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o novo responsável por este atendimento na Agência:</p>
+            <select id="novo_responsavel_agencia" style="margin-bottom: 15px; font-weight: bold; width: 100%;"><option value="">Carregando equipe...</option></select>
+            
+            <label style="text-align: left; margin-bottom: 5px; display: block; color: #475569; font-size: 12px; font-weight: 600;">Justificativa do Repasse (Obrigatório):</label>
+            <textarea id="justificativa_repasse" rows="3" placeholder="Informe o motivo da transferência..." style="margin-bottom: 20px; width: 100%; resize: none;"></textarea>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="fecharModalTransferirResponsavel()" class="btn-close" style="padding: 10px 20px; font-weight: 600;">Cancelar</button>
+                <button onclick="confirmarTransferenciaResponsavel()" class="btn-novo" style="background-color: #8b5cf6; padding: 10px 20px;">Confirmar Repasse</button>
+            </div>
+            <button onclick="fecharModalTransferirResponsavel()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
+        </div>
+    </div>
+
     <div id="modal-agencia" class="modal">
         <div class="modal-content" style="max-width: 650px; background: #fff; padding: 0;">
             <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 12px 12px 0 0;">
@@ -758,6 +788,23 @@
         </div>
     </div>
 
+    <div id="modal-transferir" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
+            <h3 style="color: #1e293b; margin-bottom: 15px;">Transferir Atendimento</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o novo cemitério destino:</p>
+            <select id="novo_cemiterio_transferencia" style="margin-bottom: 20px;">
+                <option value="CEMITÉRIO DO MARUÍ">CEMITÉRIO DO MARUÍ</option>
+                <option value="CEMITÉRIO DE SÃO FRANCISCO">CEMITÉRIO DE SÃO FRANCISCO</option>
+                <option value="CEMITÉRIO DE ITAIPU">CEMITÉRIO DE ITAIPU</option>
+            </select>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="fecharModalTransferir()" class="btn-close" style="padding: 10px 20px; font-weight: 600;">Cancelar</button>
+                <button onclick="confirmarTransferencia()" class="btn-novo" style="background-color: #0ea5e9; padding: 10px 20px;">Transferir</button>
+            </div>
+            <button onclick="fecharModalTransferir()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
+        </div>
+    </div>
+
     <div id="modal-whatsapp" class="modal">
         <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
             <h3 style="color: #1e293b; margin-bottom: 15px;">Enviar Mensagem</h3>
@@ -795,7 +842,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js?v=25"></script>
+    <script src="script.js?v=26"></script>
     <script>
         window.pegarLocalizacaoGPS = function() {
             if (navigator.geolocation) {
