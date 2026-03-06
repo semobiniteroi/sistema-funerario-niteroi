@@ -527,7 +527,7 @@ window.carregarListaHorarios = function() {
 }
 
 // ============================================================================
-// ASSINATURAS E TRANSFERÊNCIAS (CORRIGIDAS)
+// ASSINATURAS E TRANSFERÊNCIAS 
 // ============================================================================
 function setupSignaturePad() {
     const canvas = document.getElementById('signature-pad'); 
@@ -759,9 +759,27 @@ window.renderizarTabela = function(lista) {
             btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://maps.google.com/?q=${clCoords}', '_blank')" title="Ver Localização">📍</button>`; 
         }
         
-        tr.innerHTML = `<td style="vertical-align:middle;">${displayResponsavel}</td><td style="text-align: center; vertical-align:middle;">${item.hora||''}</td><td style="text-align: center; vertical-align:middle;">${conteudoNome}<br>${statusDocs}</td><td style="text-align: center; vertical-align:middle;">${item.gav||''}</td><td style="text-align: center; vertical-align:middle;">${item.car||''}</td><td style="text-align: center; vertical-align:middle;">${conteudoSepultura}</td><td style="text-align: center; vertical-align:middle;">${item.qd||''}</td><td style="text-align: center; vertical-align:middle; font-size:11px;">${item.hospital||''}</td><td style="text-align: center; vertical-align:middle;">${item.cap||''}</td><td style="text-align: center; vertical-align:middle;">${displayFalecimento}</td><td style="text-align:right; vertical-align:middle;"><div style="display:flex; gap:5px; justify-content:flex-end;">${btnMap}<button class="btn-icon btn-editar-circle" onclick="event.stopPropagation();window.editar('${item.id}')">✏️</button><button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')">🗑️</button></div></td>`;
+        tr.innerHTML = `
+            <td style="vertical-align:middle;">${displayResponsavel}</td>
+            <td style="text-align: center; vertical-align:middle;">${item.hora||''}</td>
+            <td style="text-align: center; vertical-align:middle;">${conteudoNome}<br>${statusDocs}</td>
+            <td style="text-align: center; vertical-align:middle;">${item.gav||''}</td>
+            <td style="text-align: center; vertical-align:middle;">${item.car||''}</td>
+            <td style="text-align: center; vertical-align:middle;">${conteudoSepultura}</td>
+            <td style="text-align: center; vertical-align:middle;">${item.qd||''}</td>
+            <td style="text-align: center; vertical-align:middle; font-size:11px;">${item.hospital||''}</td>
+            <td style="text-align: center; vertical-align:middle;">${item.cap||''}</td>
+            <td style="text-align: center; vertical-align:middle;">${displayFalecimento}</td>
+            <td style="text-align:right; vertical-align:middle;">
+                <div style="display:flex; gap:5px; justify-content:flex-end;">
+                    ${btnMap}
+                    <button class="btn-icon btn-editar-circle" onclick="event.stopPropagation();window.editar('${item.id}')">✏️</button>
+                    <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')">🗑️</button>
+                </div>
+            </td>`;
         fragment.appendChild(tr);
     });
+    
     tbody.appendChild(fragment);
 }
 
@@ -779,7 +797,10 @@ window.renderizarTabelaAgencia = function(lista) {
         let isAnexado = !!item.url_docs_agencia; 
         let onClickStr = isAnexado ? `onclick="event.stopPropagation(); window.open('${item.url_docs_agencia}', '_blank');"` : `onclick="event.stopPropagation(); alert('Nenhum documento anexado na nuvem.')"`; 
         let curStr = isAnexado ? 'cursor:pointer;' : 'cursor:help;';
-        return item[`agencia_chk_${key}`] ? `<span class="doc-chip tem" style="${curStr}" title="${isAnexado ? 'Acessar Nuvem' : 'Marcado'}" ${onClickStr}>${label}</span>` : `<span class="doc-chip" style="${curStr}" title="${isAnexado ? 'Acessar Nuvem' : 'Pendente'}" ${onClickStr}>${label}</span>`; 
+        
+        return item[`agencia_chk_${key}`] 
+            ? `<span class="doc-chip tem" style="${curStr}" title="${isAnexado ? 'Acessar Nuvem' : 'Marcado'}" ${onClickStr}>${label}</span>` 
+            : `<span class="doc-chip" style="${curStr}" title="${isAnexado ? 'Acessar Nuvem' : 'Pendente'}" ${onClickStr}>${label}</span>`; 
     };
     
     const fragment = document.createDocumentFragment();
@@ -790,41 +811,110 @@ window.renderizarTabelaAgencia = function(lista) {
         
         if (item.tipo_registro === 'PARTICULAR') {
             const responsavelTxt = item.chk_pessoa_fisica ? `PF: ${item.part_pf_nome || ''} (${item.part_pf_cpf || ''})` : `Funerária: ${item.part_funeraria || ''}`;
+            
+            let statusNuvem = item.part_link_nuvem ? `<a href="${item.part_link_nuvem}" target="_blank" onclick="event.stopPropagation();" style="text-decoration:none; font-size:10px; color:#3b82f6; font-weight:bold;">🔗 VER DOCUMENTOS (NUVEM)</a>` : `<span style="font-size:10px; color:#ef4444; font-weight:bold;">⚠️ NENHUM LINK ANEXADO</span>`;
+            
             card.style.borderTopColor = '#8b5cf6'; 
             card.style.background = '#faf5ff';
-            card.innerHTML = `<div class="agencia-card-header" style="background: #f3e8ff; border-bottom: 1px solid #e9d5ff;"><div class="agencia-card-title" style="color: #4c1d95;">${(item.nome || 'NÃO INFORMADO').toUpperCase()}</div><div class="agencia-card-subtitle" style="color: #7c3aed; font-weight: 700;">🌟 ATENDIMENTO PARTICULAR</div></div><div class="agencia-card-body"><div class="agencia-info-row"><span class="agencia-info-label" style="color:#7c3aed;">Cemitério:</span><span class="agencia-info-value">${item.part_cemiterio || ''}</span></div><div class="agencia-info-row"><span class="agencia-info-label" style="color:#7c3aed;">Tipo:</span><span class="agencia-info-value">${item.part_tipo || ''}</span></div><div class="agencia-info-row"><span class="agencia-info-label" style="color:#7c3aed;">Liberação:</span><span class="agencia-info-value">${item.part_hora_liberacao || ''}</span></div><div class="agencia-info-row"><span class="agencia-info-label" style="color:#7c3aed;">Responsável:</span><span class="agencia-info-value" style="font-size:11px;">${responsavelTxt}</span></div><div class="agencia-info-row"><span class="agencia-info-label" style="color:#7c3aed;">Taxas (R$):</span><span class="agencia-info-value">${item.part_taxas ? `R$ ${item.part_taxas}` : 'Isento/Não inf.'}</span></div></div><div class="agencia-card-footer" style="background: #f3e8ff; border-top: 1px solid #e9d5ff;"><button class="btn-novo" style="background:#ef4444; color:white; padding: 6px 12px; font-size: 12px; width:100%;" onclick="event.stopPropagation(); window.excluir('${item.id}')">🗑️ Remover Registro</button></div>`;
+            card.innerHTML = `
+                <div class="agencia-card-header" style="background: #f3e8ff; border-bottom: 1px solid #e9d5ff;">
+                    <div class="agencia-card-title" style="color: #4c1d95;">${(item.nome || 'NÃO INFORMADO').toUpperCase()}</div>
+                    <div class="agencia-card-subtitle" style="color: #7c3aed; font-weight: 700;">🌟 ATENDIMENTO PARTICULAR</div>
+                </div>
+                <div class="agencia-card-body">
+                    <div class="agencia-info-row"><span class="agencia-info-label" style="color:#7c3aed;">Cemitério:</span><span class="agencia-info-value">${item.part_cemiterio || ''}</span></div>
+                    <div class="agencia-info-row"><span class="agencia-info-label" style="color:#7c3aed;">Tipo:</span><span class="agencia-info-value">${item.part_tipo || ''}</span></div>
+                    <div class="agencia-info-row"><span class="agencia-info-label" style="color:#7c3aed;">Liberação:</span><span class="agencia-info-value">${item.part_hora_liberacao || ''}</span></div>
+                    <div class="agencia-info-row"><span class="agencia-info-label" style="color:#7c3aed;">Responsável:</span><span class="agencia-info-value" style="font-size:11px;">${responsavelTxt}</span></div>
+                    <div class="agencia-info-row"><span class="agencia-info-label" style="color:#7c3aed;">Taxas (R$):</span><span class="agencia-info-value">${item.part_taxas ? `R$ ${item.part_taxas}` : 'Isento/Não inf.'}</span></div>
+                    <div style="margin-top: 5px;">
+                        <span class="agencia-info-label" style="display:block; margin-bottom:5px; font-size:10px; color:#7c3aed;">DOCUMENTAÇÃO:</span>
+                        <div style="margin-top:5px;">${statusNuvem}</div>
+                    </div>
+                </div>
+                <div class="agencia-card-footer" style="background: #f3e8ff; border-top: 1px solid #e9d5ff; display:flex; gap:10px;">
+                    <button class="btn-novo" style="background:#8b5cf6; color:white; padding: 6px 12px; font-size: 12px; flex:1;" onclick="event.stopPropagation(); window.abrirFichaParticular('${item.id}')">📝 Ficha / Docs</button>
+                    <button class="btn-novo" style="background:#ef4444; color:white; padding: 6px 12px; font-size: 12px; flex:1;" onclick="event.stopPropagation(); window.excluir('${item.id}')">🗑️ Remover</button>
+                </div>`;
+            card.onclick = () => window.abrirFichaParticular(item.id);
             fragment.appendChild(card); 
             return;
         }
 
         card.onclick = () => window.visualizar(item.id);
+        
         let statusGRM = item.agencia_grm || 'PENDENTE'; 
         let badgeGRM = `<span class="badge-status ${statusGRM === 'PENDENTE' ? 'badge-pendente' : 'badge-sucesso'}">${statusGRM}</span>`;
+        
         let statusLib = item.agencia_status_liberacao || 'PENDENTE'; 
         let badgeLib = `<span class="badge-status ${statusLib === 'PENDENTE' ? 'badge-pendente' : 'badge-sucesso'}">${statusLib === 'LIBERADO' ? 'LIBERADO' : 'AGUARDANDO'}</span>`;
+        
         let docsHTML = renderChip('invol', 'INVOL', item) + renderChip('nf', 'NF', item) + renderChip('tanato', 'TANATO', item) + renderChip('comprovante', 'COMP. PGTO', item) + renderChip('guia_grm', 'GRM', item);
         
         card.style.borderTopColor = statusLib === 'LIBERADO' ? '#10b981' : (statusGRM !== 'PENDENTE' ? '#f59e0b' : '#3b82f6');
         
         let statusDocsAcolhimento = item.url_docs_acolhimento ? `<span class="badge-status badge-sucesso" style="cursor:pointer;" onclick="event.stopPropagation(); window.open('${item.url_docs_acolhimento}', '_blank')" title="Acessar Documentos do Acolhimento">OK (NUVEM)</span>` : `<span class="badge-status badge-pendente" title="Acolhimento ainda não anexou os documentos">PENDENTE</span>`;
+        
         let statusDocsAgencia = item.url_docs_agencia ? `<a href="${item.url_docs_agencia}" target="_blank" onclick="event.stopPropagation();" style="text-decoration:none; font-size:10px; color:#3b82f6; font-weight:bold;">🔗 VER DOCUMENTOS (NUVEM)</a>` : `<span style="font-size:10px; color:#ef4444; font-weight:bold;">⚠️ NENHUM LINK ANEXADO</span>`;
 
         let btnAssumir = ''; 
         let btnRepassar = `<button class="btn-novo" style="background:#8b5cf6; color:white; padding: 6px 12px; font-size: 12px; width:auto;" onclick="event.stopPropagation(); window.abrirModalTransferirResponsavel('${item.id}')" title="Repassar para outro colaborador">👤 Repassar</button>`;
+        
         if (!item.agencia_atendente) { 
             btnAssumir = `<button class="btn-novo" style="background:#3b82f6; color:white; padding: 6px 12px; font-size: 12px; width:auto;" onclick="event.stopPropagation(); window.assumirProcessoAgencia('${item.id}', false)">🙋‍♂️ Assumir</button>`; 
         } else if (!usuarioLogado || item.agencia_atendente !== usuarioLogado.nome) { 
             btnAssumir = `<button class="btn-novo" style="background:#f59e0b; color:white; padding: 6px 12px; font-size: 12px; width:auto;" onclick="event.stopPropagation(); window.assumirProcessoAgencia('${item.id}', true)">🔄 Assumir</button>`; 
         }
 
-        card.innerHTML = `<div class="agencia-card-header"><div class="agencia-card-title">${(item.nome || 'NÃO INFORMADO').toUpperCase()}</div><div class="agencia-card-subtitle">Sepultamento: ${item.data_ficha || ''} às ${item.hora || ''}</div></div><div class="agencia-card-body"><div class="agencia-info-row"><span class="agencia-info-label">E-CIGA:</span><span class="agencia-info-value" style="font-family:monospace; font-size:13px; color:#0ea5e9;">${item.agencia_processo || 'S/ PROCESSO'}</span></div><div class="agencia-info-row"><span class="agencia-info-label">Resp. Agência:</span><span class="agencia-info-value" style="color:#3b82f6;">${(item.agencia_atendente || 'AGUARDANDO').toUpperCase()}</span></div><div class="agencia-info-row"><span class="agencia-info-label">Funerária:</span><span class="agencia-info-value">${(item.funeraria || 'N/I').toUpperCase()}</span></div><div class="agencia-info-row"><span class="agencia-info-label">Docs Acolhimento:</span><span class="agencia-info-value">${statusDocsAcolhimento}</span></div><div class="agencia-info-row"><span class="agencia-info-label">GRM:</span><span class="agencia-info-value">${badgeGRM}</span></div><div class="agencia-info-row"><span class="agencia-info-label">Liberação:</span><span class="agencia-info-value">${badgeLib}</span></div><div style="margin-top: 5px;"><span class="agencia-info-label" style="display:block; margin-bottom:5px; font-size:10px;">CHECKLIST AGÊNCIA (Clique p/ abrir Nuvem):</span><div>${docsHTML}</div><div style="margin-top:5px;">${statusDocsAgencia}</div></div></div><div class="agencia-card-footer" style="flex-wrap: wrap;"><div style="display:flex; gap:5px; flex-wrap: wrap;">${btnAssumir}${btnRepassar}<button class="btn-novo" style="background:#f1f5f9; color:#ea580c; border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 12px; width:auto;" onclick="event.stopPropagation(); window.abrirModalAgencia('${item.id}')">✏️ Editar</button></div><button class="btn-novo" style="background:${statusLib === 'LIBERADO' ? '#10b981' : '#e2e8f0'}; color:${statusLib === 'LIBERADO' ? 'white' : '#94a3b8'}; padding: 6px 12px; font-size: 12px; margin-top: 5px; width:auto;" onclick="event.stopPropagation(); window.abrirModalLiberacao('${item.id}')" ${statusLib !== 'LIBERADO' ? 'disabled style="cursor:not-allowed;"' : ''}>✅ Liberação</button></div>`;
+        let avisoDocs = '';
+        if (statusLib === 'LIBERADO') {
+            let pendentes = [];
+            if(!item.agencia_chk_invol) pendentes.push("INVOL"); 
+            if(!item.agencia_chk_nf) pendentes.push("NF"); 
+            if(!item.agencia_chk_comprovante) pendentes.push("PGTO"); 
+            if(!item.agencia_chk_guia_grm) pendentes.push("GRM"); 
+            if(!item.url_docs_agencia) pendentes.push("NUVEM");
+            
+            if(pendentes.length > 0) { 
+                avisoDocs = `<div style="background:#fee2e2; color:#ef4444; padding:6px; border-radius:4px; font-size:10px; font-weight:bold; margin-top:8px; text-align:center; border: 1px solid #fca5a5;">⚠️ LIBERADO FALTANDO: ${pendentes.join(', ')}</div>`; 
+            }
+        }
+
+        card.innerHTML = `
+            <div class="agencia-card-header">
+                <div class="agencia-card-title">${(item.nome || 'NÃO INFORMADO').toUpperCase()}</div>
+                <div class="agencia-card-subtitle">Sepultamento: ${item.data_ficha || ''} às ${item.hora || ''}</div>
+            </div>
+            <div class="agencia-card-body">
+                <div class="agencia-info-row"><span class="agencia-info-label">E-CIGA:</span><span class="agencia-info-value" style="font-family:monospace; font-size:13px; color:#0ea5e9;">${item.agencia_processo || 'S/ PROCESSO'}</span></div>
+                <div class="agencia-info-row"><span class="agencia-info-label">Resp. Agência:</span><span class="agencia-info-value" style="color:#3b82f6;">${(item.agencia_atendente || 'AGUARDANDO').toUpperCase()}</span></div>
+                <div class="agencia-info-row"><span class="agencia-info-label">Funerária:</span><span class="agencia-info-value">${(item.funeraria || 'N/I').toUpperCase()}</span></div>
+                <div class="agencia-info-row"><span class="agencia-info-label">Docs Acolhimento:</span><span class="agencia-info-value">${statusDocsAcolhimento}</span></div>
+                <div class="agencia-info-row"><span class="agencia-info-label">GRM:</span><span class="agencia-info-value">${badgeGRM}</span></div>
+                <div class="agencia-info-row"><span class="agencia-info-label">Liberação:</span><span class="agencia-info-value">${badgeLib}</span></div>
+                <div style="margin-top: 5px;">
+                    <span class="agencia-info-label" style="display:block; margin-bottom:5px; font-size:10px;">CHECKLIST AGÊNCIA (Clique p/ abrir Nuvem):</span>
+                    <div>${docsHTML}</div>
+                    <div style="margin-top:5px;">${statusDocsAgencia}</div>
+                    ${avisoDocs}
+                </div>
+            </div>
+            <div class="agencia-card-footer" style="flex-wrap: wrap;">
+                <div style="display:flex; gap:5px; flex-wrap: wrap;">
+                    ${btnAssumir}
+                    ${btnRepassar}
+                    <button class="btn-novo" style="background:#f1f5f9; color:#ea580c; border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 12px; width:auto;" onclick="event.stopPropagation(); window.abrirModalAgencia('${item.id}')">✏️ Editar</button>
+                </div>
+                <button class="btn-novo" style="background:${statusLib === 'LIBERADO' ? '#10b981' : '#3b82f6'}; color:white; padding: 6px 12px; font-size: 12px; margin-top: 5px; width:auto; cursor:pointer;" onclick="event.stopPropagation(); window.abrirModalLiberacao('${item.id}')">✅ Liberação</button>
+            </div>`;
         fragment.appendChild(card);
     });
+    
     container.appendChild(fragment);
 }
 
 // ============================================================================
-// NOVO MODAL PARTICULAR
+// NOVO MODAL PARTICULAR (AGÊNCIA)
 // ============================================================================
 window.abrirModalParticular = function() {
     const form = document.getElementById('form-particular'); 
@@ -847,18 +937,22 @@ if(formParticular) {
         e.preventDefault(); 
         const dados = {
             tipo_registro: 'PARTICULAR', 
+            protocolo: window.gerarProtocolo(),
             data_ficha: document.getElementById('filtro-data').value || window.pegarDataAtualLocal(), 
             nome: document.getElementById('part_nome').value.trim(), 
             part_cemiterio: document.getElementById('part_cemiterio').value.trim(), 
+            local: document.getElementById('part_cemiterio').value.trim(), // Para geração de autorização
             part_hora_liberacao: document.getElementById('part_hora_liberacao').value, 
             part_tipo: document.getElementById('part_tipo').value, 
             part_taxas: document.getElementById('part_taxas').value, 
             chk_pessoa_fisica: document.getElementById('chk_pessoa_fisica').checked, 
             part_funeraria: document.getElementById('part_funeraria').value.trim(), 
+            funeraria: document.getElementById('part_funeraria').value.trim(), // Para geração de autorização
             part_pf_nome: document.getElementById('part_pf_nome').value.trim(), 
             part_pf_cpf: document.getElementById('part_pf_cpf').value.trim(), 
             part_pf_tel: document.getElementById('part_pf_tel').value.trim(), 
             part_pf_tel2: document.getElementById('part_pf_tel2').value.trim(), 
+            part_pf_email: document.getElementById('part_pf_email') ? document.getElementById('part_pf_email').value.trim() : '', 
             part_pf_cep: document.getElementById('part_pf_cep').value.trim(), 
             part_pf_endereco: document.getElementById('part_pf_endereco').value.trim(), 
             part_pf_numero: document.getElementById('part_pf_numero').value.trim(), 
@@ -878,6 +972,7 @@ if(formParticular) {
             resp_cidade: document.getElementById('part_pf_cidade').value.trim(), 
             resp_uf: document.getElementById('part_pf_uf').value.trim()
         };
+        
         getDB().collection("atendimentos").add(dados).then(() => { 
             window.fecharModalParticular(); 
             alert("Atendimento Particular registrado com sucesso!"); 
@@ -886,6 +981,111 @@ if(formParticular) {
             alert("Erro ao salvar o registro particular."); 
         });
     }
+}
+
+// ============================================================================
+// FICHA PARTICULAR E CHECKLIST (AGÊNCIA)
+// ============================================================================
+window.abrirFichaParticular = function(id) {
+    if(!getDB()) return;
+    getDB().collection("atendimentos").doc(id).get().then(doc => {
+        if(doc.exists) {
+            const d = doc.data(); 
+            d.id = doc.id; 
+            dadosAtendimentoAtual = d; 
+            document.getElementById('part_ficha_docId').value = id;
+            
+            let responsavelTxt = d.chk_pessoa_fisica ? `PF: ${d.part_pf_nome || ''} (CPF: ${d.part_pf_cpf || ''})` : `FUNERÁRIA: ${d.part_funeraria || ''}`;
+            
+            let dadosPF = '';
+            if (d.chk_pessoa_fisica) {
+                let enderecoCompleto = `${d.part_pf_endereco || ''}, ${d.part_pf_numero || 'S/N'}`;
+                if (d.part_pf_complemento) enderecoCompleto += ` - ${d.part_pf_complemento}`;
+                if (d.part_pf_bairro) enderecoCompleto += ` - ${d.part_pf_bairro}`;
+                if (d.part_pf_cidade) enderecoCompleto += ` - ${d.part_pf_cidade}/${d.part_pf_uf || ''}`;
+                if (d.part_pf_cep) enderecoCompleto += ` (CEP: ${d.part_pf_cep})`;
+
+                dadosPF = `
+                    <div style="grid-column: 1 / -1; border-top: 1px dashed #cbd5e1; margin-top: 5px; padding-top: 10px;">
+                        <span style="font-size:10px; color:#d97706; font-weight:bold; display:block; margin-bottom: 5px;">DADOS DO RESPONSÁVEL (PESSOA FÍSICA):</span>
+                        <div style="display:grid; grid-template-columns: 1fr; gap:10px;">
+                            <div><span style="font-size:10px; color:#64748b; font-weight:bold; display:block;">ENDEREÇO COMPLETO:</span><span style="font-size:12px; font-weight:600; color:#334155;">${enderecoCompleto}</span></div>
+                            <div><span style="font-size:10px; color:#64748b; font-weight:bold; display:block;">E-MAIL:</span><span style="font-size:12px; font-weight:600; color:#334155;">${d.part_pf_email || 'Não informado'}</span></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('resumo-particular').innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="grid-column: 1 / -1; margin-bottom: 5px; text-align: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                        <span style="font-size:10px; color:#3b82f6; font-weight:bold; display:block;">Nº PROTOCOLO</span>
+                        <span style="font-size:16px; font-weight:900; color:#1e3a8a; letter-spacing: 1px;">${d.protocolo || 'NÃO GERADO'}</span>
+                    </div>
+                    <div><span style="font-size:10px; color:#64748b; font-weight:bold; display:block;">FALECIDO:</span><span style="font-size:13px; font-weight:bold; color:#1e293b;">${(d.nome||'N/I').toUpperCase()}</span></div>
+                    <div><span style="font-size:10px; color:#64748b; font-weight:bold; display:block;">CEMITÉRIO DESTINO:</span><span style="font-size:12px; font-weight:bold; color:#334155;">${(d.part_cemiterio||'N/I').toUpperCase()}</span></div>
+                    <div><span style="font-size:10px; color:#64748b; font-weight:bold; display:block;">TIPO:</span><span style="font-size:12px; font-weight:bold; color:#334155;">${(d.part_tipo||'N/I').toUpperCase()}</span></div>
+                    <div><span style="font-size:10px; color:#64748b; font-weight:bold; display:block;">HORA LIBERAÇÃO:</span><span style="font-size:12px; font-weight:bold; color:#334155;">${d.part_hora_liberacao||'--:--'}</span></div>
+                    <div style="grid-column: 1 / -1;"><span style="font-size:10px; color:#64748b; font-weight:bold; display:block;">RESPONSÁVEL:</span><span style="font-size:12px; font-weight:bold; color:#334155;">${responsavelTxt}</span></div>
+                    <div style="grid-column: 1 / -1;"><span style="font-size:10px; color:#64748b; font-weight:bold; display:block;">TELEFONES:</span><span style="font-size:12px; font-weight:bold; color:#334155;">${d.part_pf_tel||'-'} / ${d.part_pf_tel2||'-'}</span></div>
+                    ${dadosPF}
+                </div>
+            `;
+            
+            ['autorizacao', 'obito', 'rg_falecido', 'rg_resp', 'comprovante', 'guia', 'taxas'].forEach(k => {
+                const chk = document.getElementById(`part_chk_${k}`);
+                if(chk) chk.checked = (d[`part_chk_${k}`] === true);
+            });
+            
+            const linkNuvem = document.getElementById('part_link_nuvem');
+            if (linkNuvem) linkNuvem.value = d.part_link_nuvem || '';
+            
+            safeDisplay('modal-particular-ficha', 'block');
+        }
+    });
+}
+
+window.fecharModalParticularFicha = function() { safeDisplay('modal-particular-ficha', 'none'); }
+
+window.salvarFichaParticular = function() {
+    const id = document.getElementById('part_ficha_docId').value;
+    if(!id) return;
+    
+    let updates = {};
+    ['autorizacao', 'obito', 'rg_falecido', 'rg_resp', 'comprovante', 'guia', 'taxas'].forEach(k => {
+        const chk = document.getElementById(`part_chk_${k}`);
+        if(chk) updates[`part_chk_${k}`] = chk.checked;
+    });
+    
+    const linkNuvem = document.getElementById('part_link_nuvem');
+    if(linkNuvem) updates.part_link_nuvem = linkNuvem.value.trim();
+    
+    getDB().collection("atendimentos").doc(id).update(updates).then(() => {
+        getDB().collection("auditoria").add({ data_log: new Date().toISOString(), usuario: usuarioLogado ? usuarioLogado.nome : 'Anon', acao: "ATUALIZOU FICHA PARTICULAR", detalhe: `ID: ${id}` }); 
+        alert("Ficha salva com sucesso!");
+        window.fecharModalParticularFicha();
+    }).catch(e => alert("Erro ao salvar ficha."));
+}
+
+window.enviarWppParticular = function() {
+    if (!dadosAtendimentoAtual) return;
+    const d = dadosAtendimentoAtual;
+    
+    if (!d.chk_pessoa_fisica) {
+        alert("O envio de WhatsApp só é aplicável para responsáveis Pessoa Física.");
+        return;
+    }
+    
+    let t = d.part_pf_tel ? d.part_pf_tel.replace(/\D/g, '') : '';
+    if (!t) {
+        alert("Sem telefone cadastrado para o responsável.");
+        return;
+    }
+
+    let texto = `*PREFEITURA MUNICIPAL DE NITERÓI*\n_Serviços Funerários - Agência_\n\nOlá, seguem as informações do seu atendimento particular:\n\n📄 *Protocolo:* ${d.protocolo || 'Pendente'}\n👤 *Falecido(a):* ${(d.nome || '-').toUpperCase()}\n⚰️ *Cemitério Destino:* ${(d.part_cemiterio || '-').toUpperCase()}\n🕒 *Hora de Liberação:* ${d.part_hora_liberacao || '-'}\n\nAgradecemos a compreensão.`;
+
+    let url = `https://wa.me/55${t}?text=${encodeURIComponent(texto)}`;
+    window.open(url, '_blank');
 }
 
 // ============================================================================
@@ -1180,8 +1380,10 @@ window.carregarEstatisticas = function(modo) {
         snap.forEach(doc => {
             const d = doc.data(); 
             if (modo === 'custom' && !d.data_ficha.startsWith(document.getElementById('filtro-mes-ano').value)) return;
+            
             totalAcolhimento++; 
             if (d.agencia_atendente || d.agencia_processo || d.tipo_registro === 'PARTICULAR') { totalAgencia++; }
+            
             if(d.causa) { d.causa.split('/').forEach(c => { const k = c.trim().toUpperCase(); if(k) causas[k] = (causas[k] || 0) + 1; }); }
             if(d.atendente_sistema) { const func = d.atendente_sistema.trim().toUpperCase(); if(func) atendentes[func] = (atendentes[func] || 0) + 1; }
             if(d.tipo_sepultura) { const t = d.tipo_sepultura.trim().toUpperCase(); if(t) sepulturas[t] = (sepulturas[t] || 0) + 1; }
@@ -1200,13 +1402,20 @@ window.carregarEstatisticas = function(modo) {
         const elKpiAcolhimento = document.getElementById('kpi-acolhimento'); if (elKpiAcolhimento) elKpiAcolhimento.innerText = totalAcolhimento;
         const elKpiAgencia = document.getElementById('kpi-agencia'); if (elKpiAgencia) elKpiAgencia.innerText = totalAgencia;
 
-        window.dadosGraficosAtuais = { Cemiterios: cemiterios, Volume_Periodo: linhasTempo, Causas: Causas, Atendentes: atendentes, Sepulturas: sepulturas, Funerarias: funerarias, Tempo_Resolucao: tempos, Isencoes: isencoes, Quadras: quadras, Hospitais: hospitais, Bairros: bairros, Municipios: municipios, Valores_GRM: valores };
+        window.dadosGraficosAtuais = { Cemiterios: cemiterios, Volume_Periodo: linhasTempo, Causas: causas, Atendentes: atendentes, Sepulturas: sepulturas, Funerarias: funerarias, Tempo_Resolucao: tempos, Isencoes: isencoes, Quadras: quadras, Hospitais: hospitais, Bairros: bairros, Municipios: municipios, Valores_GRM: valores };
 
         const draw = (id, dataObj, lbl, type='bar', color='#3b82f6') => {
             const ctx = document.getElementById(id); if(!ctx || !window.Chart) return;
-            let sorted = []; if(id === 'grafico-linhas') { sorted = Object.entries(dataObj).sort((a,b) => { let da = a[0].split('/').reverse().join('-'); let db = b[0].split('/').reverse().join('-'); return new Date(da) - new Date(db); }); } else { sorted = Object.entries(dataObj).sort((a,b) => b[1] - a[1]).slice(0, 10); }
+            let sorted = []; 
+            if(id === 'grafico-linhas') { 
+                sorted = Object.entries(dataObj).sort((a,b) => { let da = a[0].split('/').reverse().join('-'); let db = b[0].split('/').reverse().join('-'); return new Date(da) - new Date(db); }); 
+            } else { 
+                sorted = Object.entries(dataObj).sort((a,b) => b[1] - a[1]).slice(0, 10); 
+            }
+            
             if(chartInstances[id]) chartInstances[id].destroy();
             chartInstances[id] = new Chart(ctx, { type: type, data: { labels: sorted.map(x=>x[0]), datasets: [{ label: lbl, data: sorted.map(x=>x[1]), backgroundColor: (type==='doughnut'||type==='pie') ? ['#10b981','#3b82f6','#f59e0b','#ef4444'] : color, borderColor: type==='line' ? color : undefined, fill: type==='line' ? false : true, tension: type==='line' ? 0.1 : 0 }] }, options: { indexAxis: type==='bar'?'y':'x', maintainAspectRatio: false } });
+            
             if(id === 'grafico-causas') { dadosEstatisticasExportacao = sorted.map(([c,q]) => ({"Causa": c, "Qtd": q})); }
         };
         
@@ -1233,6 +1442,7 @@ window.carregarEstatisticas = function(modo) {
 window.baixarDadosGraficosExcel = function() {
     if(typeof XLSX === 'undefined') { alert("Biblioteca Excel não carregada. Verifique a conexão com a internet."); return; }
     if(!window.dadosGraficosAtuais) { alert("Aguarde o carregamento das estatísticas antes de exportar."); return; }
+    
     const wb = XLSX.utils.book_new();
     const formatData = (obj, keyName) => { 
         let arr = Object.entries(obj).map(([k, v]) => ({ [keyName]: k, "Quantidade": v })); 
@@ -1243,6 +1453,7 @@ window.baixarDadosGraficosExcel = function() {
         } 
         return arr; 
     };
+    
     const sheetsInfo = [ 
         { name: 'Cemitérios', data: formatData(window.dadosGraficosAtuais.Cemiterios, 'Cemitério') }, 
         { name: 'Volume por Período', data: formatData(window.dadosGraficosAtuais.Volume_Periodo, 'Data') }, 
@@ -1258,6 +1469,7 @@ window.baixarDadosGraficosExcel = function() {
         { name: 'Municípios', data: formatData(window.dadosGraficosAtuais.Municipios, 'Município') }, 
         { name: 'Valores GRM', data: formatData(window.dadosGraficosAtuais.Valores_GRM, 'Faixa de Valor') } 
     ];
+    
     sheetsInfo.forEach(s => { 
         if(s.data.length > 0) { 
             const ws = XLSX.utils.json_to_sheet(s.data); 
@@ -1267,9 +1479,6 @@ window.baixarDadosGraficosExcel = function() {
     XLSX.writeFile(wb, "Dados_Graficos_Estatisticas.xlsx");
 }
 
-// ============================================================================
-// ADMIN - CONTRIBUINTES E EQUIPE
-// ============================================================================
 window.buscarContribuintes = function() {
     const termo = document.getElementById('input-busca-contribuinte').value.trim().toUpperCase(); 
     const ul = document.getElementById('lista-contribuintes');
@@ -1294,6 +1503,7 @@ window.buscarContribuintes = function() {
         let results = Object.values(contribuintesMap); 
         ul.innerHTML = '';
         if (results.length === 0) { ul.innerHTML = '<li style="padding: 20px; text-align: center; color: #64748b;">Nenhum contribuinte encontrado.</li>'; return; }
+        
         const fragment = document.createDocumentFragment();
         results.forEach(c => {
             let enderecoCompleto = c.endereco ? `${c.endereco}, ${c.numero} - ${c.bairro}` : 'Não informado'; 
@@ -1591,8 +1801,10 @@ window.gerarBackup = async function() {
         let backupData = { atendimentos: [], equipe: [], auditoria: [] }; 
         const atendimentosSnap = await getDB().collection("atendimentos").get(); 
         atendimentosSnap.forEach(doc => backupData.atendimentos.push({ id: doc.id, ...doc.data() })); 
+        
         const equipeSnap = await getDB().collection("equipe").get(); 
         equipeSnap.forEach(doc => backupData.equipe.push({ id: doc.id, ...doc.data() })); 
+        
         const auditoriaSnap = await getDB().collection("auditoria").get(); 
         auditoriaSnap.forEach(doc => backupData.auditoria.push({ id: doc.id, ...doc.data() })); 
         
@@ -1643,9 +1855,6 @@ window.restaurarBackup = function() {
     reader.readAsText(file); 
 }
 
-// ============================================================================
-// MODAL ACOLHIMENTO E CADASTRO
-// ============================================================================
 window.abrirModal = function() {
     document.getElementById('form-atendimento').reset(); 
     document.getElementById('docId').value = ""; 
@@ -1671,7 +1880,10 @@ window.editar = function(id) {
                 if(chk) chk.checked = (d[k] === 'SIM'); 
             });
             const chkInd = document.getElementById('chk_indigente'); 
-            if(chkInd) { chkInd.checked = (d.indigente === 'SIM'); window.toggleIndigente(); }
+            if(chkInd) { 
+                chkInd.checked = (d.indigente === 'SIM'); 
+                window.toggleIndigente(); 
+            }
             document.getElementById('div-motivo-edicao').classList.remove('hidden'); 
             safeDisplay('modal', 'block');
         }
@@ -1711,9 +1923,6 @@ if(formAcolhimento) {
     }
 }
 
-// ============================================================================
-// CHECKLISTS E MESCLAGEM DE PDF E IMPRESSÕES
-// ============================================================================
 const listaDocsPadrao = ['autorizacao', 'rg_perm', 'obito', 'rg_falecido', 'residencia', 'guia_cartorio', 'moeda', 'bolsa', 'loas', 'cadunico', 'cras', 'parentesco', 'casamento', 'locacao', 'procuracao'];
 
 window.abrirModalDocsAcolhimento = function(id) {
@@ -1727,9 +1936,11 @@ window.abrirModalDocsAcolhimento = function(id) {
             });
             const elLnk = document.getElementById('link_docs_acolhimento'); 
             if(elLnk) elLnk.value = d.url_docs_acolhimento || '';
+            
             let nAj = (d.nome || 'NAO_INFORMADO').toUpperCase().replace(/[^A-Z0-9 ]/g, '').trim().replace(/\s+/g, '_'); 
             let pAj = d.protocolo || 'SEM_PROTO'; 
             window.nomePastaPadrao = `${pAj}_${nAj}`;
+            
             const dNd = document.getElementById('nome_pasta_checklist_display'); 
             if(dNd) dNd.innerText = window.nomePastaPadrao;
             safeDisplay('modal-docs-acolhimento', 'block');
@@ -1767,16 +1978,26 @@ window.mesclarEBaixarPDFsAcolhimento = async function(event) {
     const fileInput = document.getElementById('pdf_merger_input_acolhimento');
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) { alert("Selecione pelo menos um arquivo PDF."); return; }
     try {
-        const btn = event.target; const oldTxt = btn.innerText; btn.innerText = "Mesclando..."; btn.disabled = true;
+        const btn = event.target; 
+        const oldTxt = btn.innerText; 
+        btn.innerText = "Mesclando..."; 
+        btn.disabled = true;
+        
         const pdfDoc = await window.PDFLib.PDFDocument.create();
         for (let i = 0; i < fileInput.files.length; i++) { 
             const f = fileInput.files[i]; 
-            if (f.type !== "application/pdf") { alert("Selecione apenas PDFs."); btn.innerText = oldTxt; btn.disabled = false; return; } 
+            if (f.type !== "application/pdf") { 
+                alert("Selecione apenas PDFs."); 
+                btn.innerText = oldTxt; 
+                btn.disabled = false; 
+                return; 
+            } 
             const arr = await f.arrayBuffer(); 
             const currentPdf = await window.PDFLib.PDFDocument.load(arr); 
             const copiedPages = await pdfDoc.copyPages(currentPdf, currentPdf.getPageIndices()); 
             copiedPages.forEach((page) => pdfDoc.addPage(page)); 
         }
+        
         const mergedPdfBytes = await pdfDoc.save(); 
         const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' }); 
         const url = URL.createObjectURL(blob); 
@@ -1784,6 +2005,7 @@ window.mesclarEBaixarPDFsAcolhimento = async function(event) {
         a.href = url; 
         const docId = document.getElementById('docs_acolhimento_id').value; 
         let fileName = "Documentos_Acolhimento.pdf";
+        
         if(docId) { 
             const docSnap = await getDB().collection("atendimentos").doc(docId).get(); 
             if(docSnap.exists) { 
@@ -1793,22 +2015,44 @@ window.mesclarEBaixarPDFsAcolhimento = async function(event) {
                 fileName = `${p}_${n}.pdf`; 
             } 
         }
-        a.download = fileName; document.body.appendChild(a); a.click(); URL.revokeObjectURL(url); a.remove(); 
-        btn.innerText = oldTxt; btn.disabled = false; 
-        alert("PDFs mesclados e baixados com sucesso!"); fileInput.value = "";
+        
+        a.download = fileName; 
+        document.body.appendChild(a); 
+        a.click(); 
+        URL.revokeObjectURL(url); 
+        a.remove(); 
+        btn.innerText = oldTxt; 
+        btn.disabled = false; 
+        alert("PDFs mesclados e baixados com sucesso!"); 
+        fileInput.value = "";
     } catch (err) { 
-        console.error(err); alert("Erro ao mesclar arquivos."); 
-        event.target.innerText = "Mesclar e Baixar PDF"; event.target.disabled = false; 
+        console.error(err); 
+        alert("Erro ao mesclar arquivos."); 
+        event.target.innerText = "Mesclar e Baixar PDF"; 
+        event.target.disabled = false; 
     }
 };
 
-const cssPrint = `<style>@page{size:A4 portrait;margin:15mm;}body{font-family:Arial,sans-serif;margin:0;padding:0;color:#000;font-size:13px;}table{border-collapse:collapse;width:100%;}td{border:2px solid #000;}.bg-gray{background-color:#ebebeb;font-weight:bold;text-align:center;text-transform:uppercase;}.label-cell{padding:8px 10px;font-weight:normal;}.value-cell{padding:8px 10px;}</style>`;
-
-window.abrirModalLiberacao = function(id) { window.idLiberacaoAtual = id; safeDisplay('modal-liberacao', 'flex'); }
-window.fecharModalLiberacao = function() { safeDisplay('modal-liberacao', 'none'); }
+window.abrirModalLiberacao = function(id) { 
+    window.idLiberacaoAtual = id; 
+    safeDisplay('modal-liberacao', 'flex'); 
+}
+window.fecharModalLiberacao = function() { 
+    safeDisplay('modal-liberacao', 'none'); 
+}
 
 window.gerarFormularioLiberacao = function(tipoImpressao) {
     if(!window.idLiberacaoAtual) return;
+    
+    // Abre a janela de imediato para evitar bloqueio de popup
+    const w = window.open('', '_blank'); 
+    if(!w) { 
+        alert("O seu navegador bloqueou o pop-up. Por favor, permita pop-ups para imprimir a liberação."); 
+        return; 
+    }
+    
+    w.document.write("<html><head><title>Carregando...</title></head><body style='font-family: sans-serif; text-align: center; padding-top: 50px; color: #3b82f6;'><h2>Gerando documento de liberação...</h2></body></html>");
+    
     getDB().collection("atendimentos").doc(window.idLiberacaoAtual).get().then(docRef => {
         if(docRef.exists){
             const d = docRef.data(); 
@@ -1818,6 +2062,7 @@ window.gerarFormularioLiberacao = function(tipoImpressao) {
             const at = (d.agencia_atendente || (usuarioLogado ? usuarioLogado.nome : '')).toUpperCase(); 
             const tp = tipoImpressao === 'municipal' ? 'SEPULTAMENTO' : 'CREMAÇÃO';
             let se = ''; 
+            
             if (tipoImpressao === 'municipal') { 
                 let partesSepul = []; 
                 if (d.tipo_sepultura) partesSepul.push(d.tipo_sepultura); 
@@ -1826,10 +2071,31 @@ window.gerarFormularioLiberacao = function(tipoImpressao) {
                 if (d.qd) partesSepul.push(`QD/RUA: ${d.qd}`); 
                 se = partesSepul.join(' ').toUpperCase(); 
             }
+            
             const si = d.assinatura_atendente ? `<img src="${d.assinatura_atendente}" style="max-height:50px;margin-bottom:5px;">` : `<div style="height:50px;"></div>`;
-            const html = `<html><head><title>Liberação</title>${cssPrint}</head><body><table style="border:2px solid #000;"><tr><td style="width:35%;border-bottom:2px solid #000;text-align:center;padding:15px;"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:80px;"></td><td style="width:65%;border-bottom:2px solid #000;text-align:center;font-weight:bold;line-height:1.8;font-size:14px;padding:15px;">SECRETARIA DE MOBILIDADE E INFRAESTRUTURA - SEMOBI<br><br>SUBSECRETARIA DE INFRAESTRUTURA - SSINFRA<br><br>COORDENADORIA MUNICIPAL DE SERVIÇOS FUNERÁRIOS<br><br>AGÊNCIA FUNERÁRIA MUNICIPAL</td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;text-align:center;font-weight:bold;padding:8px;">CERTIFICO e dou fé que, nesta data, estamos finalizando o Processo Administrativo</td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:10%;border:none;border-right:2px solid #000;padding:10px;text-align:center;">Nº</td><td style="width:35%;border:none;border-right:2px solid #000;padding:10px;" class="bg-gray">${d.agencia_processo||''}</td><td style="width:20%;border:none;border-right:2px solid #000;padding:10px;text-align:center;">, processo de</td><td style="width:35%;border:none;padding:10px;" class="bg-gray">${tp}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:15%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Falecido:</td><td style="width:85%;border:none;padding:10px;" class="bg-gray">${(d.nome||'').toUpperCase()}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:15%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Data:</td><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="bg-gray">${dF}</td><td style="width:55%;border:none;"></td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:35%;border:none;border-right:2px solid #000;padding:10px;text-align:center;" class="label-cell">Sepultamento/Crematório no Cemitério<br>Municipal/Privado:</td><td style="width:65%;border:none;padding:10px;vertical-align:middle;" class="bg-gray">${(d.local||'').toUpperCase()}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:15%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Horário:</td><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="bg-gray">${d.hora||''}</td><td style="width:25%;border:none;border-right:2px solid #000;padding:10px;text-align:center;" class="label-cell">Horário da Liberação:</td><td style="width:30%;border:none;padding:10px;" class="bg-gray">${hA}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Saindo o féretro da Capela:</td><td style="width:70%;border:none;padding:10px;" class="bg-gray">${(d.cap||'').toUpperCase()}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Para a Sepultura:</td><td style="width:70%;border:none;padding:10px;" class="bg-gray">${se}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="padding:0;"><table><tr><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Funerária:</td><td style="width:70%;border:none;padding:10px;" class="bg-gray">${(d.funeraria||'').toUpperCase()}</td></tr></table></td></tr></table><div style="text-align:center;margin-top:40px;">${si}<div style="border-top:1px dashed #000;width:350px;margin:0 auto;margin-bottom:5px;"></div><span style="font-weight:bold;font-size:13px;">Assinatura do Responsável</span><br><span style="font-size:13px;">${at}</span><br><br><span style="font-weight:bold;font-size:13px;">Matrícula</span><br><span style="font-size:13px;">_________________</span></div></body><script>window.onload=function(){setTimeout(function(){window.print()},500)}</script></html>`;
-            const w = window.open('','_blank'); w.document.write(html); w.document.close(); window.fecharModalLiberacao();
+            const cssPrint = `<style>@page{size:A4 portrait;margin:15mm;}body{font-family:Arial,sans-serif;margin:0;padding:0;color:#000;font-size:13px;}table{border-collapse:collapse;width:100%;}td{border:2px solid #000;}.bg-gray{background-color:#ebebeb;font-weight:bold;text-align:center;text-transform:uppercase;}.label-cell{padding:8px 10px;font-weight:normal;}.value-cell{padding:8px 10px;}</style>`;
+            
+            const html = `<html><head><title>Liberação</title>${cssPrint}</head><body><table style="border:2px solid #000;"><tr><td style="width:35%;border-bottom:2px solid #000;text-align:center;padding:15px;"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:80px;"></td><td style="width:65%;border-bottom:2px solid #000;text-align:center;font-weight:bold;line-height:1.8;font-size:14px;padding:15px;">SECRETARIA DE MOBILIDADE E INFRAESTRUTURA - SEMOBI<br><br>SUBSECRETARIA DE INFRAESTRUTURA - SSINFRA<br><br>COORDENADORIA MUNICIPAL DE SERVIÇOS FUNERÁRIOS<br><br>AGÊNCIA FUNERÁRIA MUNICIPAL</td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;text-align:center;font-weight:bold;padding:8px;">CERTIFICO e dou fé que, nesta data, estamos finalizando o Processo Administrativo</td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:10%;border:none;border-right:2px solid #000;padding:10px;text-align:center;">Nº</td><td style="width:35%;border:none;border-right:2px solid #000;padding:10px;" class="bg-gray">${d.agencia_processo||''}</td><td style="width:20%;border:none;border-right:2px solid #000;padding:10px;text-align:center;">, processo de</td><td style="width:35%;border:none;padding:10px;" class="bg-gray">${tp}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:15%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Falecido:</td><td style="width:85%;border:none;padding:10px;" class="bg-gray">${(d.nome||'').toUpperCase()}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:15%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Data:</td><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="bg-gray">${dF}</td><td style="width:55%;border:none;"></td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:35%;border:none;border-right:2px solid #000;padding:10px;text-align:center;" class="label-cell">Sepultamento/Crematório no Cemitério<br>Municipal/Privado:</td><td style="width:65%;border:none;padding:10px;vertical-align:middle;" class="bg-gray">${(d.local||'').toUpperCase()}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:15%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Horário:</td><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="bg-gray">${d.hora||''}</td><td style="width:25%;border:none;border-right:2px solid #000;padding:10px;text-align:center;" class="label-cell">Horário da Liberação:</td><td style="width:30%;border:none;padding:10px;" class="bg-gray">${hA}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Saindo o féretro da Capela:</td><td style="width:70%;border:none;padding:10px;" class="bg-gray">${(d.cap||'').toUpperCase()}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Para a Sepultura:</td><td style="width:70%;border:none;padding:10px;" class="bg-gray">${se}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="padding:0;"><table><tr><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Funerária:</td><td style="width:70%;border:none;padding:10px;" class="bg-gray">${(d.funeraria||'').toUpperCase()}</td></tr></table></td></tr></table><div style="text-align:center;margin-top:40px;">${si}<div style="border-top:1px dashed #000;width:350px;margin:0 auto;margin-bottom:5px;"></div><span style="font-weight:bold;font-size:13px;">Assinatura do Responsável</span><br><span style="font-size:13px;">${at}</span><br><br><span style="font-weight:bold;font-size:13px;">Matrícula</span><br><span style="font-size:13px;">_________________</span></div></body></html>`;
+            
+            w.document.open();
+            w.document.write(html); 
+            w.document.close(); 
+            
+            // Dá um tempo para o navegador renderizar a página antes de chamar a impressão
+            setTimeout(function() {
+                w.print();
+                w.close();
+                window.fecharModalLiberacao(); 
+            }, 500);
+
+        } else {
+            w.close();
+            alert("Atendimento não encontrado.");
         }
+    }).catch(err => {
+        w.close();
+        console.error("Erro ao gerar liberação:", err);
+        alert("Erro ao conectar com o banco de dados.");
     });
 }
 
@@ -1837,15 +2103,18 @@ window.gerarAutorizacao = function(){
     if(!dadosAtendimentoAtual) return;
     const d = dadosAtendimentoAtual; 
     const formatarData = (s) => s ? s.split('-').reverse().join('/') : '';
+    
     let tipoSepul = (d.tipo_sepultura || "").toUpperCase(); 
     const classO = d.classificacao_obito || "ADULTO"; 
     let textClasse = classO === "ANJO" ? "ANJO" : "ADULTO"; 
     let condicao = "ALUGUEL (3 ANOS)";
     
     if(tipoSepul.includes("PERPETU")){ 
-        tipoSepul += " - " + textClasse; condicao = `PERPÉTUA (L: ${d.livro_perpetua||'-'} / F: ${d.folha_perpetua||'-'})`; 
+        tipoSepul += " - " + textClasse; 
+        condicao = `PERPÉTUA (L: ${d.livro_perpetua||'-'} / F: ${d.folha_perpetua||'-'})`; 
     } else if(tipoSepul.includes("MEMBRO")){ 
-        tipoSepul = `MEMBRO AMPUTADO`; condicao = "N/A"; 
+        tipoSepul = `MEMBRO AMPUTADO`; 
+        condicao = "N/A"; 
     } else { 
         tipoSepul += " - " + textClasse; 
     }
@@ -1853,6 +2122,7 @@ window.gerarAutorizacao = function(){
     const ho = new Date(); 
     const mesExtenso = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][ho.getMonth()]; 
     const dExtenso = `${String(ho.getDate()).padStart(2,'0')} de ${mesExtenso} de ${ho.getFullYear()}`;
+    
     const checkForm = (val, checkType) => { 
         val = (val || '').toUpperCase(); 
         if(checkType === 'ALUGUEL') return (!val.includes('PERPETU') && d.perpetua !== 'X') ? '(X)' : '( )'; 
@@ -1866,58 +2136,108 @@ window.gerarAutorizacao = function(){
         return '( )'; 
     };
     
-    const html = `<html><head><title>Autorização para Funeral</title><style>@page{size:A4 portrait;margin:10mm;}body{font-family:Arial,sans-serif;font-size:12px;margin:0;padding:10px;line-height:1.5;}.bold{font-weight:bold;text-transform:uppercase;}.ass{margin-top:30px;text-align:center;width:60%;margin-left:auto;margin-right:auto;}h3{text-decoration:underline;text-align:center;margin-bottom:10px;margin-top:10px;font-size:14px;}.section-title{font-weight:bold;text-decoration:underline;margin-top:20px;display:block;font-size:12px;}p{margin:5px 0;text-align:justify;}.ul-texto{border-bottom:1px solid #000;display:inline-block;min-width:40px;text-align:center;font-weight:bold;text-transform:uppercase;}.checkboxes{margin:10px 0;font-size:11px;}.checkboxes span{margin-right:5px;}.obs{font-size:11px;margin-top:10px;text-align:justify;display:flex;gap:10px;line-height:1.3;}.logo-container{text-align:center;margin-bottom:10px;}</style></head><body>
-    <div class="logo-container"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:60px;"></div>
-    <h3>AUTORIZAÇÃO PARA FUNERAL</h3>
-    <p>Eu, <span class="ul-texto" style="width:45%;">${d.resp_nome||''}</span> CPF nº <span class="ul-texto" style="width:20%;">${d.resp_cpf||''}</span><br>
-    RG: <span class="ul-texto" style="width:20%;">${d.resp_rg||''}</span> residente <span class="ul-texto" style="width:35%;">${d.resp_endereco||''}</span> nº <span class="ul-texto" style="width:5%;">${d.resp_numero||''}</span> bairro <span class="ul-texto" style="width:15%;">${d.resp_bairro||''}</span><br>
-    <span class="ul-texto" style="width:20%;">${d.resp_cidade||''}</span> Município <span class="ul-texto" style="width:10%;">${d.resp_uf||''}</span> Estado CEP: <span class="ul-texto" style="width:15%;">${d.resp_cep||''}</span> grau de parentesco <span class="ul-texto" style="width:20%;">${d.parentesco||''}</span></p>
-    <p><b>AUTORIZO a FUNERÁRIA</b> <span class="ul-texto" style="width:40%;">${d.funeraria||''}</span>, a tratar junto à Agência Funerária dos Cemitérios Municipais de Niterói do Sepultamento do Sr(a) <span class="ul-texto" style="width:50%;">${d.nome||''}</span> falecido no dia <span class="ul-texto" style="width:15%;">${formatarData(d.data_obito)||''}</span>,<br>
-    tendo como local de óbito <span class="ul-texto" style="width:30%;">${d.hospital||''}</span>, sendo o sepultamento no Cemitério <span class="ul-texto" style="width:20%;">${(d.local||'').replace('CEMITÉRIO DO ','').replace('CEMITÉRIO DE ','')}</span> Tipo de Sepultura ${checkForm(d.tipo_sepultura,'CRA')} Cova Rasa Adulto</p>
-    <div class="checkboxes"><span>${checkForm(d.tipo_sepultura,'CRJ')} Cova Rasa Anjo</span> <span>${checkForm(d.tipo_sepultura,'GA')} GAVETA ADULTO</span> <span>${checkForm(d.tipo_sepultura,'GJ')} GAVETA ANJO</span> <span>${checkForm(d.tipo_sepultura,'CA')} CARNEIRA ADULTO</span> <span>${checkForm(d.tipo_sepultura,'CJ')} CARNEIRA ANJO</span> <span>Nº Sepultura <span class="ul-texto" style="width:8%;">${d.sepul||''}</span></span> <span>Qd. <span class="ul-texto" style="width:8%;">${d.qd||''}</span></span> <span>Rua <span class="ul-texto" style="width:8%;"></span></span></div>
-    <p>Aluguel ${checkForm(d.tipo_sepultura,'ALUGUEL')} Perpétuo ${checkForm(d.tipo_sepultura,'PERPETU')} Livro nº <span class="ul-texto" style="width:10%;">${d.livro_perpetua||''}</span> Folha nº <span class="ul-texto" style="width:10%;">${d.folha_perpetua||''}</span> <b>Autorização de 24 Horas para sepultamento, SIM ${d.do_24h==='SIM'?'(X)':'( )'} NÃO ${d.do_24h!=='SIM'?'(X)':'( )'}</b></p>
-    <p>Telefones para Contato 1º <span class="ul-texto" style="width:20%;">${d.telefone||''}</span> 2º <span class="ul-texto" style="width:20%;"></span></p>
-    <p><b>DATA E HORÁRIO DO SEPULTAMENTO: <span class="ul-texto" style="width:15%;">${formatarData(d.data_ficha)||''}</span> ÁS <span class="ul-texto" style="width:10%;">${d.hora||''}</span> HORAS</b></p>
-    <p><b>*ESTOU CIENTE E ACEITO A SEPULTURA DISPONÍVEL.</b></p>
-    <p style="text-align:right;">Niterói, <span class="ul-texto" style="width:30%;border:none;">${dExtenso}</span></p>
-    <div class="ass"><div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div>
-    <span class="section-title">AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</span>
-    <p>Autorizo a Funerária <span class="ul-texto" style="width:30%;">${d.funeraria||''}</span> a entregar toda e qualquer documentação exigida, bem como a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), agendamento e liberação de corpo na agência para o Cemitério de destino.</p>
-    <div class="ass"><div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div>
-    <span class="section-title">NÃO AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</span>
-    <p><b>NÃO</b> autorizo a Funerária <span class="ul-texto" style="width:30%;">${d.funeraria||''}</span> a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), sendo de minha inteira responsabilidade efetuar o pagamento das taxas bem como entregar a documentação exigida para liberação do corpo na agência para o Cemitério de destino. Importante frisar que toda a documentação posterior ao pagamento, a família deverá entregar a Funerária para que seja autorizado junto ao Cemitério a entrada do corpo na capela do Cemitério escolhido.</p>
-    <p>Sendo de responsabilidade da Funerária <span class="ul-texto" style="width:30%;">${d.funeraria||''}</span> tão somente a entrega dos documentos obrigatórios da empresa contratada bem como realizar o agendamento do sepultamento.</p>
-    <div class="ass"><div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div>
-    <div class="obs"><span style="font-size:18px;">→</span><div><b>OBS.:</b> Importante frisar que a Funerária ou a Família terá o prazo de no <b>MÁXIMO 01 (uma) horas</b> antes do sepultamento para pagar as taxas. Caso não seja cumprido no horário o pagamento o sepultamento será <b>SUSPENSO</b>.</div></div>
-    <div class="obs"><span style="font-size:18px;">→</span><div><b>OBS.:</b> Em se tratando do Cemitério de Itaipu e São Francisco, o pagamento das taxas deverão ser pagas no ato da liberação do corpo na Agência, tendo em vista se tratar de Cemitérios longe da Agência recebedora. Caso não seja realizado o pagamento, os Cemitérios não autorizarão a entrada do corpo.</div></div>
-    <script>window.onload=function(){setTimeout(function(){window.print();window.close();},500)}</script>
-    </body></html>`;
-    const w = window.open('','_blank'); w.document.write(html); w.document.close();
+    const sigResp = d.assinatura_responsavel ? `<img src="${d.assinatura_responsavel}" style="max-height:40px;">` : '';
+    
+    const html = `<html><head><title>Autorização para Funeral</title><style>@page{size:A4 portrait;margin:10mm;}body{font-family:Arial,sans-serif;font-size:12px;margin:0;padding:10px;line-height:1.5;}.bold{font-weight:bold;text-transform:uppercase;}.ass{margin-top:30px;text-align:center;width:60%;margin-left:auto;margin-right:auto;}h3{text-decoration:underline;text-align:center;margin-bottom:10px;margin-top:10px;font-size:14px;}.section-title{font-weight:bold;text-decoration:underline;margin-top:20px;display:block;font-size:12px;}p{margin:5px 0;text-align:justify;}.ul-texto{border-bottom:1px solid #000;display:inline-block;min-width:40px;text-align:center;font-weight:bold;text-transform:uppercase;}.checkboxes{margin:10px 0;font-size:11px;}.checkboxes span{margin-right:5px;}.obs{font-size:11px;margin-top:10px;text-align:justify;display:flex;gap:10px;line-height:1.3;}.logo-container{text-align:center;margin-bottom:10px;}</style></head><body><div class="logo-container"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:60px;"></div><h3>AUTORIZAÇÃO PARA FUNERAL</h3><p>Eu, <span class="ul-texto" style="width:45%;">${d.resp_nome||''}</span> CPF nº <span class="ul-texto" style="width:20%;">${d.resp_cpf||''}</span><br>RG: <span class="ul-texto" style="width:20%;">${d.resp_rg||''}</span> residente <span class="ul-texto" style="width:35%;">${d.resp_endereco||''}</span> nº <span class="ul-texto" style="width:5%;">${d.resp_numero||''}</span> bairro <span class="ul-texto" style="width:15%;">${d.resp_bairro||''}</span><br><span class="ul-texto" style="width:20%;">${d.resp_cidade||''}</span> Município <span class="ul-texto" style="width:10%;">${d.resp_uf||''}</span> Estado CEP: <span class="ul-texto" style="width:15%;">${d.resp_cep||''}</span> grau de parentesco <span class="ul-texto" style="width:20%;">${d.parentesco||''}</span></p><p><b>AUTORIZO a FUNERÁRIA</b> <span class="ul-texto" style="width:40%;">${d.funeraria||''}</span>, a tratar junto à Agência Funerária dos Cemitérios Municipais de Niterói do Sepultamento do Sr(a) <span class="ul-texto" style="width:50%;">${d.nome||''}</span> falecido no dia <span class="ul-texto" style="width:15%;">${formatarData(d.data_obito)||''}</span>,<br>tendo como local de óbito <span class="ul-texto" style="width:30%;">${d.hospital||''}</span>, sendo o sepultamento no Cemitério <span class="ul-texto" style="width:20%;">${(d.local||'').replace('CEMITÉRIO DO ','').replace('CEMITÉRIO DE ','')}</span> Tipo de Sepultura ${checkForm(d.tipo_sepultura,'CRA')} Cova Rasa Adulto</p><div class="checkboxes"><span>${checkForm(d.tipo_sepultura,'CRJ')} Cova Rasa Anjo</span> <span>${checkForm(d.tipo_sepultura,'GA')} GAVETA ADULTO</span> <span>${checkForm(d.tipo_sepultura,'GJ')} GAVETA ANJO</span> <span>${checkForm(d.tipo_sepultura,'CA')} CARNEIRA ADULTO</span> <span>${checkForm(d.tipo_sepultura,'CJ')} CARNEIRA ANJO</span> <span>Nº Sepultura <span class="ul-texto" style="width:8%;">${d.sepul||''}</span></span> <span>Qd. <span class="ul-texto" style="width:8%;">${d.qd||''}</span></span> <span>Rua <span class="ul-texto" style="width:8%;"></span></span></div><p>Aluguel ${checkForm(d.tipo_sepultura,'ALUGUEL')} Perpétuo ${checkForm(d.tipo_sepultura,'PERPETU')} Livro nº <span class="ul-texto" style="width:10%;">${d.livro_perpetua||''}</span> Folha nº <span class="ul-texto" style="width:10%;">${d.folha_perpetua||''}</span> <b>Autorização de 24 Horas para sepultamento, SIM ${d.do_24h==='SIM'?'(X)':'( )'} NÃO ${d.do_24h!=='SIM'?'(X)':'( )'}</b></p><p>Telefones para Contato 1º <span class="ul-texto" style="width:20%;">${d.telefone||''}</span> 2º <span class="ul-texto" style="width:20%;"></span></p><p><b>DATA E HORÁRIO DO SEPULTAMENTO: <span class="ul-texto" style="width:15%;">${formatarData(d.data_ficha)||''}</span> ÁS <span class="ul-texto" style="width:10%;">${d.hora||''}</span> HORAS</b></p><p><b>*ESTOU CIENTE E ACEITO A SEPULTURA DISPONÍVEL.</b></p><p style="text-align:right;">Niterói, <span class="ul-texto" style="width:30%;border:none;">${dExtenso}</span></p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><span class="section-title">AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</span><p>Autorizo a Funerária <span class="ul-texto" style="width:30%;">${d.funeraria||''}</span> a entregar toda e qualquer documentação exigida, bem como a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), agendamento e liberação de corpo na agência para o Cemitério de destino.</p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><span class="section-title">NÃO AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</span><p><b>NÃO</b> autorizo a Funerária <span class="ul-texto" style="width:30%;">${d.funeraria||''}</span> a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), sendo de minha inteira responsabilidade efetuar o pagamento das taxas bem como entregar a documentação exigida para liberação do corpo na agência para o Cemitério de destino. Importante frisar que toda a documentação posterior ao pagamento, a família deverá entregar a Funerária para que seja autorizado junto ao Cemitério a entrada do corpo na capela do Cemitério escolhido.</p><p>Sendo de responsabilidade da Funerária <span class="ul-texto" style="width:30%;">${d.funeraria||''}</span> tão somente a entrega dos documentos obrigatórios da empresa contratada bem como realizar o agendamento do sepultamento.</p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><div class="obs"><span style="font-size:18px;">→</span><div><b>OBS.:</b> Importante frisar que a Funerária ou a Família terá o prazo de no <b>MÁXIMO 01 (uma) horas</b> antes do sepultamento para pagar as taxas. Caso não seja cumprido no horário o pagamento o sepultamento será <b>SUSPENSO</b>.</div></div><div class="obs"><span style="font-size:18px;">→</span><div><b>OBS.:</b> Em se tratando do Cemitério de Itaipu e São Francisco, o pagamento das taxas deverão ser pagas no ato da liberação do corpo na Agência, tendo em vista se tratar de Cemitérios longe da Agência recebedora. Caso não seja realizado o pagamento, os Cemitérios não autorizarão a entrada do corpo.</div></div></body></html>`;
+    
+    const w = window.open('', '_blank'); 
+    if(!w) { 
+        alert("O seu navegador bloqueou o pop-up. Por favor, permita pop-ups para imprimir a autorização."); 
+        return; 
+    }
+    
+    w.document.open();
+    w.document.write(html); 
+    w.document.close();
+    setTimeout(function() { w.print(); w.close(); }, 500);
 }
 
 window.gerarComprovante = function() {
     if(!dadosAtendimentoAtual) return;
-    const d = dadosAtendimentoAtual; const ck = (c) => c ? '(X)' : '( )'; const f = (s) => s ? s.split('-').reverse().join('/') : ''; const p = d.protocolo || ""; 
-    let dhT = ""; if(d.data_hora_atendimento){ const ps = d.data_hora_atendimento.split('T'); if(ps.length === 2) dhT = `${ps[0].split('-').reverse().join('/')} AS ${ps[1]}`; } else { const n = new Date(); dhT = `${String(n.getDate()).padStart(2,'0')}/${String(n.getMonth()+1).padStart(2,'0')}/${n.getFullYear()} AS ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; }
-    const im = (d.local && d.local.includes("MARUÍ")); const is = (d.local && d.local.includes("SÃO FRANCISCO")); const ii = (d.local && d.local.includes("ITAIPU")); const cc = (d.cap && !d.cap.toUpperCase().includes("SEM"));
-    let tD = ""; if(d.data_obito && d.hora_obito && d.hora && d.data_ficha){ const df = new Date(d.data_ficha+'T'+d.hora) - new Date(d.data_obito+'T'+d.hora_obito); if(df > 0) tD = `${Math.floor(df/3600000)}h ${Math.round(((df%3600000)/60000))}min`; }
-    const cE = (v) => (d.estado_civil||"") === v ? '(X)' : '( )'; const rl = d.parentesco ? `(${d.parentesco})` : '';
-    let tS = (d.tipo_sepultura||"").toUpperCase(); const co = d.classificacao_obito || "ADULTO"; let tH = d.hora_obito || ""; if(d.ignorar_hora_obito === 'SIM') tH += " (IGNORADO)";
-    let c = co === "ANJO" ? "ANJO" : "ADULTO"; if(tS.includes("PERPETU")) { tS = `${tS} (L: ${d.livro_perpetua||'-'} / F: ${d.folha_perpetua||'-'}) - ${c}`; } else if(tS.includes("MEMBRO")) { tS = `MEMBRO AMPUTADO (${d.tipo_membro||d.tipo_membro_select||'N/I'})`; } else { tS = `${tS} - ${c}`; }
-    let dEx = ""; if(d.data_ficha){ const ps = d.data_ficha.split('-'); dEx = `${ps[2]}/${ps[1]}/${parseInt(ps[0])+(c==='ANJO'?2:3)}`; }
-    let bF = assinaturaResponsavelImg ? `<div style="text-align:center;height:45px;"><img src="${assinaturaResponsavelImg}" style="max-height:40px;max-width:80%;"></div>` : `<div style="height:45px;"></div>`;
-    let bA = assinaturaAtendenteImg ? `<div style="text-align:center;height:45px;"><img src="${assinaturaAtendenteImg}" style="max-height:40px;max-width:80%;"></div>` : `<div style="height:45px;"></div>`;
+    const d = dadosAtendimentoAtual; 
+    const ck = (c) => c ? '(X)' : '( )'; 
+    const f = (s) => s ? s.split('-').reverse().join('/') : ''; 
+    const p = d.protocolo || ""; 
+    
+    let dhT = ""; 
+    if(d.data_hora_atendimento){ 
+        const ps = d.data_hora_atendimento.split('T'); 
+        if(ps.length === 2) dhT = `${ps[0].split('-').reverse().join('/')} AS ${ps[1]}`; 
+    } else { 
+        const n = new Date(); 
+        dhT = `${String(n.getDate()).padStart(2,'0')}/${String(n.getMonth()+1).padStart(2,'0')}/${n.getFullYear()} AS ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; 
+    }
+    
+    const im = (d.local && d.local.includes("MARUÍ")); 
+    const is = (d.local && d.local.includes("SÃO FRANCISCO")); 
+    const ii = (d.local && d.local.includes("ITAIPU")); 
+    const cc = (d.cap && !d.cap.toUpperCase().includes("SEM"));
+    
+    let tD = ""; 
+    if(d.data_obito && d.hora_obito && d.hora && d.data_ficha){ 
+        const df = new Date(d.data_ficha+'T'+d.hora) - new Date(d.data_obito+'T'+d.hora_obito); 
+        if(df > 0) tD = `${Math.floor(df/3600000)}h ${Math.round(((df%3600000)/60000))}min`; 
+    }
+    
+    const cE = (v) => (d.estado_civil||"") === v ? '(X)' : '( )'; 
+    const rl = d.parentesco ? `(${d.parentesco})` : '';
+    
+    let tS = (d.tipo_sepultura||"").toUpperCase(); 
+    const co = d.classificacao_obito || "ADULTO"; 
+    let tH = d.hora_obito || ""; 
+    if(d.ignorar_hora_obito === 'SIM') tH += " (IGNORADO)";
+    
+    let c = co === "ANJO" ? "ANJO" : "ADULTO"; 
+    if(tS.includes("PERPETU")) { 
+        tS = `${tS} (L: ${d.livro_perpetua||'-'} / F: ${d.folha_perpetua||'-'}) - ${c}`; 
+    } else if(tS.includes("MEMBRO")) { 
+        tS = `MEMBRO AMPUTADO (${d.tipo_membro||d.tipo_membro_select||'N/I'})`; 
+    } else { 
+        tS = `${tS} - ${c}`; 
+    }
+    
+    let dEx = ""; 
+    if(d.data_ficha){ 
+        const ps = d.data_ficha.split('-'); 
+        dEx = `${ps[2]}/${ps[1]}/${parseInt(ps[0])+(c==='ANJO'?2:3)}`; 
+    }
+    
+    let bF = d.assinatura_responsavel ? `<div style="text-align:center;height:45px;"><img src="${d.assinatura_responsavel}" style="max-height:40px;max-width:80%;"></div>` : `<div style="height:45px;"></div>`;
+    let bA = d.assinatura_atendente ? `<div style="text-align:center;height:45px;"><img src="${d.assinatura_atendente}" style="max-height:40px;max-width:80%;"></div>` : `<div style="height:45px;"></div>`;
     let nA = (d.atendente_sistema || (usuarioLogado ? usuarioLogado.nome : 'N/A')).toUpperCase();
     
-    const htmlComprovante = `<html><head><title>Comprovante</title><style>@page{size:A4 portrait;margin:8mm;}body{font-family:Arial,sans-serif;font-size:14px;margin:0;padding:10px;line-height:1.3;color:#000;}.header{text-align:center;margin-bottom:25px;position:relative;}.header h2{font-size:20px;text-decoration:underline;margin:0;font-weight:bold;text-transform:uppercase;color:#000;}.protocolo{position:absolute;top:-5px;right:0;font-size:14px;font-weight:bold;border:2px solid #000;padding:5px 10px;}.line{margin-bottom:4px;white-space:normal;word-wrap:break-word;overflow:visible;}.bold{font-weight:900;}.red{color:red;font-weight:bold;}.section-title{font-weight:900;margin-top:15px;margin-bottom:2px;text-transform:uppercase;font-size:14px;}.two-columns{display:flex;justify-content:space-between;margin-top:10px;}.col-left{width:60%;}.col-right{width:38%;}.assinaturas-block{display:flex;justify-content:space-between;margin-top:25px;margin-bottom:10px;gap:20px;}.ass-line{text-align:center;padding-top:2px;flex:1;font-size:12px;}.box-lateral{border:2px solid #000;padding:5px;font-weight:900;font-size:12px;height:100%;display:flex;flex-direction:column;justify-content:space-between;}.termo-juridico{text-align:justify;font-size:12px;line-height:1.3;}.footer-line{margin-top:10px;border-top:1px solid #000;padding-top:5px;font-weight:900;font-size:12px;}.aviso-final{border:2px solid #000;padding:5px;margin-top:10px;font-weight:900;text-align:justify;font-size:12px;line-height:1.3;}.spacer{margin-left:10px;}</style></head><body><div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:60px;margin-bottom:5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${(d.nome||'').toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome||'').toUpperCase()} <span style="margin-left:5px;font-weight:normal;">${rl}</span></div><div class="line"><span class="bold">Funerária:</span> ${(d.funeraria||'').toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria||'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${nA}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dhT}</div><div class="line"><span class="bold">Data:</span> ${f(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora||''} <span class="bold spacer">SEPULTURA:</span> ${d.sepul||''} <span class="bold spacer">${im?"QUADRA:":"RUA:"}</span> ${d.qd||''} <span class="bold spacer">CAPELA:</span> ${d.cap||''}</div><div class="line"><span class="bold">COM CAPELA</span> ${ck(cc)} <span class="bold">SEM CAPELA</span> ${ck(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${f(d.data_obito)} AS ${tH} <span class="red spacer">[${tD}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${cE('SOLTEIRO')} SOLTEIRO ${cE('CASADO')} CASADO ${cE('VIUVO')} VÍUVO ${cE('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${cE('DIVORCIADO')} DIVORCIADO ${cE('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px;font-size:14px;border:1px solid #000;padding:5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${tS}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div><div class="assinaturas-block"><div class="ass-line">${bA}<div style="border-top:1px solid #000;">Acolhimento / Atendente:<br><b>${nA}</b></div></div><div class="ass-line">${bF}<div style="border-top:1px solid #000;">Assinatura do responsável/família<br><b>${(d.resp_nome||'').toUpperCase()}</b></div></div></div><div style="font-weight:bold;font-size:12px;margin-top:5px;">OBS: PASSANDO DAS 36 HORAS DO FALECIMENTO SOMENTE COM TANATOPRAXIA.</div><div style="font-weight:bold;font-size:12px;margin-top:5px;">OBS.: VELÓRIO COM DURAÇÃO DE DUAS HORAS ANTES DO SEPULTAMENTO. EM CASO DE ATRASO DO SERVIÇO FUNERÁRIO NÃO SERÁ ESTENDIDO O HORÁRIO ESTABELECIDO.</div><div class="line" style="margin-top:15px;border:2px solid #000;padding:5px;"><span class="bold">PREVISÃO DE EXUMAÇÃO:</span> A partir de <span class="red" style="font-size:16px;">${dEx}</span><br><span style="font-size:10px;">(Legislação: 3 anos para Adultos / 2 anos para Crianças até 11 anos)</span><div style="margin-top:12px;margin-bottom:8px;border:2px dashed #000;padding:8px;text-align:center;font-weight:900;font-size:13px;">⚠️ ATENÇÃO: COMPAREÇA OU ENTRE EM CONTATO NO PRAZO MÍNIMO DE 90 DIAS ANTES DA DATA DE EXUMAÇÃO PARA ABERTURA DE PROCESSO.</div><div style="margin-top:15px;text-align:center;">${bF}<div style="border-top:1px solid #000;width:60%;margin:0 auto;">Assinatura do Responsável (Ciência do Prazo)</div></div></div><div class="two-columns"><div class="col-left"><div style="text-align:center;font-weight:bold;text-decoration:underline;margin-bottom:5px;">TERMO DE COMPROMISSO CEMITÉRIOS MUNICIPAIS</div><div class="termo-juridico">Sendo o <span class="bold">FALECIDO CASADO</span>, o responsável perante, o Cemitério do MARUÍ, SÃO FRANCISCO E ITAIPU será obrigatoriamente o <span class="bold">CONJUGE</span>.<br>Sendo o <span class="bold">FALECIDO VIÚVO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU serão obrigatoriamente os <span class="bold">FILHOS</span>.<br>Sendo o <span class="bold">FALECIDO SOLTEIRO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU obrigatoriamente os <span class="bold">FILHOS, PAIS, IRMÃOS</span>.<br>Será exigida a apresentação de documentos de <span class="bold" style="text-decoration:underline">IDENTIDADE e CPF</span>.</div><div class="assinaturas-block" style="margin-top:40px;"><div style="flex:1;"></div><div class="ass-line">${bF}<div style="border-top:1px solid #000;">Assinatura funcionário/família</div></div></div></div><div class="col-right"><div class="box-lateral"><div>CAPELAS MUNICIPAIS E PARTICULARES:</div><br><div>PAGAMENTO E NOTA FISCAL DAS TAXAS MUNICIPAIS E INVOL COM DUAS HORAS ANTES DO SEPULTAMENTO</div><br><br><div>CLIENTE: _____________________</div></div></div></div><div class="footer-line">MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome||'').toUpperCase()}</div><div style="font-weight:bold;font-size:12px;margin-top:5px;">TEL: ${d.telefone||''}</div><div class="aviso-final"><span style="text-decoration:underline">COMUNICADO AOS FAMILIARES DO FALECIDO E AS EMPRESAS FUNERÁRIAS RESPONSÁVEIS PELO SEPULTAMENTO.</span><br>Informamos que somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação dos seguintes documentos:<span class="bold">GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL PELO SERVIÇO), TAXAS MUNICIPAIS PAGAS e INVOL.</span></div></div></body><script>window.onload=function(){setTimeout(function(){window.print()},500)}</script></html>`;
-    const w = window.open('','_blank'); w.document.write(htmlComprovante); w.document.close();
+    const htmlComprovante = `<html><head><title>Comprovante</title><style>@page{size:A4 portrait;margin:8mm;}body{font-family:Arial,sans-serif;font-size:14px;margin:0;padding:10px;line-height:1.3;color:#000;}.header{text-align:center;margin-bottom:25px;position:relative;}.header h2{font-size:20px;text-decoration:underline;margin:0;font-weight:bold;text-transform:uppercase;color:#000;}.protocolo{position:absolute;top:-5px;right:0;font-size:14px;font-weight:bold;border:2px solid #000;padding:5px 10px;}.line{margin-bottom:4px;white-space:normal;word-wrap:break-word;overflow:visible;}.bold{font-weight:900;}.red{color:red;font-weight:bold;}.section-title{font-weight:900;margin-top:15px;margin-bottom:2px;text-transform:uppercase;font-size:14px;}.two-columns{display:flex;justify-content:space-between;margin-top:10px;}.col-left{width:60%;}.col-right{width:38%;}.assinaturas-block{display:flex;justify-content:space-between;margin-top:25px;margin-bottom:10px;gap:20px;}.ass-line{text-align:center;padding-top:2px;flex:1;font-size:12px;}.box-lateral{border:2px solid #000;padding:5px;font-weight:900;font-size:12px;height:100%;display:flex;flex-direction:column;justify-content:space-between;}.termo-juridico{text-align:justify;font-size:12px;line-height:1.3;}.footer-line{margin-top:10px;border-top:1px solid #000;padding-top:5px;font-weight:900;font-size:12px;}.aviso-final{border:2px solid #000;padding:5px;margin-top:10px;font-weight:900;text-align:justify;font-size:12px;line-height:1.3;}.spacer{margin-left:10px;}</style></head><body><div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:60px;margin-bottom:5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${(d.nome||'').toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome||'').toUpperCase()} <span style="margin-left:5px;font-weight:normal;">${rl}</span></div><div class="line"><span class="bold">Funerária:</span> ${(d.funeraria||'').toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria||'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${nA}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dhT}</div><div class="line"><span class="bold">Data:</span> ${f(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora||''} <span class="bold spacer">SEPULTURA:</span> ${d.sepul||''} <span class="bold spacer">${im?"QUADRA:":"RUA:"}</span> ${d.qd||''} <span class="bold spacer">CAPELA:</span> ${d.cap||''}</div><div class="line"><span class="bold">COM CAPELA</span> ${ck(cc)} <span class="bold">SEM CAPELA</span> ${ck(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${f(d.data_obito)} AS ${tH} <span class="red spacer">[${tD}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${cE('SOLTEIRO')} SOLTEIRO ${cE('CASADO')} CASADO ${cE('VIUVO')} VÍUVO ${cE('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${cE('DIVORCIADO')} DIVORCIADO ${cE('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px;font-size:14px;border:1px solid #000;padding:5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${tS}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div><div class="assinaturas-block"><div class="ass-line">${bA}<div style="border-top:1px solid #000;">Acolhimento / Atendente:<br><b>${nA}</b></div></div><div class="ass-line">${bF}<div style="border-top:1px solid #000;">Assinatura do responsável/família<br><b>${(d.resp_nome||'').toUpperCase()}</b></div></div></div><div style="font-weight:bold;font-size:12px;margin-top:5px;">OBS: PASSANDO DAS 36 HORAS DO FALECIMENTO SOMENTE COM TANATOPRAXIA.</div><div style="font-weight:bold;font-size:12px;margin-top:5px;">OBS.: VELÓRIO COM DURAÇÃO DE DUAS HORAS ANTES DO SEPULTAMENTO. EM CASO DE ATRASO DO SERVIÇO FUNERÁRIO NÃO SERÁ ESTENDIDO O HORÁRIO ESTABELECIDO.</div><div class="line" style="margin-top:15px;border:2px solid #000;padding:5px;"><span class="bold">PREVISÃO DE EXUMAÇÃO:</span> A partir de <span class="red" style="font-size:16px;">${dEx}</span><br><span style="font-size:10px;">(Legislação: 3 anos para Adultos / 2 anos para Crianças até 11 anos)</span><div style="margin-top:12px;margin-bottom:8px;border:2px dashed #000;padding:8px;text-align:center;font-weight:900;font-size:13px;">⚠️ ATENÇÃO: COMPAREÇA OU ENTRE EM CONTATO NO PRAZO MÍNIMO DE 90 DIAS ANTES DA DATA DE EXUMAÇÃO PARA ABERTURA DE PROCESSO.</div><div style="margin-top:15px;text-align:center;">${bF}<div style="border-top:1px solid #000;width:60%;margin:0 auto;">Assinatura do Responsável (Ciência do Prazo)</div></div></div><div class="two-columns"><div class="col-left"><div style="text-align:center;font-weight:bold;text-decoration:underline;margin-bottom:5px;">TERMO DE COMPROMISSO CEMITÉRIOS MUNICIPAIS</div><div class="termo-juridico">Sendo o <span class="bold">FALECIDO CASADO</span>, o responsável perante, o Cemitério do MARUÍ, SÃO FRANCISCO E ITAIPU será obrigatoriamente o <span class="bold">CONJUGE</span>.<br>Sendo o <span class="bold">FALECIDO VIÚVO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU serão obrigatoriamente os <span class="bold">FILHOS</span>.<br>Sendo o <span class="bold">FALECIDO SOLTEIRO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU obrigatoriamente os <span class="bold">FILHOS, PAIS, IRMÃOS</span>.<br>Será exigida a apresentação de documentos de <span class="bold" style="text-decoration:underline">IDENTIDADE e CPF</span>.</div><div class="assinaturas-block" style="margin-top:40px;"><div style="flex:1;"></div><div class="ass-line">${bF}<div style="border-top:1px solid #000;">Assinatura funcionário/família</div></div></div></div><div class="col-right"><div class="box-lateral"><div>CAPELAS MUNICIPAIS E PARTICULARES:</div><br><div>PAGAMENTO E NOTA FISCAL DAS TAXAS MUNICIPAIS E INVOL COM DUAS HORAS ANTES DO SEPULTAMENTO</div><br><br><div>CLIENTE: _____________________</div></div></div></div><div class="footer-line">MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome||'').toUpperCase()}</div><div style="font-weight:bold;font-size:12px;margin-top:5px;">TEL: ${d.telefone||''}</div><div class="aviso-final"><span style="text-decoration:underline">COMUNICADO AOS FAMILIARES DO FALECIDO E AS EMPRESAS FUNERÁRIAS RESPONSÁVEIS PELO SEPULTAMENTO.</span><br>Informamos que somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação dos seguintes documentos:<span class="bold">GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL PELO SERVIÇO), TAXAS MUNICIPAIS PAGAS e INVOL.</span></div></div></body></html>`;
+    
+    const w = window.open('', '_blank'); 
+    if(!w) { 
+        alert("O seu navegador bloqueou o pop-up. Por favor, permita pop-ups para imprimir o comprovante."); 
+        return; 
+    }
+    
+    w.document.open();
+    w.document.write(htmlComprovante); 
+    w.document.close();
+    setTimeout(function() { w.print(); w.close(); }, 500);
 }
 
 window.gerarEtiqueta = function() {
     if(!dadosAtendimentoAtual) return;
-    const d = dadosAtendimentoAtual; const fd = (s) => s ? s.split('-').reverse().join('/') : ''; const dF = fd(d.data_ficha);
-    const html = `<html><head><title>Etiqueta</title><style>@page{size:landscape;margin:0}body{font-family:Arial,sans-serif;margin:0;padding:0;height:100vh;width:100vw;display:flex;justify-content:center;align-items:center;overflow:hidden}.box{width:95vw;height:90vh;border:5px solid #000;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;text-align:center;padding:10px}.header-img{max-height:100px;margin-bottom:10px}.title{font-size:24px;font-weight:900;text-transform:uppercase;border-bottom:3px solid #000;padding-bottom:5px;display:inline-block;margin-bottom:30px}.group{margin-bottom:30px;width:100%}.label{font-size:18px;color:#333;font-weight:bold;text-transform:uppercase;margin-bottom:5px}.val-nome{font-size:55px;font-weight:900;text-transform:uppercase;line-height:1.1}.val-data{font-size:40px;font-weight:800}.val-local{font-size:35px;font-weight:800;text-transform:uppercase}</style></head><body><div class="box"><div><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" class="header-img"><br><div class="title">IDENTIFICAÇÃO DE VELÓRIO</div></div><div class="group"><div class="label">FALECIDO(A)</div><div class="val-nome">${d.nome}</div></div><div class="group"><div class="label">SEPULTAMENTO</div><div class="val-data">${dF} às ${d.hora}</div></div><div class="group"><div class="label">LOCAL</div><div class="val-local">${d.cap}<br>${d.local||"CEMITÉRIO DO MARUÍ"}</div></div></div><script>window.onload=function(){setTimeout(function(){window.print()},500)}</script></body></html>`;
-    const w = window.open('','_blank'); if(w) { w.document.write(html); w.document.close(); }
+    const d = dadosAtendimentoAtual; 
+    const fd = (s) => s ? s.split('-').reverse().join('/') : ''; 
+    const dF = fd(d.data_ficha);
+    
+    const html = `<html><head><title>Etiqueta</title><style>@page{size:landscape;margin:0}body{font-family:Arial,sans-serif;margin:0;padding:0;height:100vh;width:100vw;display:flex;justify-content:center;align-items:center;overflow:hidden}.box{width:95vw;height:90vh;border:5px solid #000;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;text-align:center;padding:10px}.header-img{max-height:100px;margin-bottom:10px}.title{font-size:24px;font-weight:900;text-transform:uppercase;border-bottom:3px solid #000;padding-bottom:5px;display:inline-block;margin-bottom:30px}.group{margin-bottom:30px;width:100%}.label{font-size:18px;color:#333;font-weight:bold;text-transform:uppercase;margin-bottom:5px}.val-nome{font-size:55px;font-weight:900;text-transform:uppercase;line-height:1.1}.val-data{font-size:40px;font-weight:800}.val-local{font-size:35px;font-weight:800;text-transform:uppercase}</style></head><body><div class="box"><div><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" class="header-img"><br><div class="title">IDENTIFICAÇÃO DE VELÓRIO</div></div><div class="group"><div class="label">FALECIDO(A)</div><div class="val-nome">${d.nome}</div></div><div class="group"><div class="label">SEPULTAMENTO</div><div class="val-data">${dF} às ${d.hora}</div></div><div class="group"><div class="label">LOCAL</div><div class="val-local">${d.cap}<br>${d.local||"CEMITÉRIO DO MARUÍ"}</div></div></div></body></html>`;
+    
+    const w = window.open('', '_blank'); 
+    if(!w) { 
+        alert("O seu navegador bloqueou o pop-up. Por favor, permita pop-ups para imprimir a etiqueta."); 
+        return; 
+    }
+    
+    w.document.open();
+    w.document.write(html); 
+    w.document.close();
+    setTimeout(function() { w.print(); w.close(); }, 500);
 }
 
 // ============================================================================
@@ -2047,8 +2367,8 @@ window.visualizar = function(id) {
                 const cleanCoords = d.geo_coords ? d.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
                 if (cleanCoords && cleanCoords.includes(',')) { 
                     mapContainer.style.display = 'block'; 
-                    mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://maps.google.com/?q=...?q=${cleanCoords}&z=17&output=embed"></iframe>`; 
-                    mapLink.href = `https://maps.google.com/?q=...?q=${cleanCoords}`; 
+                    mapFrame.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0" src="https://maps.google.com/?q=${cleanCoords}&z=17&output=embed"></iframe>`; 
+                    mapLink.href = `https://maps.google.com/?q=${cleanCoords}`; 
                 } else { 
                     mapContainer.style.display = 'none'; 
                 } 
@@ -2059,7 +2379,7 @@ window.visualizar = function(id) {
 }
 
 // ============================================================================
-// WHATSAPP, SMS E UTILITÁRIOS GERAIS
+// WHATSAPP E SMS
 // ============================================================================
 window.abrirModalWpp = function() { 
     if (!dadosAtendimentoAtual) return; 
@@ -2082,15 +2402,15 @@ window.enviarWppTemplate = function(tipo) {
     if (d.local) {
         if (d.local.includes('MARUÍ')) { 
             enderecoStr = "Rua General Castrioto, 414 - Barreto, Niterói - RJ"; 
-            mapaStr = "https://maps.google.com/?q=...?q=-22.8804,-43.1091"; 
+            mapaStr = "https://goo.gl/maps/ExemploMarui"; 
         } 
         else if (d.local.includes('FRANCISCO')) { 
             enderecoStr = "Rua Tapajós, 75 - São Francisco, Niterói - RJ"; 
-            mapaStr = "https://maps.google.com/?q=...?q=-22.9238,-43.0877"; 
+            mapaStr = "https://goo.gl/maps/ExemploSaoFrancisco"; 
         } 
         else if (d.local.includes('ITAIPU')) { 
             enderecoStr = "Rua Paulina Rabello, 78 - Itaipu, Niterói - RJ"; 
-            mapaStr = "https://maps.google.com/?q=...?q=-22.9463,-43.0360"; 
+            mapaStr = "https://goo.gl/maps/ExemploItaipu"; 
         }
     }
     
@@ -2098,7 +2418,7 @@ window.enviarWppTemplate = function(tipo) {
         const c = d.geo_coords ? d.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
         if (!t) { alert("Sem telefone cadastrado."); return; } 
         if (!c) { alert("Sem GPS cadastrado."); return; }
-        texto = `Localização exata da Sepultura: https://maps.google.com/?q=...?q=${c}`;
+        texto = `Localização exata da Sepultura: https://maps.google.com/?q=${c}`;
     } else if (tipo === 'info') {
         if (!t) { alert("Sem telefone cadastrado."); return; } 
         let dataExumacao = ""; 
@@ -2116,7 +2436,28 @@ window.enviarWppTemplate = function(tipo) {
     if (t) url = `https://wa.me/55${t}?text=${encodeURIComponent(texto)}`;
     
     window.open(url, '_blank'); 
-    fecharModalWpp();
+    window.fecharModalWpp();
+}
+
+window.enviarWppParticular = function() {
+    if (!dadosAtendimentoAtual) return;
+    const d = dadosAtendimentoAtual;
+    
+    if (!d.chk_pessoa_fisica) {
+        alert("O envio de WhatsApp só é aplicável para responsáveis Pessoa Física.");
+        return;
+    }
+    
+    let t = d.part_pf_tel ? d.part_pf_tel.replace(/\D/g, '') : '';
+    if (!t) {
+        alert("Sem telefone cadastrado para o responsável.");
+        return;
+    }
+
+    let texto = `*PREFEITURA MUNICIPAL DE NITERÓI*\n_Serviços Funerários - Agência_\n\nOlá, seguem as informações do seu atendimento particular:\n\n📄 *Protocolo:* ${d.protocolo || 'Pendente'}\n👤 *Falecido(a):* ${(d.nome || '-').toUpperCase()}\n⚰️ *Cemitério Destino:* ${(d.part_cemiterio || '-').toUpperCase()}\n🕒 *Hora de Liberação:* ${d.part_hora_liberacao || '-'}\n\nAgradecemos a compreensão.`;
+
+    let url = `https://wa.me/55${t}?text=${encodeURIComponent(texto)}`;
+    window.open(url, '_blank');
 }
 
 window.enviarSMS = function() { 
@@ -2124,7 +2465,7 @@ window.enviarSMS = function() {
     const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; 
     const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
     if (!t) { alert("Sem telefone cadastrado."); return; } 
-    window.location.href = `sms:+55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/?q=...?q=' + c)}`; 
+    window.location.href = `sms:+55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/?q=$' + c)}`; 
 }
 
 window.fecharModalVisualizar = function() { safeDisplay('modal-visualizar', 'none'); };
@@ -2146,7 +2487,7 @@ window.excluir = function(id) {
 };
 
 window.onclick = function(e) { 
-    const m = ['modal-visualizar', 'modal-estatisticas', 'modal-admin', 'modal-transferir', 'modal-whatsapp', 'modal-agencia', 'modal-liberacao', 'modal-transferir-responsavel', 'modal-onedrive', 'modal-docs-acolhimento', 'modal-particular']; 
+    const m = ['modal-visualizar', 'modal-estatisticas', 'modal-admin', 'modal-transferir', 'modal-whatsapp', 'modal-agencia', 'modal-liberacao', 'modal-transferir-responsavel', 'modal-onedrive', 'modal-docs-acolhimento', 'modal-particular', 'modal-assinatura', 'modal-particular-ficha']; 
     if (m.includes(e.target.id)) {
         safeDisplay(e.target.id, 'none'); 
     }
