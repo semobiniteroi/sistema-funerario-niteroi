@@ -427,20 +427,18 @@ window.buscarPorCPF_PF = function() {
 
 window.toggleIndigente = function() {
     const chk = document.getElementById('chk_indigente'); 
-    const campos = ['resp_nome', 'resp_cpf', 'resp_endereco', 'resp_numero', 'resp_bairro', 'resp_cidade', 'telefone', 'funeraria', 'isencao', 'tipo_sepultura', 'sepul', 'qd', 'hospital', 'cap', 'data_obito', 'nome', 'causa', 'hora'];
+    const isIndigente = chk ? chk.checked : false;
+    const campos = ['resp_cpf', 'resp_nome', 'resp_endereco', 'resp_numero', 'resp_bairro', 'resp_cidade', 'telefone', 'funeraria', 'isencao', 'tipo_sepultura', 'sepul', 'qd', 'hospital', 'cap', 'data_obito', 'nome', 'causa', 'hora'];
+    
     campos.forEach(id => { 
         const el = document.getElementById(id); 
         if (el) { 
-            if (chk && chk.checked) { 
-                if (el.hasAttribute('required')) { 
-                    el.removeAttribute('required'); 
-                    el.setAttribute('data-was-required', 'true'); 
-                } 
+            if (isIndigente) { 
+                el.required = false; 
+                el.removeAttribute('required'); 
             } else { 
-                if (el.getAttribute('data-was-required') === 'true') { 
-                    el.setAttribute('required', ''); 
-                    el.removeAttribute('data-was-required'); 
-                } 
+                el.required = true; 
+                el.setAttribute('required', 'required'); 
             } 
         } 
     });
@@ -941,13 +939,13 @@ if(formParticular) {
             data_ficha: document.getElementById('filtro-data').value || window.pegarDataAtualLocal(), 
             nome: document.getElementById('part_nome').value.trim(), 
             part_cemiterio: document.getElementById('part_cemiterio').value.trim(), 
-            local: document.getElementById('part_cemiterio').value.trim(), // Para geração de autorização
+            local: document.getElementById('part_cemiterio').value.trim(), 
             part_hora_liberacao: document.getElementById('part_hora_liberacao').value, 
             part_tipo: document.getElementById('part_tipo').value, 
             part_taxas: document.getElementById('part_taxas').value, 
             chk_pessoa_fisica: document.getElementById('chk_pessoa_fisica').checked, 
             part_funeraria: document.getElementById('part_funeraria').value.trim(), 
-            funeraria: document.getElementById('part_funeraria').value.trim(), // Para geração de autorização
+            funeraria: document.getElementById('part_funeraria').value.trim(), 
             part_pf_nome: document.getElementById('part_pf_nome').value.trim(), 
             part_pf_cpf: document.getElementById('part_pf_cpf').value.trim(), 
             part_pf_tel: document.getElementById('part_pf_tel').value.trim(), 
@@ -1862,6 +1860,7 @@ window.abrirModal = function() {
     if (usuarioLogado) document.getElementById('atendente_sistema').value = usuarioLogado.nome;
     document.getElementById('data_hora_atendimento').value = (new Date(new Date() - new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
     if(document.getElementById('filtro-data')) document.getElementById('data_ficha').value = document.getElementById('filtro-data').value;
+    window.toggleIndigente();
     safeDisplay('modal', 'block');
 }
 
@@ -1904,6 +1903,9 @@ if(formAcolhimento) {
                 dados[key] = el.type === 'checkbox' ? (el.checked ? 'SIM' : 'NAO') : el.value; 
             } 
         });
+        
+        dados.indigente = document.getElementById('chk_indigente') && document.getElementById('chk_indigente').checked ? 'SIM' : 'NAO';
+        
         if(!dados.atendente_sistema && usuarioLogado) dados.atendente_sistema = usuarioLogado.nome; 
         dados.local = document.getElementById('filtro-local').value;
         if(!id && !dados.protocolo) dados.protocolo = window.gerarProtocolo();

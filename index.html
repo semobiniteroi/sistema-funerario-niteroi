@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Controle Funerário - Niterói</title>
+    <link rel="icon" type="image/png" href="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -478,7 +479,7 @@
                     <div class="input-group span-1"><label>Data Sepultamento</label><input type="date" id="data_ficha" required></div>
                     <div class="input-group span-1"><label>Hora Sepultamento</label><select id="hora" required></select></div>
                     <div class="input-group span-2"><label style="color:#3b82f6;">Atendente Responsável</label><input type="text" id="atendente_sistema" readonly></div>
-                    <div class="input-group span-4" style="background-color: #f1f5f9; border: 1px dashed #cbd5e1; padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 10px;"><input type="checkbox" id="chk_indigente" style="margin:0;"><label for="chk_indigente" style="margin: 0; color: #475569; cursor: pointer; text-transform: none; font-size:13px;">Sepultamento de Indigente (Desativa campos obrigatórios)</label></div>
+                    <div class="input-group span-4" style="background-color: #f1f5f9; border: 1px dashed #cbd5e1; padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 10px;"><input type="checkbox" id="chk_indigente" style="margin:0;" onchange="window.toggleIndigente()"><label for="chk_indigente" style="margin: 0; color: #475569; cursor: pointer; text-transform: none; font-size:13px;">Sepultamento de Indigente (Desativa campos obrigatórios)</label></div>
                     <div class="input-group span-4 form-section-divider"><span style="font-size:16px;">📝</span><h4 class="form-section-title">Dados do Responsável (Contribuinte)</h4></div>
                     <div class="input-group span-1"><label>CPF</label><div style="display:flex; gap:5px;"><input type="text" id="resp_cpf" placeholder="000.000.000-00" required><button type="button" onclick="buscarPorCPF()" class="btn-novo" style="width:40px; padding:0; justify-content:center; border-radius:6px; background-color: #3b82f6;">🔍</button></div></div>
                     <div class="input-group span-1"><label>RG</label><input type="text" id="resp_rg"></div>
@@ -609,7 +610,6 @@
             <div class="modal-footer-custom" style="background: #f8fafc; padding: 15px 20px; border-top: 1px solid #e2e8f0; border-radius: 0 0 12px 12px; display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;">
                     <button type="button" class="btn-print" onclick="gerarComprovante()">📄 Comprovante</button>
-                    <button type="button" class="btn-print" onclick="gerarReciboFuneraria()">📄 Recibo Funerária</button>
                     <button type="button" class="btn-print" onclick="gerarAutorizacao()">📝 Autorização</button>
                     <button type="button" class="btn-tag" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
                 </div>
@@ -889,7 +889,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js?v=35"></script>
+    <script src="script.js?v=38"></script>
     <script>
         window.pegarLocalizacaoGPS = function() {
             if (navigator.geolocation) {
