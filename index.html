@@ -120,7 +120,7 @@
             <img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" alt="Logo">
             <h3>Controle de Acesso</h3>
             <p>Identifique-se para continuar</p>
-            <input type="text" id="login-usuario" placeholder="Usuário" style="margin-bottom: 10px;">
+            <input type="email" id="login-usuario" placeholder="E-mail de acesso" style="margin-bottom: 10px;">
             <input type="password" id="login-senha" placeholder="Senha" onkeypress="checarLoginEnter(event)">
             <button onclick="fazerLogin()" class="btn-novo" style="width:100%; justify-content: center; margin-top: 15px; background-color: #3b82f6;">🔓 Entrar</button>
             <p id="msg-erro-login" style="color: red; display: none; margin-top: 10px; font-weight:bold;">Dados incorretos!</p>
@@ -609,7 +609,7 @@
             
             <div class="modal-footer-custom" style="background: #f8fafc; padding: 15px 20px; border-top: 1px solid #e2e8f0; border-radius: 0 0 12px 12px; display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;">
-                    <button type="button" class="btn-print" onclick="gerarComprovante()">📄 Comprovante</button>
+                    <button type="button" class="btn-print" onclick="gerarComprovante()">📄 Comprovante Familiar</button>
                     <button type="button" class="btn-print" onclick="gerarReciboFuneraria()">📄 Recibo Funerária</button>
                     <button type="button" class="btn-print" onclick="gerarAutorizacao()">📝 Autorização</button>
                     <button type="button" class="btn-tag" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
@@ -885,12 +885,13 @@
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js?v=38"></script>
+    <script src="script.js?v=42"></script>
     <script>
         window.pegarLocalizacaoGPS = function() {
             if (navigator.geolocation) {
