@@ -103,12 +103,31 @@
         .agencia-card-footer .actions { display: flex; gap: 5px; flex-wrap: wrap; }
 
         /* ================================================================= */
-        /* RESPONSIVIDADE E TOUCHSCREENS */
+        /* RESPONSIVIDADE E TOUCHSCREENS (TABLETS E CELULARES) */
         /* ================================================================= */
+        /* Correção Global de Quebra de Linha no Header (Evita sobreposição em Tablets) */
+        .header-prefeitura { height: auto !important; min-height: 80px; flex-wrap: wrap !important; padding-top: 15px !important; padding-bottom: 15px !important; }
+        .info-area { flex-wrap: wrap !important; gap: 15px !important; justify-content: flex-end !important; }
+        .controles-topo { flex-wrap: wrap !important; gap: 10px !important; }
+        .topo-box { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; }
+
         .tabela-container { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; border-radius: 8px; }
         table { width: 100%; min-width: 800px; } 
 
-        @media (max-width: 768px) {
+        @media (max-width: 992px) { 
+            /* Header Responsivo */
+            .header-prefeitura { flex-direction: column; padding: 15px 10px !important; }
+            .logo-area { flex-direction: column; text-align: center; gap: 10px; width: 100%; }
+            .titulo-area div { border-left: none !important; padding-left: 0 !important; margin-left: 0 !important; flex-wrap: wrap; justify-content: center; width: 100%; }
+            .info-area { flex-direction: column; width: 100%; gap: 15px; margin-top: 15px; }
+            .controles-topo { flex-direction: column; width: 100%; gap: 10px; }
+            .topo-box { width: 100%; flex-direction: column; align-items: stretch; max-width: none; }
+            .search-box { flex-direction: row; }
+            .search-box input { width: 100%; flex-grow: 1; }
+            .user-controls { flex-direction: column; width: 100%; gap: 8px; align-items: stretch; }
+            .user-controls button { width: 100%; justify-content: center; }
+            #user-display div { text-align: center !important; margin-right: 0 !important; margin-bottom: 8px; }
+
             /* Modais e Botões */
             .modal-footer-custom { padding-bottom: 20px; flex-direction: column; }
             .modal-footer-custom button { flex: 1 1 100%; max-width: 100%; width: 100%; margin-bottom: 5px; }
@@ -118,18 +137,6 @@
             .col-actions { position: absolute; top: 15px; right: 15px; }
             .tab-header { padding-bottom: 5px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; justify-content: flex-start; }
             .modal-resumo-grid { grid-template-columns: 1fr !important; }
-            
-            /* Header Responsivo */
-            .header-prefeitura { flex-direction: column; padding: 15px 10px; height: auto; }
-            .logo-area { flex-direction: column; text-align: center; gap: 10px; width: 100%; }
-            .titulo-area div { border-left: none !important; padding-left: 0 !important; margin-left: 0 !important; flex-wrap: wrap; justify-content: center; width: 100%; }
-            .info-area { flex-direction: column; width: 100%; gap: 15px; margin-top: 15px; }
-            .controles-topo { flex-direction: column; width: 100%; gap: 10px; }
-            .topo-box { width: 100%; flex-direction: column; align-items: stretch; max-width: none; }
-            .search-box { flex-direction: row; }
-            .user-controls { flex-direction: column; width: 100%; gap: 8px; align-items: stretch; }
-            .user-controls button { width: 100%; justify-content: center; }
-            #user-display div { text-align: center !important; margin-right: 0 !important; margin-bottom: 8px; }
 
             /* Controles do Dashboard */
             .controles { flex-direction: column; align-items: stretch !important; gap: 10px; }
@@ -710,12 +717,12 @@
                              <div>
                                  <label>NÍVEL DE ACESSO</label>
                                  <select id="novo-nivel">
-                                       <option value="COMPLETO">Completo (Admin + Tudo)</option>
-                                       <option value="COMPLETO_SEM_ADMIN">Completo (Sem Admin)</option>
-                                       <option value="ACOLHIMENTO_VIS_AGENCIA">Acolhimento + Visão da Agência</option>
-                                       <option value="AGENCIA_VIS_ACOLHIMENTO">Agência + Visão do Acolhimento</option>
-                                       <option value="ACOLHIMENTO">Apenas Acolhimento</option>
-                                       <option value="AGENCIA">Apenas Agência</option>
+                                     <option value="COMPLETO">Completo (Admin + Tudo)</option>
+                                     <option value="COMPLETO_SEM_ADMIN">Completo (Sem Admin)</option>
+                                     <option value="ACOLHIMENTO_VIS_AGENCIA">Acolhimento + Visão da Agência</option>
+                                     <option value="AGENCIA_VIS_ACOLHIMENTO">Agência + Visão do Acolhimento</option>
+                                     <option value="ACOLHIMENTO">Apenas Acolhimento</option>
+                                     <option value="AGENCIA">Apenas Agência</option>
                                  </select>
                              </div>
                         </div>
@@ -895,53 +902,6 @@
                 </div>
 
             </div>
-        </div>
-    </div>
-
-    <div id="modal-transferir" class="modal">
-        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
-            <h3 style="color: #1e293b; margin-bottom: 15px;">Transferir Atendimento</h3>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o novo cemitério destino:</p>
-            <select id="novo_cemiterio_transferencia" style="margin-bottom: 20px;">
-                <option value="CEMITÉRIO DO MARUÍ">CEMITÉRIO DO MARUÍ</option>
-                <option value="CEMITÉRIO DE SÃO FRANCISCO">CEMITÉRIO DE SÃO FRANCISCO</option>
-                <option value="CEMITÉRIO DE ITAIPU">CEMITÉRIO DE ITAIPU</option>
-            </select>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="fecharModalTransferir()" class="btn-close" style="padding: 10px 20px; font-weight: 600;">Cancelar</button>
-                <button onclick="confirmarTransferencia()" class="btn-novo" style="background-color: #0ea5e9; padding: 10px 20px;">Transferir</button>
-            </div>
-            <button onclick="fecharModalTransferir()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
-        </div>
-    </div>
-
-    <div id="modal-whatsapp" class="modal">
-        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
-            <h3 style="color: #1e293b; margin-bottom: 15px;">Enviar Mensagem</h3>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o tipo de mensagem que deseja enviar ao responsável:</p>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button onclick="enviarWppTemplate('info')" class="btn-novo" style="background-color: #0ea5e9; width: 100%;">📋 Inf. Úteis do Atendimento (WPP)</button>
-                <button onclick="enviarWppTemplate('convite')" class="btn-novo" style="background-color: #8b5cf6; width: 100%;">🕊️ Convite para Familiares (WPP)</button>
-                <button onclick="enviarWppTemplate('gps')" class="btn-novo" style="background-color: #22c55e; width: 100%;">📍 Localização da Sepultura (WPP)</button>
-                <button onclick="enviarSMS()" class="btn-novo" style="background-color: #f59e0b; width: 100%;">📱 Enviar Localização por SMS</button>
-            </div>
-            <button onclick="fecharModalWpp()" class="btn-close" style="margin-top: 15px; width: 100%;">Cancelar</button>
-            <button onclick="fecharModalWpp()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
-        </div>
-    </div>
-
-    <div id="modal-assinatura" class="modal">
-        <div class="modal-content" style="max-width: 500px; text-align: center; border-radius: 12px; padding: 30px;">
-            <h3 id="titulo-assinatura" style="color: #1e293b; margin-bottom: 5px;">Assinatura</h3>
-            <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Assine abaixo usando o dedo ou mouse.</p>
-            <div style="display: inline-block; width: 100%;">
-                <canvas id="signature-pad" width="400" height="200" style="width: 100%; border-radius: 8px; background-color: #f8fafc; border: 2px dashed #cbd5e1; touch-action: none;"></canvas>
-            </div>
-            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
-                <button onclick="limparAssinatura()" class="btn-close" style="padding: 10px 20px; font-weight: 600;">Limpar</button>
-                <button onclick="salvarAssinatura()" class="btn-novo" style="background-color: #3b82f6; padding: 10px 20px;">Salvar Assinatura</button>
-            </div>
-            <button onclick="fecharModalAssinatura()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
         </div>
     </div>
 
