@@ -78,7 +78,7 @@ window.registrarHistorico = function(id, acao, detalhe) {
         acao: acao,
         detalhe: detalhe || ''
     };
-    getDB().collection("atendimentos").doc(id).collection("historico").add(logEntry).catch(e => console.error("Erro ao salvar histórico individual", e));
+    getDB().collection("atendimentos").doc(id).collection("historico").add(logEntry).catch(e => console.error("Erro ao salvar histórico", e));
 };
 
 // ============================================================================
@@ -111,7 +111,6 @@ function fazerLogin() {
     auth.signInWithEmailAndPassword(u, p)
         .then((userCredential) => {
             const userEmail = userCredential.user.email;
-            
             setTimeout(() => {
                 getDB().collection("equipe").where("email", "==", userEmail).get().then(snap => {
                     if (!snap.empty) { 
@@ -165,23 +164,27 @@ window.liberarAcesso = function() {
     const btnAgencia = document.getElementById('nav-btn-agencia');
     const btnAdmin = document.querySelector('.btn-admin');
     
-    if(btnAcolhimento) btnAcolhimento.style.display = '';
-    if(btnAgencia) btnAgencia.style.display = '';
-    if(btnAdmin) btnAdmin.style.display = '';
-
     let nivelAcesso = usuarioLogado.nivel || 'COMPLETO'; 
     
+    if(btnAcolhimento) btnAcolhimento.style.display = '';
+    if(btnAgencia) btnAgencia.style.display = '';
+    if(btnAdmin) btnAdmin.style.display = (nivelAcesso === 'COMPLETO' || !usuarioLogado.nivel) ? '' : 'none';
+
     if (nivelAcesso === 'ACOLHIMENTO') { 
         if(btnAgencia) btnAgencia.style.display = 'none'; 
-        if(btnAdmin) btnAdmin.style.display = 'none'; 
         window.alternarDashboard('acolhimento'); 
     } else if (nivelAcesso === 'AGENCIA') { 
         if(btnAcolhimento) btnAcolhimento.style.display = 'none'; 
-        if(btnAdmin) btnAdmin.style.display = 'none'; 
         window.alternarDashboard('agencia'); 
     } else { 
         window.alternarDashboard('acolhimento'); 
     }
+
+    const btnNovoAcolhimento = document.querySelector('#dashboard-acolhimento button[onclick="abrirModal()"]');
+    if(btnNovoAcolhimento) btnNovoAcolhimento.style.display = (nivelAcesso === 'AGENCIA_VIS_ACOLHIMENTO') ? 'none' : '';
+
+    const btnNovoAgencia = document.querySelector('#dashboard-agencia button[onclick="abrirModalParticular()"]');
+    if(btnNovoAgencia) btnNovoAgencia.style.display = (nivelAcesso === 'ACOLHIMENTO_VIS_AGENCIA') ? 'none' : '';
 
     const filtroLocal = document.getElementById('filtro-local');
     const filtroData = document.getElementById('filtro-data'); 
@@ -269,7 +272,7 @@ function inicializarSistema() {
                         });
                     }
                 }).catch(e => { 
-                    console.error("Aguardando sincronização de regras", e); 
+                    console.error("Aguardando sincronização", e); 
                     usuarioLogado = sessao ? JSON.parse(sessao) : {nome: user.email.split('@')[0], email: user.email, nivel: "COMPLETO"};
                     window.liberarAcesso();
                 }); 
@@ -293,7 +296,7 @@ function inicializarSistema() {
                         getDB().collection("atendimentos").doc(doc.id).update({ data_ficha: d.data_ficha_modal }); 
                     }
                 }); 
-            }).catch(err => console.log("Aguardando permissão de leitura total...")); 
+            }).catch(err => console.log("Aguardando permissão leitura...")); 
         } 
     }, 3000);
 }
@@ -749,6 +752,9 @@ window.renderizarTabela = function(lista) {
         return; 
     }
     
+    let nivelAcesso = (usuarioLogado && usuarioLogado.nivel) ? usuarioLogado.nivel : 'COMPLETO';
+    let podeEditarAcolhimento = (nivelAcesso !== 'AGENCIA_VIS_ACOLHIMENTO' && nivelAcesso !== 'AGENCIA');
+    
     const fragment = document.createDocumentFragment(); 
     const doencasInfecciosas = ['COVID', 'MENINGITE', 'TUBERCULOSE', 'H1N1', 'HIV', 'SIDA', 'SARAMPO'];
 
@@ -766,7 +772,7 @@ window.renderizarTabela = function(lista) {
                 <td style="text-align: center; vertical-align:middle;">${item.data_ficha ? item.data_ficha.split('-').reverse().join('/') : ''}</td>
                 <td style="text-align:right; vertical-align:middle;">
                     <div style="display:flex; gap:5px; justify-content:flex-end;">
-                        <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')" title="Excluir">🗑️</button>
+                        ${podeEditarAcolhimento ? `<button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')" title="Excluir">🗑️</button>` : ''}
                     </div>
                 </td>`;
             fragment.appendChild(tr); 
@@ -845,8 +851,8 @@ window.renderizarTabela = function(lista) {
             <td style="text-align:right; vertical-align:middle;">
                 <div style="display:flex; gap:5px; justify-content:flex-end;">
                     ${btnMap}
-                    <button class="btn-icon btn-editar-circle" onclick="event.stopPropagation();window.editar('${item.id}')">✏️</button>
-                    <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')">🗑️</button>
+                    ${podeEditarAcolhimento ? `<button class="btn-icon btn-editar-circle" onclick="event.stopPropagation();window.editar('${item.id}')">✏️</button>
+                    <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')">🗑️</button>` : ''}
                 </div>
             </td>`;
         fragment.appendChild(tr);
@@ -864,6 +870,9 @@ window.renderizarTabelaAgencia = function(lista) {
         container.innerHTML = '<div style="grid-column: 1 / -1; padding:40px; text-align:center; color:#64748b; font-weight:500;">Nenhum registro encontrado para a Agência.</div>'; 
         return; 
     }
+
+    let nivelAcesso = (usuarioLogado && usuarioLogado.nivel) ? usuarioLogado.nivel : 'COMPLETO';
+    let podeEditarAgencia = (nivelAcesso !== 'ACOLHIMENTO_VIS_AGENCIA' && nivelAcesso !== 'ACOLHIMENTO');
     
     const renderChip = (key, label, item) => { 
         let isAnexado = !!item.url_docs_agencia; 
@@ -904,10 +913,10 @@ window.renderizarTabelaAgencia = function(lista) {
                         <div style="margin-top:5px;">${statusNuvem}</div>
                     </div>
                 </div>
-                <div class="agencia-card-footer" style="background: #f3e8ff; border-top: 1px solid #e9d5ff; display:flex; gap:10px;">
+                ${podeEditarAgencia ? `<div class="agencia-card-footer" style="background: #f3e8ff; border-top: 1px solid #e9d5ff; display:flex; gap:10px;">
                     <button class="btn-novo" style="background:#8b5cf6; color:white; padding: 6px 12px; font-size: 12px; flex:1;" onclick="event.stopPropagation(); window.abrirFichaParticular('${item.id}')">📝 Ficha / Docs</button>
                     <button class="btn-novo" style="background:#ef4444; color:white; padding: 6px 12px; font-size: 12px; flex:1;" onclick="event.stopPropagation(); window.excluir('${item.id}')">🗑️ Remover</button>
-                </div>`;
+                </div>` : ''}`;
             card.onclick = () => window.abrirFichaParticular(item.id);
             fragment.appendChild(card); 
             return;
@@ -971,14 +980,14 @@ window.renderizarTabelaAgencia = function(lista) {
                     ${avisoDocs}
                 </div>
             </div>
-            <div class="agencia-card-footer" style="flex-wrap: wrap;">
+            ${podeEditarAgencia ? `<div class="agencia-card-footer" style="flex-wrap: wrap;">
                 <div style="display:flex; gap:5px; flex-wrap: wrap;">
                     ${btnAssumir}
                     ${btnRepassar}
                     <button class="btn-novo" style="background:#f1f5f9; color:#ea580c; border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 12px; width:auto;" onclick="event.stopPropagation(); window.abrirModalAgencia('${item.id}')">✏️ Editar</button>
                 </div>
                 <button class="btn-novo" style="background:${statusLib === 'LIBERADO' ? '#10b981' : '#3b82f6'}; color:white; padding: 6px 12px; font-size: 12px; margin-top: 5px; width:auto; cursor:pointer;" onclick="event.stopPropagation(); window.abrirModalLiberacao('${item.id}')">✅ Liberação</button>
-            </div>`;
+            </div>` : ''}`;
         fragment.appendChild(card);
     });
     
@@ -1065,7 +1074,7 @@ window.abrirFichaParticular = function(id) {
         if(doc.exists) {
             const d = doc.data(); 
             d.id = doc.id; 
-            dadosAtendimentoAtual = d; // Importante para permitir gerarAutorizacao usar esses dados
+            dadosAtendimentoAtual = d; 
             document.getElementById('part_ficha_docId').value = id;
             
             let responsavelTxt = d.chk_pessoa_fisica ? `PF: ${d.part_pf_nome || ''} (CPF: ${d.part_pf_cpf || ''})` : `FUNERÁRIA: ${d.part_funeraria || ''}`;
@@ -1481,7 +1490,7 @@ window.carregarEstatisticas = function(modo) {
         const elKpiAcolhimento = document.getElementById('kpi-acolhimento'); if (elKpiAcolhimento) elKpiAcolhimento.innerText = totalAcolhimento;
         const elKpiAgencia = document.getElementById('kpi-agencia'); if (elKpiAgencia) elKpiAgencia.innerText = totalAgencia;
 
-        window.dadosGraficosAtuais = { Cemiterios: cemiterios, Volume_Periodo: linhasTempo, Causas: causas, Atendentes: atendentes, Sepulturas: sepulturas, Funerarias: funerarias, Tempo_Resolucao: tempos, Isencoes: isencoes, Quadras: quadras, Hospitais: hospitais, Bairros: bairros, Municipios: municipios, Valores_GRM: valores };
+        window.dadosGraficosAtuais = { Cemiterios: Cemiterios, Volume_Periodo: linhasTempo, Causas: causas, Atendentes: atendentes, Sepulturas: sepulturas, Funerarias: funerarias, Tempo_Resolucao: tempos, Isencoes: isencoes, Quadras: quadras, Hospitais: hospitais, Bairros: bairros, Municipios: municipios, Valores_GRM: valores };
 
         const draw = (id, dataObj, lbl, type='bar', color='#3b82f6') => {
             const ctx = document.getElementById(id); if(!ctx || !window.Chart) return;
@@ -2311,7 +2320,7 @@ window.gerarAutorizacao = function(){
     
     let fun = (d.funeraria || '').toUpperCase();
     let isSocialOuFamilia = fun === 'SOCIAL' || fun === 'PRÓPRIA FAMÍLIA' || fun.includes('ACOLHIMENTO');
-    let displayFunerariaTop = isSocialOuFamilia ? '                    ' : (d.funeraria || '');
+    let displayFunerariaTop = isSocialOuFamilia ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : (d.funeraria || '');
     
     const html = `<html><head><title>Autorização para Funeral</title><style>@page{size:A4 portrait;margin:10mm;}body{font-family:Arial,sans-serif;font-size:12px;margin:0;padding:10px;line-height:1.5;}.bold{font-weight:bold;text-transform:uppercase;}.ass{margin-top:30px;text-align:center;width:60%;margin-left:auto;margin-right:auto;}h3{text-decoration:underline;text-align:center;margin-bottom:10px;margin-top:10px;font-size:14px;}.section-title{font-weight:bold;text-decoration:underline;margin-top:20px;display:block;font-size:12px;}p{margin:5px 0;text-align:justify;}.ul-texto{border-bottom:1px solid #000;display:inline-block;min-width:40px;text-align:center;font-weight:bold;text-transform:uppercase;color:#000;}.checkboxes{margin:10px 0;font-size:11px;}.checkboxes span{margin-right:5px;}.obs{font-size:11px;margin-top:10px;text-align:justify;display:flex;gap:10px;line-height:1.3;}.logo-container{text-align:center;margin-bottom:10px;}</style></head><body><div class="logo-container"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:60px;"></div><h3>AUTORIZAÇÃO PARA FUNERAL</h3><p>Eu, <span class="ul-texto" style="width:45%;">${d.resp_nome||''}</span> CPF nº <span class="ul-texto" style="width:20%;">${d.resp_cpf||''}</span><br>RG: <span class="ul-texto" style="width:20%;">${d.resp_rg||''}</span> residente <span class="ul-texto" style="width:35%;">${d.resp_endereco||''}</span> nº <span class="ul-texto" style="width:5%;">${d.resp_numero||''}</span> bairro <span class="ul-texto" style="width:15%;">${d.resp_bairro||''}</span><br><span class="ul-texto" style="width:20%;">${d.resp_cidade||''}</span> Município <span class="ul-texto" style="width:10%;">${d.resp_uf||''}</span> Estado CEP: <span class="ul-texto" style="width:15%;">${d.resp_cep||''}</span> grau de parentesco <span class="ul-texto" style="width:20%;">${d.parentesco||''}</span></p><p><b>AUTORIZO a FUNERÁRIA</b> <span class="ul-texto" style="width:40%;color:#000;">${displayFunerariaTop}</span>, a tratar junto à Agência Funerária dos Cemitérios Municipais de Niterói do Sepultamento do Sr(a) <span class="ul-texto" style="width:50%;">${d.nome||''}</span> falecido no dia <span class="ul-texto" style="width:15%;">${formatarData(d.data_obito)||''}</span>,<br>tendo como local de óbito <span class="ul-texto" style="width:30%;">${d.hospital||''}</span>, sendo o sepultamento no Cemitério <span class="ul-texto" style="width:20%;">${(d.local||'').replace('CEMITÉRIO DO ','').replace('CEMITÉRIO DE ','')}</span> Tipo de Sepultura ${checkForm(d.tipo_sepultura,'CRA')} Cova Rasa Adulto</p><div class="checkboxes"><span>${checkForm(d.tipo_sepultura,'CRJ')} Cova Rasa Anjo</span> <span>${checkForm(d.tipo_sepultura,'GA')} GAVETA ADULTO</span> <span>${checkForm(d.tipo_sepultura,'GJ')} GAVETA ANJO</span> <span>${checkForm(d.tipo_sepultura,'CA')} CARNEIRA ADULTO</span> <span>${checkForm(d.tipo_sepultura,'CJ')} CARNEIRA ANJO</span> <span>Nº Sepultura <span class="ul-texto" style="width:8%;">${d.sepul||''}</span></span> <span>Qd. <span class="ul-texto" style="width:8%;">${d.qd||''}</span></span> <span>Rua <span class="ul-texto" style="width:8%;"></span></span></div><p>Aluguel ${checkForm(d.tipo_sepultura,'ALUGUEL')} Perpétuo ${checkForm(d.tipo_sepultura,'PERPETU')} Livro nº <span class="ul-texto" style="width:10%;">${d.livro_perpetua||''}</span> Folha nº <span class="ul-texto" style="width:10%;">${d.folha_perpetua||''}</span> <b>Autorização de 24 Horas para sepultamento, SIM ${d.do_24h==='SIM'?'(X)':'( )'} NÃO ${d.do_24h!=='SIM'?'(X)':'( )'}</b></p><p>Telefones para Contato 1º <span class="ul-texto" style="width:20%;">${d.telefone||''}</span> 2º <span class="ul-texto" style="width:20%;"></span></p><p><b>DATA E HORÁRIO DO SEPULTAMENTO: <span class="ul-texto" style="width:15%;">${formatarData(d.data_ficha)||''}</span> ÁS <span class="ul-texto" style="width:10%;">${d.hora||''}</span> HORAS</b></p><p><b>*ESTOU CIENTE E ACEITO A SEPULTURA DISPONÍVEL.</b></p><p style="text-align:right;">Niterói, <span class="ul-texto" style="width:30%;border:none;">${dExtenso}</span></p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><span class="section-title">AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</span><p>Autorizo a Funerária <span class="ul-texto" style="width:30%; color:transparent;">_</span> a entregar toda e qualquer documentação exigida, bem como a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), agendamento e liberação de corpo na agência para o Cemitério de destino.</p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><span class="section-title">NÃO AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</span><p><b>NÃO</b> autorizo a Funerária <span class="ul-texto" style="width:30%; color:transparent;">_</span> a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), sendo de minha inteira responsabilidade efetuar o pagamento das taxas bem como entregar a documentação exigida para liberação do corpo na agência para o Cemitério de destino. Importante frisar que toda a documentação posterior ao pagamento, a família deverá entregar a Funerária para que seja autorizado junto ao Cemitério a entrada do corpo na capela do Cemitério escolhido.</p><p>Sendo de responsabilidade da Funerária <span class="ul-texto" style="width:30%; color:transparent;">_</span> tão somente a entrega dos documentos obrigatórios da empresa contratada bem como realizar o agendamento do sepultamento.</p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><div class="obs"><span style="font-size:18px;">→</span><div><b>OBS.:</b> Importante frisar que a Funerária ou a Família terá o prazo de no <b>MÁXIMO 01 (uma) horas</b> antes do sepultamento para pagar as taxas. Caso não seja cumprido no horário o pagamento o sepultamento será <b>SUSPENSO</b>.</div></div><div class="obs"><span style="font-size:18px;">→</span><div><b>OBS.:</b> Em se tratando do Cemitério de Itaipu e São Francisco, o pagamento das taxas deverão ser pagas no ato da liberação do corpo na Agência, tendo em vista se tratar de Cemitérios longe da Agência recebedora. Caso não seja realizado o pagamento, os Cemitérios não autorizarão a entrada do corpo.</div></div></body></html>`;
     
@@ -2417,9 +2426,6 @@ window.gerarEtiqueta = function() {
     w.document.close();
 }
 
-// ============================================================================
-// VISUALIZAR FICHA DE RESUMO E MAPA
-// ============================================================================
 window.visualizar = function(id) {
     if(!getDB()) return;
     getDB().collection("atendimentos").doc(id).get().then(doc => {
@@ -2584,9 +2590,6 @@ window.visualizar = function(id) {
     });
 }
 
-// ============================================================================
-// WHATSAPP E SMS
-// ============================================================================
 window.abrirModalWpp = function() { 
     if (!dadosAtendimentoAtual) return; 
     safeDisplay('modal-whatsapp', 'flex'); 
@@ -2719,533 +2722,4 @@ window.fazerLogout = function() {
 
 window.bloquearTela = function() { 
     safeDisplay('tela-bloqueio', 'flex'); 
-}
-
-window.abrirAdmin = function() { 
-    if (usuarioLogado && usuarioLogado.nivel && usuarioLogado.nivel !== 'COMPLETO') { 
-        alert("Acesso Negado: Apenas contas com nível 'Completo' podem acessar a Administração."); 
-        return; 
-    } 
-    safeDisplay('modal-admin', 'block'); 
-    window.abrirAba('tab-equipe'); 
-}
-
-window.fecharModalAdmin = function() { safeDisplay('modal-admin', 'none'); }
-
-window.abrirAba = function(id) {
-    Array.from(document.getElementsByClassName('tab-pane')).forEach(e => e.classList.remove('active')); 
-    document.getElementById(id).classList.add('active'); 
-    document.querySelectorAll('.tab-header .tab-btn').forEach(btn => btn.classList.remove('active'));
-    
-    if (id === 'tab-equipe') document.querySelectorAll('.tab-btn')[0].classList.add('active'); 
-    if (id === 'tab-contribuintes') document.querySelectorAll('.tab-btn')[1].classList.add('active'); 
-    if (id === 'tab-backup') document.querySelectorAll('.tab-btn')[2].classList.add('active'); 
-    if (id === 'tab-stats') document.querySelectorAll('.tab-btn')[3].classList.add('active'); 
-    if (id === 'tab-logs') document.querySelectorAll('.tab-btn')[4].classList.add('active');
-    
-    if(id === 'tab-equipe') window.listarEquipe(); 
-    if(id === 'tab-logs') window.carregarLogs(); 
-    if(id === 'tab-stats') window.carregarEstatisticas('7');
-}
-
-window.carregarEstatisticas = function(modo) {
-    const database = getDB(); 
-    if(!database) return; 
-    
-    let dInicio = new Date(); let dString = "";
-    
-    if (modo === 'custom') { 
-        const inputMonth = document.getElementById('filtro-mes-ano'); 
-        if(inputMonth && inputMonth.value) { dString = inputMonth.value; } 
-        else { alert("Selecione Mês e Ano."); return; } 
-    } else { 
-        if (modo === 'mes') { 
-            dInicio = new Date(dInicio.getFullYear(), dInicio.getMonth(), 1); 
-        } else { 
-            dInicio.setDate(dInicio.getDate() - parseInt(modo)); 
-        } 
-        let localDate = new Date(dInicio.getTime() - (dInicio.getTimezoneOffset() * 60000)); 
-        dString = localDate.toISOString().split('T')[0]; 
-    }
-    
-    database.collection("atendimentos").where("data_ficha", ">=", dString).onSnapshot(snap => {
-        let causas = {}, atendentes = {}, sepulturas = {}, funerarias = {}, tempos = {"Menos de 12h":0, "12h a 24h":0, "24h a 48h":0, "Mais de 48h":0}, isencoes = {"PAGO":0, "GRATUIDADE (100%)":0, "DESCONTO (50%)":0}, quadras = {}, hospitais = {}, bairros = {}, municipios = {}, valores = {"Até R$ 500":0, "R$ 501 a R$ 1000":0, "R$ 1001 a R$ 2000":0, "Acima de R$ 2000":0}, totalValores = 0, qtdValores = 0, cemiterios = {"MARUÍ":0, "SÃO FRANCISCO":0, "ITAIPU":0}, linhasTempo = {};
-        let totalAcolhimento = 0; let totalAgencia = 0;
-
-        snap.forEach(doc => {
-            const d = doc.data(); 
-            if (modo === 'custom' && !d.data_ficha.startsWith(document.getElementById('filtro-mes-ano').value)) return;
-            
-            totalAcolhimento++; 
-            if (d.agencia_atendente || d.agencia_processo || d.tipo_registro === 'PARTICULAR') { totalAgencia++; }
-            
-            if(d.causa) { d.causa.split('/').forEach(c => { const k = c.trim().toUpperCase(); if(k) causas[k] = (causas[k] || 0) + 1; }); }
-            if(d.atendente_sistema) { const func = d.atendente_sistema.trim().toUpperCase(); if(func) atendentes[func] = (atendentes[func] || 0) + 1; }
-            if(d.tipo_sepultura) { const t = d.tipo_sepultura.trim().toUpperCase(); if(t) sepulturas[t] = (sepulturas[t] || 0) + 1; }
-            if(d.funeraria) { const f = d.funeraria.trim().toUpperCase(); if(f) funerarias[f] = (funerarias[f] || 0) + 1; }
-            if(d.isencao) { if(d.isencao === 'SIM') isencoes["GRATUIDADE (100%)"]++; else if(d.isencao === '50') isencoes["DESCONTO (50%)"]++; else isencoes["PAGO"]++; }
-            if(d.qd) { const q = d.qd.trim().toUpperCase(); if(q) quadras[q] = (quadras[q] || 0) + 1; }
-            if(d.hospital) { const h = d.hospital.trim().toUpperCase(); if(h) hospitais[h] = (hospitais[h] || 0) + 1; }
-            if(d.resp_bairro) { const b = d.resp_bairro.trim().toUpperCase(); if(b) bairros[b] = (bairros[b] || 0) + 1; }
-            if(d.resp_cidade) { const c = d.resp_cidade.trim().toUpperCase(); if(c) municipios[c] = (municipios[c] || 0) + 1; }
-            if(d.local) { if(d.local.includes("MARUÍ")) cemiterios["MARUÍ"]++; else if(d.local.includes("FRANCISCO")) cemiterios["SÃO FRANCISCO"]++; else if(d.local.includes("ITAIPU")) cemiterios["ITAIPU"]++; } else { cemiterios["MARUÍ"]++; }
-            if(d.data_ficha) { let dataStr = d.data_ficha.split('-').reverse().join('/'); linhasTempo[dataStr] = (linhasTempo[dataStr] || 0) + 1; }
-            if(d.agencia_valor_grm) { let v = parseFloat(d.agencia_valor_grm); if(!isNaN(v)) { totalValores += v; qtdValores++; if(v <= 500) valores["Até R$ 500"]++; else if(v <= 1000) valores["R$ 501 a R$ 1000"]++; else if(v <= 2000) valores["R$ 1001 a R$ 2000"]++; else valores["Acima de R$ 2000"]++; } }
-            if(d.data_hora_atendimento && d.data_ficha && d.hora) { const start = new Date(d.data_hora_atendimento); const end = new Date(d.data_ficha + 'T' + d.hora); if(!isNaN(start) && !isNaN(end)) { const diffHrs = (end - start) / 3600000; if(diffHrs < 12) tempos["Menos de 12h"]++; else if(diffHrs <= 24) tempos["12h a 24h"]++; else if(diffHrs <= 48) tempos["24h a 48h"]++; else tempos["Mais de 48h"]++; } }
-        });
-
-        const elKpiAcolhimento = document.getElementById('kpi-acolhimento'); if (elKpiAcolhimento) elKpiAcolhimento.innerText = totalAcolhimento;
-        const elKpiAgencia = document.getElementById('kpi-agencia'); if (elKpiAgencia) elKpiAgencia.innerText = totalAgencia;
-
-        window.dadosGraficosAtuais = { Cemiterios: cemiterios, Volume_Periodo: linhasTempo, Causas: causas, Atendentes: atendentes, Sepulturas: sepulturas, Funerarias: funerarias, Tempo_Resolucao: tempos, Isencoes: isencoes, Quadras: quadras, Hospitais: hospitais, Bairros: bairros, Municipios: municipios, Valores_GRM: valores };
-
-        const draw = (id, dataObj, lbl, type='bar', color='#3b82f6') => {
-            const ctx = document.getElementById(id); if(!ctx || !window.Chart) return;
-            let sorted = []; 
-            if(id === 'grafico-linhas') { 
-                sorted = Object.entries(dataObj).sort((a,b) => { let da = a[0].split('/').reverse().join('-'); let db = b[0].split('/').reverse().join('-'); return new Date(da) - new Date(db); }); 
-            } else { 
-                sorted = Object.entries(dataObj).sort((a,b) => b[1] - a[1]).slice(0, 10); 
-            }
-            
-            if(chartInstances[id]) chartInstances[id].destroy();
-            chartInstances[id] = new Chart(ctx, { type: type, data: { labels: sorted.map(x=>x[0]), datasets: [{ label: lbl, data: sorted.map(x=>x[1]), backgroundColor: (type==='doughnut'||type==='pie') ? ['#10b981','#3b82f6','#f59e0b','#ef4444'] : color, borderColor: type==='line' ? color : undefined, fill: type==='line' ? false : true, tension: type==='line' ? 0.1 : 0 }] }, options: { indexAxis: type==='bar'?'y':'x', maintainAspectRatio: false } });
-            
-            if(id === 'grafico-causas') { dadosEstatisticasExportacao = sorted.map(([c,q]) => ({"Causa": c, "Qtd": q})); }
-        };
-        
-        draw('grafico-cemiterios', cemiterios, 'Sepultamentos por Cemitério', 'doughnut'); 
-        draw('grafico-linhas', linhasTempo, 'Volume de Sepultamentos', 'line', '#8b5cf6'); 
-        draw('grafico-causas', causas, 'Top 10 Causas', 'bar', '#3b82f6'); 
-        draw('grafico-atendentes', atendentes, 'Atendimentos por Funcionário', 'bar', '#10b981'); 
-        draw('grafico-sepulturas', sepulturas, 'Tipos de Sepultura', 'bar', '#f59e0b'); 
-        draw('grafico-funerarias', funerarias, 'Top Funerárias', 'bar', '#8b5cf6'); 
-        draw('grafico-tempo-resolucao', tempos, 'Tempo de Resolução', 'doughnut'); 
-        draw('grafico-isencao', isencoes, 'Perfil Social (Isenções)', 'pie'); 
-        draw('grafico-quadras', quadras, 'Quadras Mais Utilizadas', 'bar', '#0ea5e9'); 
-        draw('grafico-hospitais', hospitais, 'Hospitais (Local Óbito)', 'bar', '#ec4899'); 
-        draw('grafico-bairros', bairros, 'Bairros dos Contribuintes', 'bar', '#14b8a6'); 
-        draw('grafico-municipios', municipios, 'Municípios', 'bar', '#f43f5e');
-        
-        let mediaValor = qtdValores > 0 ? (totalValores / qtdValores).toFixed(2) : "0.00"; 
-        const elT = document.getElementById('titulo-grafico-valores'); 
-        if(elT) elT.innerText = `Faixas de Valores Pagos (Média: R$ ${mediaValor})`; 
-        draw('grafico-valores', valores, `Valores Pagos GRM`, 'bar', '#eab308');
-    });
-}
-
-window.baixarDadosGraficosExcel = function() {
-    if(typeof XLSX === 'undefined') { alert("Biblioteca Excel não carregada. Verifique a conexão com a internet."); return; }
-    if(!window.dadosGraficosAtuais) { alert("Aguarde o carregamento das estatísticas antes de exportar."); return; }
-    
-    const wb = XLSX.utils.book_new();
-    const formatData = (obj, keyName) => { 
-        let arr = Object.entries(obj).map(([k, v]) => ({ [keyName]: k, "Quantidade": v })); 
-        if(keyName === 'Data') { 
-            arr.sort((a,b) => { let da = a['Data'].split('/').reverse().join('-'); let db = b['Data'].split('/').reverse().join('-'); return new Date(da) - new Date(db); }); 
-        } else { 
-            arr.sort((a,b) => b.Quantidade - a.Quantidade); 
-        } 
-        return arr; 
-    };
-    
-    const sheetsInfo = [ 
-        { name: 'Cemitérios', data: formatData(window.dadosGraficosAtuais.Cemiterios, 'Cemitério') }, 
-        { name: 'Volume por Período', data: formatData(window.dadosGraficosAtuais.Volume_Periodo, 'Data') }, 
-        { name: 'Causas de Morte', data: formatData(window.dadosGraficosAtuais.Causas, 'Causa') }, 
-        { name: 'Atendentes', data: formatData(window.dadosGraficosAtuais.Atendentes, 'Atendente') }, 
-        { name: 'Tipos de Sepultura', data: formatData(window.dadosGraficosAtuais.Sepulturas, 'Sepultura') }, 
-        { name: 'Funerárias', data: formatData(window.dadosGraficosAtuais.Funerarias, 'Funerária') }, 
-        { name: 'Tempo de Resolução', data: formatData(window.dadosGraficosAtuais.Tempo_Resolucao, 'Tempo') }, 
-        { name: 'Isenções', data: formatData(window.dadosGraficosAtuais.Isencoes, 'Perfil de Isenção') }, 
-        { name: 'Quadras', data: formatData(window.dadosGraficosAtuais.Quadras, 'Quadra') }, 
-        { name: 'Hospitais', data: formatData(window.dadosGraficosAtuais.Hospitais, 'Hospital/Local') }, 
-        { name: 'Bairros', data: formatData(window.dadosGraficosAtuais.Bairros, 'Bairro') }, 
-        { name: 'Municípios', data: formatData(window.dadosGraficosAtuais.Municipios, 'Município') }, 
-        { name: 'Valores GRM', data: formatData(window.dadosGraficosAtuais.Valores_GRM, 'Faixa de Valor') } 
-    ];
-    
-    sheetsInfo.forEach(s => { 
-        if(s.data.length > 0) { 
-            const ws = XLSX.utils.json_to_sheet(s.data); 
-            XLSX.utils.book_append_sheet(wb, ws, s.name.substring(0, 31)); 
-        } 
-    });
-    XLSX.writeFile(wb, "Dados_Graficos_Estatisticas.xlsx");
-}
-
-window.buscarContribuintes = function() {
-    const termo = document.getElementById('input-busca-contribuinte').value.trim().toUpperCase(); 
-    const ul = document.getElementById('lista-contribuintes');
-    if (!termo) { ul.innerHTML = '<li style="padding: 20px; text-align: center; color: #64748b; font-weight: 500;">Digite um termo para buscar.</li>'; return; }
-    ul.innerHTML = '<li style="padding: 20px; text-align: center; color: #64748b;">Buscando...</li>';
-    
-    getDB().collection("atendimentos").get().then(snap => {
-        let contribuintesMap = {};
-        snap.forEach(doc => {
-            let d = doc.data(); 
-            let cpf = d.resp_cpf ? d.resp_cpf.replace(/\D/g, '') : ''; 
-            let nome = (d.resp_nome || '').toUpperCase(); 
-            let rg = d.resp_rg || ''; 
-            let tel = d.telefone || '';
-            if (cpf.includes(termo.replace(/\D/g, '')) || nome.includes(termo) || rg.includes(termo) || tel.includes(termo)) {
-                let key = cpf || nome; 
-                if (key && !contribuintesMap[key]) { 
-                    contribuintesMap[key] = { id: doc.id, cpf: d.resp_cpf || '', nome: d.resp_nome || '', rg: d.resp_rg || '', telefone: d.telefone || '', endereco: d.resp_endereco || '', numero: d.resp_numero || '', bairro: d.resp_bairro || '', cidade: d.resp_cidade || '', uf: d.resp_uf || '', cep: d.resp_cep || '', complemento: d.resp_complemento || '' }; 
-                }
-            }
-        });
-        let results = Object.values(contribuintesMap); 
-        ul.innerHTML = '';
-        if (results.length === 0) { ul.innerHTML = '<li style="padding: 20px; text-align: center; color: #64748b;">Nenhum contribuinte encontrado.</li>'; return; }
-        
-        const fragment = document.createDocumentFragment();
-        results.forEach(c => {
-            let enderecoCompleto = c.endereco ? `${c.endereco}, ${c.numero} - ${c.bairro}` : 'Não informado'; 
-            let li = document.createElement('li'); 
-            li.className = 'table-equipe-row';
-            li.innerHTML = `<div style="flex: 2; font-weight: 600; color: #1e293b;">${c.nome}</div><div style="flex: 1.5; color: #475569; font-size: 13px;">${c.cpf} <br> <span style="font-size: 11px; color: #94a3b8;">RG: ${c.rg || '-'}</span></div><div style="flex: 1.5; color: #475569; font-size: 13px;">${c.telefone}</div><div style="flex: 2; color: #475569; font-size: 12px; line-height: 1.2;">${enderecoCompleto}</div><div style="width: 60px; display: flex; justify-content: flex-end;"><button class="btn-action-edit" onclick="editarContribuinte('${c.cpf}', '${c.nome}')" title="Editar Contribuinte">✏️</button></div>`; 
-            fragment.appendChild(li);
-        });
-        ul.appendChild(fragment);
-    });
-}
-
-window.editarContribuinte = function(cpf, nome) {
-    let query = getDB().collection("atendimentos"); 
-    if (cpf) query = query.where("resp_cpf", "==", cpf); else query = query.where("resp_nome", "==", nome);
-    query.limit(1).get().then(snap => {
-        if (!snap.empty) {
-            let d = snap.docs[0].data(); 
-            document.getElementById('edit-contribuinte-cpf-original').value = cpf || nome; 
-            document.getElementById('edit-contribuinte-nome').value = d.resp_nome || ''; 
-            document.getElementById('edit-contribuinte-cpf').value = d.resp_cpf || ''; 
-            document.getElementById('edit-contribuinte-rg').value = d.resp_rg || ''; 
-            document.getElementById('edit-contribuinte-telefone').value = d.telefone || ''; 
-            document.getElementById('edit-contribuinte-cep').value = d.resp_cep || ''; 
-            document.getElementById('edit-contribuinte-endereco').value = d.resp_endereco || ''; 
-            document.getElementById('edit-contribuinte-numero').value = d.resp_numero || ''; 
-            document.getElementById('edit-contribuinte-complemento').value = d.resp_complemento || ''; 
-            document.getElementById('edit-contribuinte-bairro').value = d.resp_bairro || ''; 
-            document.getElementById('edit-contribuinte-cidade').value = d.resp_cidade || ''; 
-            document.getElementById('edit-contribuinte-uf').value = d.resp_uf || ''; 
-            document.getElementById('div-tabela-contribuintes').classList.add('hidden'); 
-            document.getElementById('box-busca-contribuinte').classList.add('hidden'); 
-            document.getElementById('div-editar-contribuinte').classList.remove('hidden');
-        }
-    });
-}
-
-window.cancelarEdicaoContribuinte = function() { 
-    document.getElementById('div-editar-contribuinte').classList.add('hidden'); 
-    document.getElementById('div-tabela-contribuintes').classList.remove('hidden'); 
-    document.getElementById('box-busca-contribuinte').classList.remove('hidden'); 
-}
-
-window.salvarEdicaoContribuinte = function() {
-    const originalKey = document.getElementById('edit-contribuinte-cpf-original').value;
-    const novoDados = { 
-        resp_nome: document.getElementById('edit-contribuinte-nome').value, 
-        resp_rg: document.getElementById('edit-contribuinte-rg').value, 
-        telefone: document.getElementById('edit-contribuinte-telefone').value, 
-        resp_cep: document.getElementById('edit-contribuinte-cep').value, 
-        resp_endereco: document.getElementById('edit-contribuinte-endereco').value, 
-        resp_numero: document.getElementById('edit-contribuinte-numero').value, 
-        resp_complemento: document.getElementById('edit-contribuinte-complemento').value, 
-        resp_bairro: document.getElementById('edit-contribuinte-bairro').value, 
-        resp_cidade: document.getElementById('edit-contribuinte-cidade').value, 
-        resp_uf: document.getElementById('edit-contribuinte-uf').value 
-    };
-    let query = getDB().collection("atendimentos"); 
-    if (originalKey.match(/\d/)) query = query.where("resp_cpf", "==", originalKey); 
-    else query = query.where("resp_nome", "==", originalKey);
-    
-    query.get().then(snap => { 
-        let batch = getDB().batch(); 
-        snap.forEach(doc => { batch.update(doc.ref, novoDados); }); 
-        batch.commit().then(() => { 
-            alert("Contribuinte atualizado com sucesso!"); 
-            cancelarEdicaoContribuinte(); 
-            buscarContribuintes(); 
-        }).catch(err => alert("Erro ao atualizar.")); 
-    });
-}
-
-window.listarEquipe = function() { 
-    const ul = document.getElementById('lista-equipe'); 
-    getDB().collection("equipe").onSnapshot(snap => { 
-        ul.innerHTML = ''; 
-        const fragment = document.createDocumentFragment();
-        snap.forEach(doc => { 
-            const u = doc.data(); 
-            let nomeSeguro = (u.nome || '').trim(); 
-            if (!nomeSeguro) nomeSeguro = 'Usuário';
-            
-            const names = nomeSeguro.split(' ').filter(n => n.length > 0); 
-            let iniciais = 'U'; 
-            if (names.length > 0) { 
-                iniciais = names[0][0].toUpperCase(); 
-                if (names.length > 1) iniciais += names[names.length - 1][0].toUpperCase(); 
-                else if (names[0].length > 1) iniciais += names[0][1].toUpperCase(); 
-            }
-            
-            const colors = ['#e0f2fe', '#fef3c7', '#dcfce3', '#f3e8ff', '#ffe4e6', '#ccfbf1']; 
-            const textColors = ['#0284c7', '#d97706', '#16a34a', '#9333ea', '#e11d48', '#0d9488']; 
-            const colorIndex = nomeSeguro.length % colors.length; 
-            const bgColor = colors[colorIndex]; 
-            const txtColor = textColors[colorIndex];
-            
-            let badgeNivel = `<span style="font-size:10px; background:#e2e8f0; color:#475569; padding:2px 6px; border-radius:4px; margin-left:5px; vertical-align:middle;">${u.nivel || 'COMPLETO'}</span>`;
-            let li = document.createElement('li'); 
-            li.className = 'table-equipe-row';
-            li.innerHTML = `<div class="col-user"><div class="avatar-circle" style="background-color: ${bgColor}; color: ${txtColor};">${iniciais}</div><div style="display: flex; flex-direction: column;"><span style="color:#1e293b; font-size:14px; font-weight:600;">${nomeSeguro} ${badgeNivel}</span><span style="color:#94a3b8; font-size:12px;">${u.email||''}</span></div></div><div class="col-login">${u.login||''}</div><div class="col-pass">*** <button class="btn-icon" style="background:#f8fafc; padding:6px; border-radius:50%; border:none; cursor:pointer;" onclick="alert('Senha: ${u.senha}')">👁️</button></div><div class="col-actions"><button class="btn-action-edit" onclick="window.editarFuncionario('${doc.id}')">✏️</button><button class="btn-action-delete" onclick="window.excluirFuncionario('${doc.id}')">🗑️</button></div>`; 
-            fragment.appendChild(li);
-        }); 
-        ul.appendChild(fragment);
-    }); 
-}
-
-window.adicionarFuncionario = function() { 
-    const nome = document.getElementById('novo-nome').value; 
-    const login = document.getElementById('novo-login').value; 
-    const email = document.getElementById('novo-email').value; 
-    const senha = document.getElementById('nova-senha').value; 
-    const nivel = document.getElementById('novo-nivel').value;
-    
-    if(!nome || !login || !senha) { alert("Preencha nome, login e senha."); return; }
-    getDB().collection("equipe").add({ nome, login, email, senha, nivel }).then(() => { 
-        alert("Usuário adicionado!"); 
-        document.getElementById('novo-nome').value = ""; 
-        document.getElementById('novo-login').value = ""; 
-        document.getElementById('novo-email').value = ""; 
-        document.getElementById('nova-senha').value = ""; 
-        document.getElementById('novo-nivel').value = "COMPLETO"; 
-    }).catch(e => alert("Erro: " + e)); 
-}
-
-window.excluirFuncionario = function(id) { 
-    if(confirm("Excluir usuário?")) getDB().collection("equipe").doc(id).delete(); 
-}
-
-window.editarFuncionario = function(id) { 
-    getDB().collection("equipe").doc(id).get().then(doc => { 
-        if(doc.exists) { 
-            const u = doc.data(); 
-            document.getElementById('edit-id').value = doc.id; 
-            document.getElementById('edit-nome').value = u.nome; 
-            document.getElementById('edit-login').value = u.login; 
-            document.getElementById('edit-email').value = u.email; 
-            document.getElementById('edit-senha').value = u.senha; 
-            document.getElementById('edit-nivel').value = u.nivel || 'COMPLETO'; 
-            document.getElementById('box-novo-usuario').classList.add('hidden'); 
-            document.getElementById('div-editar-usuario').classList.remove('hidden'); 
-        } 
-    }); 
-}
-
-window.salvarEdicaoUsuario = function() { 
-    const id = document.getElementById('edit-id').value; 
-    const nome = document.getElementById('edit-nome').value; 
-    const email = document.getElementById('edit-email').value; 
-    const senha = document.getElementById('edit-senha').value; 
-    const nivel = document.getElementById('edit-nivel').value;
-    
-    if(!nome || !senha) { alert("Nome e senha são obrigatórios."); return; }
-    getDB().collection("equipe").doc(id).update({ nome, email, senha, nivel }).then(() => { 
-        alert("Usuário atualizado!"); window.cancelarEdicao(); 
-    }).catch(e => alert("Erro: " + e)); 
-}
-
-window.cancelarEdicao = function() { 
-    document.getElementById('edit-id').value = ""; 
-    document.getElementById('edit-nome').value = ""; 
-    document.getElementById('edit-login').value = ""; 
-    document.getElementById('edit-email').value = ""; 
-    document.getElementById('edit-senha').value = ""; 
-    document.getElementById('edit-nivel').value = "COMPLETO"; 
-    document.getElementById('div-editar-usuario').classList.add('hidden'); 
-    document.getElementById('box-novo-usuario').classList.remove('hidden'); 
-}
-
-window.carregarLogs = function() { 
-    const tbody = document.getElementById('tabela-logs'); 
-    if(!tbody) return; 
-    getDB().collection("atendimentos").limit(50).orderBy("data_ficha", "desc").onSnapshot(snap => { 
-        tbody.innerHTML = ''; 
-        const fragment = document.createDocumentFragment();
-        snap.forEach(doc => { 
-            let log = doc.data(); 
-            let displayDataHora = '-'; 
-            if (log.data_hora_atendimento) { 
-                const parts = log.data_hora_atendimento.split('T'); 
-                if (parts.length === 2) { 
-                    const dateParts = parts[0].split('-'); 
-                    displayDataHora = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} <br> <span style="font-size:11px; color:#666;">${parts[1]}</span>`; 
-                } 
-            } else { 
-                displayDataHora = log.data_ficha ? log.data_ficha.split('-').reverse().join('/') : '-'; 
-            } 
-            const tr = document.createElement('tr'); 
-            tr.innerHTML = `<td>${displayDataHora}</td><td>${log.atendente_sistema||'SISTEMA'}</td><td>Cadastro: ${log.nome}</td>`; 
-            fragment.appendChild(tr); 
-        }); 
-        tbody.appendChild(fragment);
-    }); 
-}
-
-window.baixarRelatorioCompleto = function() { 
-    if(!getDB()) return; 
-    if(!confirm("Deseja baixar o relatório geral?")) return; 
-    if(typeof XLSX === 'undefined') { alert("Biblioteca Excel não carregada."); return; } 
-    getDB().collection("atendimentos").get().then(snap => { 
-        let dados = []; 
-        snap.forEach(doc => { 
-            let d = doc.data(); 
-            dados.push([d.data_ficha, d.hora, d.nome, d.causa, d.resp_nome, d.telefone, d.funeraria, d.local, d.sepul, d.protocolo, d.atendente_sistema]); 
-        }); 
-        const ws = XLSX.utils.aoa_to_sheet([["Data","Hora","Nome","Causa","Resp","Tel","Funeraria","Local","Sepul","Proto","Atendente"], ...dados]); 
-        const wb = XLSX.utils.book_new(); 
-        XLSX.utils.book_append_sheet(wb, ws, "Geral"); 
-        XLSX.writeFile(wb, "Relatorio_Geral.xlsx"); 
-    }); 
-}
-
-window.baixarExcel = function() { 
-    if(typeof XLSX === 'undefined' || dadosEstatisticasExportacao.length === 0) { alert("Sem dados para exportar."); return; } 
-    const ws = XLSX.utils.json_to_sheet(dadosEstatisticasExportacao); 
-    const wb = XLSX.utils.book_new(); 
-    XLSX.utils.book_append_sheet(wb, ws, "Stats"); 
-    XLSX.writeFile(wb, "Estatisticas.xlsx"); 
-}
-
-window.baixarLogsExcel = function() { 
-    if(typeof XLSX === 'undefined') { alert("Erro: Biblioteca Excel ausente."); return; } 
-    getDB().collection("atendimentos").limit(100).orderBy("data_ficha", "desc").get().then(snap => { 
-        let dados = []; 
-        snap.forEach(doc => { 
-            const d = doc.data(); 
-            const dataF = d.data_ficha ? d.data_ficha.split('-').reverse().join('/') : '-'; 
-            const atendente = d.atendente_sistema ? d.atendente_sistema.toUpperCase() : 'SISTEMA'; 
-            dados.push({ "Data": dataF, "Usuário": atendente, "Ação/Detalhes": `Cadastro: ${d.nome}` }); 
-        }); 
-        const ws = XLSX.utils.json_to_sheet(dados); 
-        const wb = XLSX.utils.book_new(); 
-        XLSX.utils.book_append_sheet(wb, ws, "Auditoria"); 
-        XLSX.writeFile(wb, "Logs_Auditoria.xlsx"); 
-    }); 
-}
-
-window.baixarLogsPDF = function() { 
-    if(!window.jspdf) { alert("Erro: Biblioteca PDF ausente."); return; } 
-    const { jsPDF } = window.jspdf; 
-    const doc = new jsPDF(); 
-    getDB().collection("atendimentos").limit(100).orderBy("data_ficha", "desc").get().then(snap => { 
-        let body = []; 
-        snap.forEach(doc => { 
-            const d = doc.data(); 
-            const dataF = d.data_ficha ? d.data_ficha.split('-').reverse().join('/') : '-'; 
-            const atendente = d.atendente_sistema ? d.atendente_sistema.toUpperCase() : 'SISTEMA'; 
-            body.push([dataF, atendente, `Cadastro: ${d.nome}`]); 
-        }); 
-        doc.text("Relatório de Auditoria", 14, 10); 
-        doc.autoTable({ head: [['Data', 'Usuário', 'Ação/Detalhes']], body: body, startY: 20 }); 
-        doc.save("Logs_Auditoria.pdf"); 
-    }); 
-}
-
-window.baixarTodosExcel = function() { 
-    if(typeof XLSX === 'undefined') { alert("Biblioteca Excel não carregada."); return; } 
-    getDB().collection("atendimentos").get().then(snap => { 
-        let dados = []; 
-        snap.forEach(doc => { 
-            let d = doc.data(); 
-            dados.push({ "ID": doc.id, "Protocolo": d.protocolo || '', "Data Registro": d.data_hora_atendimento || '', "Data Sepultamento": d.data_ficha || '', "Hora": d.hora || '', "Nome": d.nome || '', "Causa": d.causa || '', "Responsável": d.resp_nome || '', "Telefone": d.telefone || '', "Funerária": d.funeraria || '', "Cemitério": d.local || '', "Sepultura": d.sepul || '', "Quadra": d.qd || '', "Atendente": d.atendente_sistema || '' }); 
-        }); 
-        const ws = XLSX.utils.json_to_sheet(dados); 
-        const wb = XLSX.utils.book_new(); 
-        XLSX.utils.book_append_sheet(wb, ws, "Todos_Atendimentos"); 
-        XLSX.writeFile(wb, "Backup_Atendimentos.xlsx"); 
-    }); 
-}
-
-window.baixarTodosPDF = function() { 
-    if(!window.jspdf) { alert("Biblioteca PDF não carregada."); return; } 
-    const { jsPDF } = window.jspdf; 
-    const doc = new jsPDF('landscape'); 
-    getDB().collection("atendimentos").get().then(snap => { 
-        let body = []; 
-        snap.forEach(doc => { 
-            let d = doc.data(); 
-            const dataF = d.data_ficha ? d.data_ficha.split('-').reverse().join('/') : '-'; 
-            body.push([ dataF, d.hora || '-', (d.nome || '').substring(0,20), (d.causa || '').substring(0,20), (d.resp_nome || '').substring(0,15), d.telefone || '-', (d.local || '').replace('CEMITÉRIO DO ', '').replace('CEMITÉRIO DE ', '').trim(), d.sepul || '-', d.protocolo || '-' ]); 
-        }); 
-        doc.text("Backup Completo de Atendimentos", 14, 10); 
-        doc.autoTable({ head: [['Data', 'Hora', 'Nome', 'Causa', 'Responsável', 'Tel', 'Local', 'Sepul', 'Protocolo']], body: body, startY: 15, styles: { fontSize: 8 } }); 
-        doc.save("Backup_Atendimentos.pdf"); 
-    }); 
-}
-
-window.gerarBackup = async function() { 
-    if(!getDB()) return; 
-    try { 
-        const btn = event.target; 
-        const originalText = btn.innerText; 
-        btn.innerText = "⏳ Gerando..."; 
-        btn.disabled = true; 
-        
-        let backupData = { atendimentos: [], equipe: [], auditoria: [] }; 
-        const atendimentosSnap = await getDB().collection("atendimentos").get(); 
-        atendimentosSnap.forEach(doc => backupData.atendimentos.push({ id: doc.id, ...doc.data() })); 
-        
-        const equipeSnap = await getDB().collection("equipe").get(); 
-        equipeSnap.forEach(doc => backupData.equipe.push({ id: doc.id, ...doc.data() })); 
-        
-        const auditoriaSnap = await getDB().collection("auditoria").get(); 
-        auditoriaSnap.forEach(doc => backupData.auditoria.push({ id: doc.id, ...doc.data() })); 
-        
-        const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' }); 
-        const url = URL.createObjectURL(blob); 
-        const a = document.createElement('a'); 
-        a.href = url; 
-        const date = new Date().toISOString().slice(0,10); 
-        a.download = `backup_funeraria_${date}.json`; 
-        document.body.appendChild(a); 
-        a.click(); 
-        URL.revokeObjectURL(url); 
-        a.remove(); 
-        
-        btn.innerText = originalText; 
-        btn.disabled = false; 
-    } catch (e) { alert("Erro ao gerar backup."); } 
-}
-
-window.restaurarBackup = function() { 
-    const fileInput = document.getElementById('file-restore'); 
-    const file = fileInput.files[0]; 
-    if (!file) { alert("Por favor, selecione um arquivo de backup (.json)."); return; } 
-    if (!confirm("⚠️ ATENÇÃO! Isso irá RESTAURAR o banco de dados. Registros com o mesmo ID serão sobrescritos. Deseja continuar?")) { return; } 
-    
-    const reader = new FileReader(); 
-    reader.onload = async function(e) { 
-        try { 
-            const backupData = JSON.parse(e.target.result); 
-            let count = 0; 
-            const restaurarColecao = async (nomeColecao, dados) => { 
-                if (dados && dados.length > 0) { 
-                    for (let item of dados) { 
-                        const id = item.id; 
-                        delete item.id; 
-                        await getDB().collection(nomeColecao).doc(id).set(item); 
-                        count++; 
-                    } 
-                } 
-            }; 
-            await restaurarColecao("atendimentos", backupData.atendimentos); 
-            await restaurarColecao("equipe", backupData.equipe); 
-            await restaurarColecao("auditoria", backupData.auditoria); 
-            alert(`Restaurado com sucesso! ${count} registros processados.`); 
-            fileInput.value = ""; 
-        } catch (error) { alert("Erro ao ler o arquivo de backup."); } 
-    }; 
-    reader.readAsText(file); 
 }
