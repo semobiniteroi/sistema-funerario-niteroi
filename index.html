@@ -22,6 +22,38 @@
         /* Correção do tamanho e estilo das Checkboxes */
         input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6; margin: 0; }
 
+        /* Ajuste e Alinhamento do Botão de Busca (Lupa) */
+        .filtro-busca {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .filtro-busca input {
+            padding-right: 36px !important; 
+        }
+        .btn-busca-mini {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+        .btn-busca-mini:hover {
+            background-color: #e2e8f0;
+            color: #3b82f6;
+        }
+
         label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #475569; margin-bottom: 6px; display: block; letter-spacing: 0.3px; }
         canvas#signature-pad { border: 2px dashed #cbd5e1; background-color: #f8fafc; touch-action: none; border-radius: 6px; cursor: crosshair; width: 100%; }
 
@@ -137,10 +169,23 @@
             </div>
         </div>
         <div class="info-area">
-            <div class="controles-topo">
-                <div class="topo-box"><span class="topo-icon">📍</span><div class="topo-content"><label>Cemitério</label><select id="filtro-local"><option value="CEMITÉRIO DO MARUÍ">MARUÍ</option><option value="CEMITÉRIO DE SÃO FRANCISCO">SÃO FRANCISCO</option><option value="CEMITÉRIO DE ITAIPU">ITAIPU</option></select></div></div>
-                <div class="topo-box"><span class="topo-icon">📅</span><div class="topo-content"><label>Data</label><input type="date" id="filtro-data"></div></div>
-                <div class="topo-box search-box"><input type="text" id="input-busca" placeholder="Buscar Nome ou Protocolo..."><button onclick="realizarBusca()" class="btn-search" title="Pesquisar">🔍</button></div>
+            <div class="controles-topo filtros-minimalistas">
+                <div class="filtro-item">
+                    <select id="filtro-local">
+                        <option value="CEMITÉRIO DO MARUÍ">📍 Maruí</option>
+                        <option value="CEMITÉRIO DE SÃO FRANCISCO">📍 São Francisco</option>
+                        <option value="CEMITÉRIO DE ITAIPU">📍 Itaipu</option>
+                    </select>
+                </div>
+                <div class="filtro-item">
+                    <input type="date" id="filtro-data">
+                </div>
+                <div class="filtro-item filtro-busca">
+                    <input type="text" id="input-busca" placeholder="🔍 Buscar...">
+                    <button onclick="realizarBusca()" class="btn-busca-mini" title="Pesquisar">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    </button>
+                </div>
             </div>
             <div class="user-controls">
                 <span id="user-display"></span>
@@ -259,12 +304,11 @@
                 
                 <div class="form-section-divider"><h4 class="form-section-title" style="color: #3b82f6;">📄 Documentos Anexados</h4></div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px; background: #fafafa; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 15px;">
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer;"><input type="checkbox" id="part_chk_autorizacao"> Autorização / Requerimento</label>
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer;"><input type="checkbox" id="part_chk_obito"> Declaração de Óbito</label>
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer;"><input type="checkbox" id="part_chk_rg_falecido"> RG/CPF Falecido</label>
                     <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer;"><input type="checkbox" id="part_chk_rg_resp"> RG/CPF Responsável</label>
                     <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer;"><input type="checkbox" id="part_chk_comprovante"> Comprovante de Residência</label>
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer;"><input type="checkbox" id="part_chk_guia"> Guia de Sepultamento</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer;"><input type="checkbox" id="part_chk_guia"> Guia de Sepult. ou Cremação</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer;"><input type="checkbox" id="part_chk_invol"> Guia do INVOL</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer;"><input type="checkbox" id="part_chk_nf"> Nota Fiscal</label>
                     <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer;"><input type="checkbox" id="part_chk_taxas"> Comprovante de Taxas</label>
                 </div>
 
@@ -279,7 +323,6 @@
             
             <div class="modal-footer-custom" style="background: #f8fafc; padding: 15px 20px; border-top: 1px solid #e2e8f0; border-radius: 0 0 12px 12px; display: flex; gap: 10px; justify-content: space-between; flex-wrap: wrap;">
                 <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                    <button type="button" class="btn-print" onclick="gerarAutorizacao()">📝 Gerar Autorização</button>
                     <button type="button" class="btn-wpp" onclick="enviarWppParticular()">📱 WhatsApp PF</button>
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap: wrap;">
@@ -773,7 +816,8 @@
                         <div class="grafico-container" style="height: 350px;"><h5 style="text-align:center; margin-bottom:10px; color:#334155;">Sepultamentos por Cemitério</h5><canvas id="grafico-cemiterios"></canvas></div>
                         
                         <div class="grafico-container" style="height: 350px;"><h5 style="text-align:center; margin-bottom:10px; color:#334155;">Causas de Morte (Top 10)</h5><canvas id="grafico-causas"></canvas></div>
-                        <div class="grafico-container" style="height: 350px;"><h5 style="text-align:center; margin-bottom:10px; color:#334155;">Atendimentos por Funcionário</h5><canvas id="grafico-atendentes"></canvas></div>
+                        <div class="grafico-container" style="height: 350px;"><h5 style="text-align:center; margin-bottom:10px; color:#334155;">Produtividade: Acolhimento</h5><canvas id="grafico-atendentes-acolhimento"></canvas></div>
+                        <div class="grafico-container" style="height: 350px;"><h5 style="text-align:center; margin-bottom:10px; color:#334155;">Produtividade: Agência</h5><canvas id="grafico-atendentes-agencia"></canvas></div>
                         <div class="grafico-container" style="height: 350px;"><h5 style="text-align:center; margin-bottom:10px; color:#334155;">Tipos de Sepultura</h5><canvas id="grafico-sepulturas"></canvas></div>
                         <div class="grafico-container" style="height: 350px;"><h5 style="text-align:center; margin-bottom:10px; color:#334155;">Top Funerárias</h5><canvas id="grafico-funerarias"></canvas></div>
                         <div class="grafico-container" style="height: 350px;"><h5 style="text-align:center; margin-bottom:10px; color:#334155;">Tempo Médio de Resolução</h5><canvas id="grafico-tempo-resolucao"></canvas></div>
@@ -911,7 +955,6 @@
         };
     </script>
 
-    <!-- MODAL HISTÓRICO DE MOVIMENTAÇÕES -->
     <div id="modal-historico" class="modal" style="display:none;">
         <div class="modal-content" style="max-width:600px;background:#fff;padding:0;border-radius:12px;overflow:hidden;">
             <div style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;">
