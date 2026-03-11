@@ -159,6 +159,7 @@ function fazerLogin() {
     
     let authChain;
     if (auth && isEmail) {
+        // Tenta login com e-mail/senha; se falhar, tenta anônimo
         authChain = auth.signInWithEmailAndPassword(u, p)
             .then(cred => ({ cred, method: 'email' }))
             .catch(() => {
@@ -167,6 +168,7 @@ function fazerLogin() {
                     .catch(() => ({ cred: null, method: 'none' }));
             });
     } else if (auth) {
+        // Campo não é e-mail: usa autenticação anônima para poder consultar Firestore
         authChain = auth.signInAnonymously()
             .then(cred => ({ cred, method: 'anonymous' }))
             .catch(() => ({ cred: null, method: 'none' }));
@@ -176,10 +178,12 @@ function fazerLogin() {
     
     authChain.then(({ cred, method }) => {
         if (method === 'email' && cred && cred.user) {
+            // Firebase Auth autenticou com sucesso — busca na equipe pelo email do Auth
             const authEmail = cred.user.email;
             return getDB().collection("equipe").where("email", "==", authEmail).get()
                 .then(snap => {
                     if (!snap.empty) return snap;
+                    // Email no Firestore pode estar diferente — busca todos e compara parcialmente
                     return getDB().collection("equipe").get().then(allSnap => {
                         const emailPrefix = authEmail.split('@')[0].toLowerCase();
                         let found = null;
@@ -192,10 +196,12 @@ function fazerLogin() {
                         if (found) {
                             return { empty: false, docs: [found], size: 1 };
                         }
+                        // Último fallback: busca por login + senha
                         return getDB().collection("equipe").where("login", "==", u).where("senha", "==", p).get();
                     });
                 });
         } else {
+            // Sem Firebase Auth: busca por login + senha
             return getDB().collection("equipe").where("login", "==", u).where("senha", "==", p).get();
         }
     }).then(snap => {
@@ -319,12 +325,14 @@ function inicializarSistema() {
         } else {
             const dbInst = getDB();
             if(dbInst) { 
+                // Garante autenticação Firebase (anônima se necessário) antes de consultar Firestore
                 const authReady = auth ? new Promise((resolve) => {
                     const unsub = auth.onAuthStateChanged((user) => {
                         unsub();
                         if (user) {
                             resolve(user);
                         } else {
+                            // Nenhum usuário autenticado: tenta anônimo
                             auth.signInAnonymously()
                                 .then(cred => resolve(cred.user))
                                 .catch(() => resolve(null));
@@ -1520,7 +1528,7 @@ window.carregarEstatisticas = function(modo) {
     }
     
     database.collection("atendimentos").where("data_ficha", ">=", dString).onSnapshot(snap => {
-        let causas = {}, atendentesAcolhimento = {}, atendentesAgencia = {}, sepulturas = {}, funerarias = {}, tempos = {"Menos de 12h":0, "12h a 24h":0, "24h a 48h":0, "Mais de 48h":0}, isencoes = {"PAGO":0, "GRATUIDADE (100%)":0, "DESCONTO (50%)":0}, quadras = {}, hospitais = {}, bairros = {}, municipios = {}, valores = {"Até R$ 500":0, "R$ 501 a R$ 1000":0, "R$ 1001 a R$ 2000":0, "Acima de R$ 2000":0}, totalValores = 0, qtdValores = 0, cemiterios = {"MARUÍ":0, "SÃO FRANCISCO":0, "ITAIPU":0}, linhasTempo = {};
+        let causas = {}, atendentes = {}, sepulturas = {}, funerarias = {}, tempos = {"Menos de 12h":0, "12h a 24h":0, "24h a 48h":0, "Mais de 48h":0}, isencoes = {"PAGO":0, "GRATUIDADE (100%)":0, "DESCONTO (50%)":0}, quadras = {}, hospitais = {}, bairros = {}, municipios = {}, valores = {"Até R$ 500":0, "R$ 501 a R$ 1000":0, "R$ 1001 a R$ 2000":0, "Acima de R$ 2000":0}, totalValores = 0, qtdValores = 0, cemiterios = {"MARUÍ":0, "SÃO FRANCISCO":0, "ITAIPU":0}, linhasTempo = {};
         let totalAcolhimento = 0; let totalAgencia = 0;
 
         snap.forEach(doc => {
@@ -1531,8 +1539,7 @@ window.carregarEstatisticas = function(modo) {
             if (d.agencia_atendente || d.agencia_processo || d.tipo_registro === 'PARTICULAR') { totalAgencia++; }
             
             if(d.causa) { d.causa.split('/').forEach(c => { const k = c.trim().toUpperCase(); if(k) causas[k] = (causas[k] || 0) + 1; }); }
-            if(d.atendente_sistema) { const func = d.atendente_sistema.trim().toUpperCase(); if(func) atendentesAcolhimento[func] = (atendentesAcolhimento[func] || 0) + 1; }
-            if(d.agencia_atendente) { const funcAg = d.agencia_atendente.trim().toUpperCase(); if(funcAg) atendentesAgencia[funcAg] = (atendentesAgencia[funcAg] || 0) + 1; }
+            if(d.atendente_sistema) { const func = d.atendente_sistema.trim().toUpperCase(); if(func) atendentes[func] = (atendentes[func] || 0) + 1; }
             if(d.tipo_sepultura) { const t = d.tipo_sepultura.trim().toUpperCase(); if(t) sepulturas[t] = (sepulturas[t] || 0) + 1; }
             if(d.funeraria) { const f = d.funeraria.trim().toUpperCase(); if(f) funerarias[f] = (funerarias[f] || 0) + 1; }
             if(d.isencao) { if(d.isencao === 'SIM') isencoes["GRATUIDADE (100%)"]++; else if(d.isencao === '50') isencoes["DESCONTO (50%)"]++; else isencoes["PAGO"]++; }
@@ -1549,44 +1556,19 @@ window.carregarEstatisticas = function(modo) {
         const elKpiAcolhimento = document.getElementById('kpi-acolhimento'); if (elKpiAcolhimento) elKpiAcolhimento.innerText = totalAcolhimento;
         const elKpiAgencia = document.getElementById('kpi-agencia'); if (elKpiAgencia) elKpiAgencia.innerText = totalAgencia;
 
-        window.dadosGraficosAtuais = { Cemiterios: cemiterios, Volume_Periodo: linhasTempo, Causas: causas, Atendentes_Acolhimento: atendentesAcolhimento, Atendentes_Agencia: atendentesAgencia, Sepulturas: sepulturas, Funerarias: funerarias, Tempo_Resolucao: tempos, Isencoes: isencoes, Quadras: quadras, Hospitais: hospitais, Bairros: bairros, Municipios: municipios, Valores_GRM: valores };
+        window.dadosGraficosAtuais = { Cemiterios: cemiterios, Volume_Periodo: linhasTempo, Causas: causas, Atendentes: atendentes, Sepulturas: sepulturas, Funerarias: funerarias, Tempo_Resolucao: tempos, Isencoes: isencoes, Quadras: quadras, Hospitais: hospitais, Bairros: bairros, Municipios: municipios, Valores_GRM: valores };
 
         const draw = (id, dataObj, lbl, type='bar', color='#3b82f6') => {
             const ctx = document.getElementById(id); if(!ctx || !window.Chart) return;
             let sorted = []; 
             if(id === 'grafico-linhas') { 
                 sorted = Object.entries(dataObj).sort((a,b) => { let da = a[0].split('/').reverse().join('-'); let db = b[0].split('/').reverse().join('-'); return new Date(da) - new Date(db); }); 
-            } else if (id.includes('atendentes')) {
-                sorted = Object.entries(dataObj).sort((a,b) => b[1] - a[1]); // Sem limite (slice) para produtividade
             } else { 
                 sorted = Object.entries(dataObj).sort((a,b) => b[1] - a[1]).slice(0, 10); 
             }
             
-            // Limitador de texto para evitar quebra do Chart.js
-            let displayLabels = sorted.map(x => {
-                let text = String(x[0]);
-                return text.length > 35 ? text.substring(0, 32) + '...' : text;
-            });
-
             if(chartInstances[id]) chartInstances[id].destroy();
-            chartInstances[id] = new Chart(ctx, { 
-                type: type, 
-                data: { 
-                    labels: displayLabels, 
-                    datasets: [{ 
-                        label: lbl, 
-                        data: sorted.map(x=>x[1]), 
-                        backgroundColor: (type==='doughnut'||type==='pie') ? ['#10b981','#3b82f6','#f59e0b','#ef4444'] : color, 
-                        borderColor: type==='line' ? color : undefined, 
-                        fill: type==='line' ? false : true, 
-                        tension: type==='line' ? 0.1 : 0 
-                    }] 
-                }, 
-                options: { 
-                    indexAxis: type==='bar'?'y':'x', 
-                    maintainAspectRatio: false 
-                } 
-            });
+            chartInstances[id] = new Chart(ctx, { type: type, data: { labels: sorted.map(x=>x[0]), datasets: [{ label: lbl, data: sorted.map(x=>x[1]), backgroundColor: (type==='doughnut'||type==='pie') ? ['#10b981','#3b82f6','#f59e0b','#ef4444'] : color, borderColor: type==='line' ? color : undefined, fill: type==='line' ? false : true, tension: type==='line' ? 0.1 : 0 }] }, options: { indexAxis: type==='bar'?'y':'x', maintainAspectRatio: false } });
             
             if(id === 'grafico-causas') { dadosEstatisticasExportacao = sorted.map(([c,q]) => ({"Causa": c, "Qtd": q})); }
         };
@@ -1594,8 +1576,7 @@ window.carregarEstatisticas = function(modo) {
         draw('grafico-cemiterios', cemiterios, 'Sepultamentos por Cemitério', 'doughnut'); 
         draw('grafico-linhas', linhasTempo, 'Volume de Sepultamentos', 'line', '#8b5cf6'); 
         draw('grafico-causas', causas, 'Top 10 Causas', 'bar', '#3b82f6'); 
-        draw('grafico-atendentes-acolhimento', atendentesAcolhimento, 'Produtividade: Acolhimento', 'bar', '#10b981'); 
-        draw('grafico-atendentes-agencia', atendentesAgencia, 'Produtividade: Agência', 'bar', '#8b5cf6'); 
+        draw('grafico-atendentes', atendentes, 'Atendimentos por Funcionário', 'bar', '#10b981'); 
         draw('grafico-sepulturas', sepulturas, 'Tipos de Sepultura', 'bar', '#f59e0b'); 
         draw('grafico-funerarias', funerarias, 'Top Funerárias', 'bar', '#8b5cf6'); 
         draw('grafico-tempo-resolucao', tempos, 'Tempo de Resolução', 'doughnut'); 
@@ -1631,8 +1612,7 @@ window.baixarDadosGraficosExcel = function() {
         { name: 'Cemitérios', data: formatData(window.dadosGraficosAtuais.Cemiterios, 'Cemitério') }, 
         { name: 'Volume por Período', data: formatData(window.dadosGraficosAtuais.Volume_Periodo, 'Data') }, 
         { name: 'Causas de Morte', data: formatData(window.dadosGraficosAtuais.Causas, 'Causa') }, 
-        { name: 'Produtividade Acolhimento', data: formatData(window.dadosGraficosAtuais.Atendentes_Acolhimento, 'Atendente') }, 
-        { name: 'Produtividade Agência', data: formatData(window.dadosGraficosAtuais.Atendentes_Agencia, 'Atendente') }, 
+        { name: 'Atendentes', data: formatData(window.dadosGraficosAtuais.Atendentes, 'Atendente') }, 
         { name: 'Tipos de Sepultura', data: formatData(window.dadosGraficosAtuais.Sepulturas, 'Sepultura') }, 
         { name: 'Funerárias', data: formatData(window.dadosGraficosAtuais.Funerarias, 'Funerária') }, 
         { name: 'Tempo de Resolução', data: formatData(window.dadosGraficosAtuais.Tempo_Resolucao, 'Tempo') }, 
