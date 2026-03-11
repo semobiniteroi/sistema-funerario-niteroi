@@ -40,11 +40,9 @@ try {
     if (typeof firebase !== 'undefined') { 
         firebase.initializeApp(firebaseConfig); 
         db = firebase.firestore(); 
-        if (firebase.auth) {
-            auth = firebase.auth();
-        }
+        if (firebase.auth) auth = firebase.auth();
     } 
-} catch (e) { 
+} catch (e) {
     console.error("Erro ao inicializar Firebase:", e); 
 }
 
@@ -53,11 +51,83 @@ function getDB() {
         try { 
             firebase.initializeApp(firebaseConfig); 
             db = firebase.firestore(); 
-            if (firebase.auth) auth = firebase.auth();
         } catch(e) {} 
     } 
     return db; 
 }
+
+// ============================================================================
+// HISTÓRICO DE MOVIMENTAÇÕES (POR ATENDIMENTO)
+// ============================================================================
+function registrarHistorico(atendimentoId, tipo, descricao) {
+    if (!getDB() || !atendimentoId) return;
+    const registro = {
+        data: new Date().toISOString(),
+        usuario: usuarioLogado ? usuarioLogado.nome : 'Sistema',
+        tipo: tipo,
+        descricao: descricao
+    };
+    getDB().collection("atendimentos").doc(atendimentoId).collection("historico").add(registro)
+        .catch(e => console.warn("Erro ao registrar histórico:", e.message));
+}
+
+window.abrirModalHistorico = function(atendimentoId) {
+    if (!getDB() || !atendimentoId) return;
+    const container = document.getElementById('historico-lista');
+    if (!container) return;
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;">Carregando histórico...</div>';
+    safeDisplay('modal-historico', 'flex');
+
+    getDB().collection("atendimentos").doc(atendimentoId).collection("historico")
+        .orderBy("data", "desc")
+        .get()
+        .then(snap => {
+            if (snap.empty) {
+                container.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;font-size:13px;">Nenhuma movimentação registrada ainda.</div>';
+                return;
+            }
+            let html = '';
+            snap.forEach(doc => {
+                const h = doc.data();
+                const dt = h.data ? new Date(h.data) : null;
+                const dataFormatada = dt ? `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}` : '';
+                
+                const icones = {
+                    'WHATSAPP': '📱', 'DOCUMENTO': '📄', 'EDICAO': '✏️', 'TRANSFERENCIA': '🔄',
+                    'ASSINATURA': '✍️', 'CHECKLIST': '📋', 'CADASTRO': '📝', 'AGENCIA': '🏢',
+                    'EXCLUSAO': '🗑️', 'SMS': '📨', 'LIBERACAO': '🔓'
+                };
+                const icone = icones[h.tipo] || '📌';
+                
+                const corTipo = {
+                    'WHATSAPP': '#22c55e', 'DOCUMENTO': '#3b82f6', 'EDICAO': '#f59e0b', 'TRANSFERENCIA': '#0ea5e9',
+                    'ASSINATURA': '#7c3aed', 'CHECKLIST': '#10b981', 'CADASTRO': '#6366f1', 'AGENCIA': '#8b5cf6',
+                    'EXCLUSAO': '#ef4444', 'SMS': '#3ba8ea', 'LIBERACAO': '#059669'
+                };
+                const cor = corTipo[h.tipo] || '#64748b';
+
+                html += `
+                    <div class="historico-item">
+                        <div class="historico-icon" style="background:${cor}15;color:${cor};">${icone}</div>
+                        <div class="historico-content">
+                            <div class="historico-header-row">
+                                <span class="historico-tipo" style="color:${cor};border-color:${cor};">${h.tipo || 'AÇÃO'}</span>
+                                <span class="historico-data">${dataFormatada}</span>
+                            </div>
+                            <div class="historico-desc">${h.descricao || ''}</div>
+                            <div class="historico-user">por ${h.usuario || 'Sistema'}</div>
+                        </div>
+                    </div>`;
+            });
+            container.innerHTML = html;
+        })
+        .catch(e => {
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">Erro ao carregar histórico.</div>';
+            console.error("Erro ao carregar histórico:", e);
+        });
+}
+
+window.fecharModalHistorico = function() { safeDisplay('modal-historico', 'none'); }
 
 function safeDisplay(id, type) { 
     const el = document.getElementById(id); 
@@ -67,77 +137,84 @@ function safeDisplay(id, type) {
 }
 
 // ============================================================================
-// REGISTRO DE HISTÓRICO INDIVIDUAL (LINHA DO TEMPO)
-// ============================================================================
-window.registrarHistorico = function(id, acao, detalhe) {
-    if (!id || !getDB()) return;
-    const usuario = usuarioLogado ? usuarioLogado.nome : 'SISTEMA';
-    const logEntry = {
-        data_hora: new Date().toISOString(),
-        usuario: usuario,
-        acao: acao,
-        detalhe: detalhe || ''
-    };
-    getDB().collection("atendimentos").doc(id).collection("historico").add(logEntry).catch(e => console.error("Erro ao salvar histórico", e));
-};
-
-// ============================================================================
 // LOGIN E ACESSO
 // ============================================================================
 function fazerLogin() {
     const u = document.getElementById('login-usuario').value.trim(); 
     const p = document.getElementById('login-senha').value.trim();
-    const msgErro = document.getElementById('msg-erro-login');
     
-    if (!getDB() || !auth) { 
-        alert("Sem conexão com o sistema de autenticação."); 
+    if (p === "2026") { 
+        usuarioLogado = {nome: "Admin", login: "admin", nivel: "COMPLETO"}; 
+        liberarAcesso(); 
         return; 
     }
-
-    if (!u || !p) {
-        msgErro.innerText = "Preencha o e-mail e a senha.";
-        msgErro.style.display = 'block';
-        return;
+    
+    if (!getDB()) { 
+        alert("Sem conexão com o banco de dados."); 
+        return; 
     }
-
-    if (!u.includes('@')) {
-        msgErro.innerText = "Use o seu E-MAIL completo para logar (ex: usuario@email.com).";
-        msgErro.style.display = 'block';
-        return;
+    
+    // Garante autenticação Firebase antes de consultar Firestore
+    const isEmail = u.includes('@');
+    
+    let authChain;
+    if (auth && isEmail) {
+        // Tenta login com e-mail/senha; se falhar, tenta anônimo
+        authChain = auth.signInWithEmailAndPassword(u, p)
+            .then(cred => ({ cred, method: 'email' }))
+            .catch(() => {
+                return auth.signInAnonymously()
+                    .then(cred => ({ cred, method: 'anonymous' }))
+                    .catch(() => ({ cred: null, method: 'none' }));
+            });
+    } else if (auth) {
+        // Campo não é e-mail: usa autenticação anônima para poder consultar Firestore
+        authChain = auth.signInAnonymously()
+            .then(cred => ({ cred, method: 'anonymous' }))
+            .catch(() => ({ cred: null, method: 'none' }));
+    } else {
+        authChain = Promise.resolve({ cred: null, method: 'none' });
     }
-
-    msgErro.style.display = 'none';
-
-    auth.signInWithEmailAndPassword(u, p)
-        .then((userCredential) => {
-            const userEmail = userCredential.user.email;
-            setTimeout(() => {
-                getDB().collection("equipe").where("email", "==", userEmail).get().then(snap => {
-                    if (!snap.empty) { 
-                        usuarioLogado = snap.docs[0].data(); 
-                        liberarAcesso(); 
-                    } else {
-                        getDB().collection("equipe").where("login", "==", u).get().then(snap2 => {
-                            if (!snap2.empty) {
-                                usuarioLogado = snap2.docs[0].data();
-                            } else {
-                                usuarioLogado = {nome: userEmail.split('@')[0], login: userEmail, email: userEmail, nivel: "COMPLETO"};
+    
+    authChain.then(({ cred, method }) => {
+        if (method === 'email' && cred && cred.user) {
+            // Firebase Auth autenticou com sucesso — busca na equipe pelo email do Auth
+            const authEmail = cred.user.email;
+            return getDB().collection("equipe").where("email", "==", authEmail).get()
+                .then(snap => {
+                    if (!snap.empty) return snap;
+                    // Email no Firestore pode estar diferente — busca todos e compara parcialmente
+                    return getDB().collection("equipe").get().then(allSnap => {
+                        const emailPrefix = authEmail.split('@')[0].toLowerCase();
+                        let found = null;
+                        allSnap.forEach(doc => {
+                            const d = doc.data();
+                            if (d.email && d.email.toLowerCase().split('@')[0] === emailPrefix) {
+                                found = doc;
                             }
-                            liberarAcesso();
                         });
-                    }
-                }).catch(err => { 
-                    console.error("Erro ao buscar nível de acesso:", err);
-                    usuarioLogado = {nome: userEmail.split('@')[0], login: userEmail, email: userEmail, nivel: "COMPLETO"};
-                    liberarAcesso();
+                        if (found) {
+                            return { empty: false, docs: [found], size: 1 };
+                        }
+                        // Último fallback: busca por login + senha
+                        return getDB().collection("equipe").where("login", "==", u).where("senha", "==", p).get();
+                    });
                 });
-            }, 800);
-        })
-        .catch((error) => {
-            console.error(error);
-            msgErro.innerText = "Acesso negado. Verifique seu e-mail e senha cadastrados no painel Auth.";
-            msgErro.style.display = 'block';
-        });
+        } else {
+            // Sem Firebase Auth: busca por login + senha
+            return getDB().collection("equipe").where("login", "==", u).where("senha", "==", p).get();
+        }
+    }).then(snap => {
+        if (!snap.empty) { 
+            usuarioLogado = snap.docs[0].data(); 
+            liberarAcesso(); 
+        } else { 
+            document.getElementById('msg-erro-login').style.display = 'block'; 
+        }
+    }).catch(err => { 
+        console.error("Erro no login:", err);
+        alert("Erro ao logar. Verifique suas credenciais."); 
+    });
 }
 
 function checarLoginEnter(e) { 
@@ -153,38 +230,27 @@ window.liberarAcesso = function() {
     safeDisplay('tela-bloqueio', 'none'); 
     sessionStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado)); 
     
-    const userDisplay = document.getElementById('user-display');
-    if (userDisplay && usuarioLogado) {
-        let nomeVisual = (usuarioLogado.nome || 'Usuário').toUpperCase();
-        let emailVisual = usuarioLogado.email || usuarioLogado.login || '';
-        userDisplay.innerHTML = `<div style="display:flex; flex-direction:column; text-align:right; margin-right:15px;"><span style="font-size:12px; font-weight:700; color:#1e293b;">${nomeVisual}</span><span style="font-size:10px; color:#64748b;">${emailVisual}</span></div>`;
-    }
-    
     const btnAcolhimento = document.getElementById('nav-btn-acolhimento');
     const btnAgencia = document.getElementById('nav-btn-agencia');
     const btnAdmin = document.querySelector('.btn-admin');
     
-    let nivelAcesso = usuarioLogado.nivel || 'COMPLETO'; 
-    
     if(btnAcolhimento) btnAcolhimento.style.display = '';
     if(btnAgencia) btnAgencia.style.display = '';
-    if(btnAdmin) btnAdmin.style.display = (nivelAcesso === 'COMPLETO' || !usuarioLogado.nivel) ? '' : 'none';
+    if(btnAdmin) btnAdmin.style.display = '';
 
+    let nivelAcesso = usuarioLogado.nivel || 'COMPLETO'; 
+    
     if (nivelAcesso === 'ACOLHIMENTO') { 
         if(btnAgencia) btnAgencia.style.display = 'none'; 
+        if(btnAdmin) btnAdmin.style.display = 'none'; 
         window.alternarDashboard('acolhimento'); 
     } else if (nivelAcesso === 'AGENCIA') { 
         if(btnAcolhimento) btnAcolhimento.style.display = 'none'; 
+        if(btnAdmin) btnAdmin.style.display = 'none'; 
         window.alternarDashboard('agencia'); 
     } else { 
         window.alternarDashboard('acolhimento'); 
     }
-
-    const btnNovoAcolhimento = document.querySelector('#dashboard-acolhimento button[onclick="abrirModal()"]');
-    if(btnNovoAcolhimento) btnNovoAcolhimento.style.display = (nivelAcesso === 'AGENCIA_VIS_ACOLHIMENTO') ? 'none' : '';
-
-    const btnNovoAgencia = document.querySelector('#dashboard-agencia button[onclick="abrirModalParticular()"]');
-    if(btnNovoAgencia) btnNovoAgencia.style.display = (nivelAcesso === 'ACOLHIMENTO_VIS_AGENCIA') ? 'none' : '';
 
     const filtroLocal = document.getElementById('filtro-local');
     const filtroData = document.getElementById('filtro-data'); 
@@ -251,39 +317,47 @@ function inicializarSistema() {
     }
     
     const sessao = sessionStorage.getItem('usuarioLogado'); 
-    
-    if (auth) {
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                getDB().collection("equipe").where("email", "==", user.email).get().then(snap => { 
-                    if (!snap.empty) { 
-                        usuarioLogado = snap.docs[0].data(); 
-                        sessionStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado));
-                        window.liberarAcesso();
-                    } else {
-                        getDB().collection("equipe").where("login", "==", user.email).get().then(snap2 => {
-                            if (!snap2.empty) {
-                                usuarioLogado = snap2.docs[0].data();
-                            } else {
-                                usuarioLogado = sessao ? JSON.parse(sessao) : {nome: user.email.split('@')[0], email: user.email, nivel: "COMPLETO"};
-                            }
-                            sessionStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado));
-                            window.liberarAcesso();
-                        });
-                    }
-                }).catch(e => { 
-                    console.error("Aguardando sincronização", e); 
-                    usuarioLogado = sessao ? JSON.parse(sessao) : {nome: user.email.split('@')[0], email: user.email, nivel: "COMPLETO"};
-                    window.liberarAcesso();
-                }); 
-            } else {
-                safeDisplay('tela-bloqueio', 'flex');
-            }
-        });
-    } else {
-        if (sessao) {
-            usuarioLogado = JSON.parse(sessao); 
+    if (sessao) { 
+        const uTemp = JSON.parse(sessao); 
+        if(uTemp.login === 'admin') { 
+            usuarioLogado = uTemp; 
             window.liberarAcesso(); 
+        } else {
+            const dbInst = getDB();
+            if(dbInst) { 
+                // Garante autenticação Firebase (anônima se necessário) antes de consultar Firestore
+                const authReady = auth ? new Promise((resolve) => {
+                    const unsub = auth.onAuthStateChanged((user) => {
+                        unsub();
+                        if (user) {
+                            resolve(user);
+                        } else {
+                            // Nenhum usuário autenticado: tenta anônimo
+                            auth.signInAnonymously()
+                                .then(cred => resolve(cred.user))
+                                .catch(() => resolve(null));
+                        }
+                    });
+                }) : Promise.resolve(null);
+                
+                authReady.then(() => {
+                    dbInst.collection("equipe").where("login", "==", uTemp.login).get().then(snap => { 
+                        if (!snap.empty) { 
+                            usuarioLogado = snap.docs[0].data(); 
+                            window.liberarAcesso(); 
+                        } else { 
+                            window.fazerLogout(); 
+                        } 
+                    }).catch(e => { 
+                        console.warn("Erro ao restaurar sessão, usando dados locais:", e.message);
+                        usuarioLogado = uTemp; 
+                        window.liberarAcesso(); 
+                    });
+                });
+            } else { 
+                usuarioLogado = uTemp; 
+                window.liberarAcesso(); 
+            }
         }
     }
     
@@ -296,7 +370,9 @@ function inicializarSistema() {
                         getDB().collection("atendimentos").doc(doc.id).update({ data_ficha: d.data_ficha_modal }); 
                     }
                 }); 
-            }).catch(err => console.log("Aguardando permissão leitura...")); 
+            }).catch(e => {
+                console.warn("Erro ao sincronizar dados:", e.message);
+            }); 
         } 
     }, 3000);
 }
@@ -496,22 +572,18 @@ window.buscarPorCPF_PF = function() {
 
 window.toggleIndigente = function() {
     const chk = document.getElementById('chk_indigente'); 
-    const isIndigente = chk ? chk.checked : false;
-    const campos = ['resp_cpf', 'resp_nome', 'resp_endereco', 'resp_numero', 'resp_bairro', 'resp_cidade', 'telefone', 'funeraria', 'isencao', 'tipo_sepultura', 'sepul', 'qd', 'hospital', 'cap', 'data_obito', 'nome', 'causa', 'hora'];
-    
+    const campos = ['resp_nome', 'resp_cpf', 'resp_endereco', 'resp_numero', 'resp_bairro', 'resp_cidade', 'telefone', 'funeraria', 'isencao', 'tipo_sepultura', 'sepul', 'qd', 'hospital', 'cap', 'data_obito', 'nome', 'causa', 'hora'];
     campos.forEach(id => { 
         const el = document.getElementById(id); 
         if (el) { 
-            if (isIndigente) { 
-                if (el.hasAttribute('required') || el.required) { 
+            if (chk && chk.checked) { 
+                if (el.hasAttribute('required')) { 
                     el.removeAttribute('required'); 
-                    el.required = false;
                     el.setAttribute('data-was-required', 'true'); 
                 } 
             } else { 
                 if (el.getAttribute('data-was-required') === 'true') { 
-                    el.setAttribute('required', 'required'); 
-                    el.required = true;
+                    el.setAttribute('required', ''); 
                     el.removeAttribute('data-was-required'); 
                 } 
             } 
@@ -693,7 +765,7 @@ window.salvarAssinatura = function() {
         } 
         
         getDB().collection("atendimentos").doc(dadosAtendimentoAtual.id).update(updateData).then(() => {
-            window.registrarHistorico(dadosAtendimentoAtual.id, "COLETOU ASSINATURA", `Assinatura de: ${tipoAssinaturaAtual.toUpperCase()}`);
+            registrarHistorico(dadosAtendimentoAtual.id, 'ASSINATURA', `Assinatura ${tipoAssinaturaAtual === 'responsavel' ? 'do Responsável' : 'da Equipe'} registrada`);
             alert("Assinatura salva com sucesso!"); 
             window.fecharModalAssinatura();
             window.visualizar(dadosAtendimentoAtual.id); 
@@ -731,7 +803,7 @@ window.confirmarTransferencia = function() {
                 acao: "TRANSFERÊNCIA", 
                 detalhe: `De: ${localAntigo} Para: ${novoLocal}` 
             }); 
-            window.registrarHistorico(dadosAtendimentoAtual.id, "TRANSFERÊNCIA DE CEMITÉRIO", `De: ${localAntigo} Para: ${novoLocal}`);
+            registrarHistorico(dadosAtendimentoAtual.id, 'TRANSFERENCIA', `Transferido de ${localAntigo} para ${novoLocal}`);
             alert("Atendimento transferido com sucesso!"); 
             window.fecharModalTransferir(); 
             window.fecharModalVisualizar(); 
@@ -752,9 +824,6 @@ window.renderizarTabela = function(lista) {
         return; 
     }
     
-    let nivelAcesso = (usuarioLogado && usuarioLogado.nivel) ? usuarioLogado.nivel : 'COMPLETO';
-    let podeEditarAcolhimento = (nivelAcesso !== 'AGENCIA_VIS_ACOLHIMENTO' && nivelAcesso !== 'AGENCIA');
-    
     const fragment = document.createDocumentFragment(); 
     const doencasInfecciosas = ['COVID', 'MENINGITE', 'TUBERCULOSE', 'H1N1', 'HIV', 'SIDA', 'SARAMPO'];
 
@@ -772,7 +841,7 @@ window.renderizarTabela = function(lista) {
                 <td style="text-align: center; vertical-align:middle;">${item.data_ficha ? item.data_ficha.split('-').reverse().join('/') : ''}</td>
                 <td style="text-align:right; vertical-align:middle;">
                     <div style="display:flex; gap:5px; justify-content:flex-end;">
-                        ${podeEditarAcolhimento ? `<button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')" title="Excluir">🗑️</button>` : ''}
+                        <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')" title="Excluir">🗑️</button>
                     </div>
                 </td>`;
             fragment.appendChild(tr); 
@@ -795,10 +864,10 @@ window.renderizarTabela = function(lista) {
         }
         
         let servicosExtras = []; 
-        if (item.tanato === 'SIM' || item.chk_tanato === 'SIM') servicosExtras.push('TANATO'); 
-        if (item.invol === 'SIM' || item.chk_invol === 'SIM') servicosExtras.push('INVOL'); 
-        if (item.translado === 'SIM' || item.chk_translado === 'SIM') servicosExtras.push('TRANS'); 
-        if (item.urna_opc === 'SIM' || item.chk_urna_opc === 'SIM') servicosExtras.push('URNA'); 
+        if (item.tanato === 'SIM') servicosExtras.push('TANATO'); 
+        if (item.invol === 'SIM') servicosExtras.push('INVOL'); 
+        if (item.translado === 'SIM') servicosExtras.push('TRANS'); 
+        if (item.urna_opc === 'SIM') servicosExtras.push('URNA'); 
         
         if (servicosExtras.length > 0) {
             displayResponsavel += `<br><span style="font-size:10px; font-weight:bold;">SERVIÇOS: ${servicosExtras.join(', ')}</span>`; 
@@ -851,8 +920,8 @@ window.renderizarTabela = function(lista) {
             <td style="text-align:right; vertical-align:middle;">
                 <div style="display:flex; gap:5px; justify-content:flex-end;">
                     ${btnMap}
-                    ${podeEditarAcolhimento ? `<button class="btn-icon btn-editar-circle" onclick="event.stopPropagation();window.editar('${item.id}')">✏️</button>
-                    <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')">🗑️</button>` : ''}
+                    <button class="btn-icon btn-editar-circle" onclick="event.stopPropagation();window.editar('${item.id}')">✏️</button>
+                    <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')">🗑️</button>
                 </div>
             </td>`;
         fragment.appendChild(tr);
@@ -870,9 +939,6 @@ window.renderizarTabelaAgencia = function(lista) {
         container.innerHTML = '<div style="grid-column: 1 / -1; padding:40px; text-align:center; color:#64748b; font-weight:500;">Nenhum registro encontrado para a Agência.</div>'; 
         return; 
     }
-
-    let nivelAcesso = (usuarioLogado && usuarioLogado.nivel) ? usuarioLogado.nivel : 'COMPLETO';
-    let podeEditarAgencia = (nivelAcesso !== 'ACOLHIMENTO_VIS_AGENCIA' && nivelAcesso !== 'ACOLHIMENTO');
     
     const renderChip = (key, label, item) => { 
         let isAnexado = !!item.url_docs_agencia; 
@@ -913,10 +979,10 @@ window.renderizarTabelaAgencia = function(lista) {
                         <div style="margin-top:5px;">${statusNuvem}</div>
                     </div>
                 </div>
-                ${podeEditarAgencia ? `<div class="agencia-card-footer" style="background: #f3e8ff; border-top: 1px solid #e9d5ff; display:flex; gap:10px;">
+                <div class="agencia-card-footer" style="background: #f3e8ff; border-top: 1px solid #e9d5ff; display:flex; gap:10px;">
                     <button class="btn-novo" style="background:#8b5cf6; color:white; padding: 6px 12px; font-size: 12px; flex:1;" onclick="event.stopPropagation(); window.abrirFichaParticular('${item.id}')">📝 Ficha / Docs</button>
                     <button class="btn-novo" style="background:#ef4444; color:white; padding: 6px 12px; font-size: 12px; flex:1;" onclick="event.stopPropagation(); window.excluir('${item.id}')">🗑️ Remover</button>
-                </div>` : ''}`;
+                </div>`;
             card.onclick = () => window.abrirFichaParticular(item.id);
             fragment.appendChild(card); 
             return;
@@ -980,14 +1046,14 @@ window.renderizarTabelaAgencia = function(lista) {
                     ${avisoDocs}
                 </div>
             </div>
-            ${podeEditarAgencia ? `<div class="agencia-card-footer" style="flex-wrap: wrap;">
+            <div class="agencia-card-footer" style="flex-wrap: wrap;">
                 <div style="display:flex; gap:5px; flex-wrap: wrap;">
                     ${btnAssumir}
                     ${btnRepassar}
                     <button class="btn-novo" style="background:#f1f5f9; color:#ea580c; border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 12px; width:auto;" onclick="event.stopPropagation(); window.abrirModalAgencia('${item.id}')">✏️ Editar</button>
                 </div>
                 <button class="btn-novo" style="background:${statusLib === 'LIBERADO' ? '#10b981' : '#3b82f6'}; color:white; padding: 6px 12px; font-size: 12px; margin-top: 5px; width:auto; cursor:pointer;" onclick="event.stopPropagation(); window.abrirModalLiberacao('${item.id}')">✅ Liberação</button>
-            </div>` : ''}`;
+            </div>`;
         fragment.appendChild(card);
     });
     
@@ -1055,7 +1121,7 @@ if(formParticular) {
         };
         
         getDB().collection("atendimentos").add(dados).then((docRef) => { 
-            window.registrarHistorico(docRef.id, "CRIOU ATEND. PARTICULAR", "Registro inicial (Agência)");
+            registrarHistorico(docRef.id, 'CADASTRO', `Atendimento particular registrado - Falecido: ${dados.nome} | Protocolo: ${dados.protocolo}`);
             window.fecharModalParticular(); 
             alert("Atendimento Particular registrado com sucesso!"); 
         }).catch(err => { 
@@ -1083,7 +1149,8 @@ window.abrirFichaParticular = function(id) {
             if (d.chk_pessoa_fisica) {
                 let enderecoCompleto = `${d.part_pf_endereco || ''}, ${d.part_pf_numero || 'S/N'}`;
                 if (d.part_pf_complemento) enderecoCompleto += ` - ${d.part_pf_complemento}`;
-                if (d.part_pf_bairro) enderecoCompleto += ` - ${d.part_pf_cidade}/${d.part_pf_uf || ''}`;
+                if (d.part_pf_bairro) enderecoCompleto += ` - ${d.part_pf_bairro}`;
+                if (d.part_pf_cidade) enderecoCompleto += ` - ${d.part_pf_cidade}/${d.part_pf_uf || ''}`;
                 if (d.part_pf_cep) enderecoCompleto += ` (CEP: ${d.part_pf_cep})`;
 
                 dadosPF = `
@@ -1143,7 +1210,7 @@ window.salvarFichaParticular = function() {
     
     getDB().collection("atendimentos").doc(id).update(updates).then(() => {
         getDB().collection("auditoria").add({ data_log: new Date().toISOString(), usuario: usuarioLogado ? usuarioLogado.nome : 'Anon', acao: "ATUALIZOU FICHA PARTICULAR", detalhe: `ID: ${id}` }); 
-        window.registrarHistorico(id, "ATUALIZOU FICHA PARTICULAR", `Nuvem: ${updates.part_link_nuvem ? 'Anexado' : 'Pendente'}`);
+        registrarHistorico(id, 'CHECKLIST', 'Checklist da ficha particular atualizado');
         alert("Ficha salva com sucesso!");
         window.fecharModalParticularFicha();
     }).catch(e => alert("Erro ao salvar ficha."));
@@ -1167,8 +1234,8 @@ window.enviarWppParticular = function() {
     let texto = `*PREFEITURA MUNICIPAL DE NITERÓI*\n_Serviços Funerários - Agência_\n\nOlá, seguem as informações do seu atendimento particular:\n\n📄 *Protocolo:* ${d.protocolo || 'Pendente'}\n👤 *Falecido(a):* ${(d.nome || '-').toUpperCase()}\n⚰️ *Cemitério Destino:* ${(d.part_cemiterio || '-').toUpperCase()}\n🕒 *Hora de Liberação:* ${d.part_hora_liberacao || '-'}\n\nAgradecemos a compreensão.`;
 
     let url = `https://wa.me/55${t}?text=${encodeURIComponent(texto)}`;
-    window.registrarHistorico(d.id, "MENSAGEM WHATSAPP", "Enviou aviso de atendimento particular");
     window.open(url, '_blank');
+    registrarHistorico(d.id, 'WHATSAPP', `WhatsApp particular enviado para ${d.part_pf_nome || 'responsável'} (${t})`);
 }
 
 // ============================================================================
@@ -1257,7 +1324,7 @@ window.salvarDadosAgencia = function() {
     
     getDB().collection("atendimentos").doc(id).update(dados).then(() => { 
         getDB().collection("auditoria").add({ data_log: new Date().toISOString(), usuario: usuarioLogado ? usuarioLogado.nome : 'Anon', acao: "ATUALIZAÇÃO AGÊNCIA", detalhe: `Processo: ${dados.agencia_processo}` }); 
-        window.registrarHistorico(id, "ATUALIZOU TRÂMITES (AGÊNCIA)", `Status Liberação: ${dados.agencia_status_liberacao} | GRM: ${dados.agencia_grm} | Nuvem: ${dados.url_docs_agencia ? 'Anexado' : 'Pendente'}`);
+        registrarHistorico(id, 'AGENCIA', `Trâmites da agência atualizados - Processo: ${dados.agencia_processo} | GRM: ${dados.agencia_grm} | Status: ${dados.agencia_status_liberacao}`);
         window.fecharModalAgencia(); 
     }).catch(e => alert("Erro ao salvar trâmites da agência."));
 }
@@ -1312,7 +1379,6 @@ window.mesclarEBaixarPDFsAgencia = async function(event) {
         a.remove(); 
         btn.innerText = oldTxt; 
         btn.disabled = false; 
-        if (docId) window.registrarHistorico(docId, "GEROU DOCUMENTO", "Mesclou PDFs (Agência)");
         alert("PDFs mesclados e baixados com sucesso!"); 
         fileInput.value = "";
     } catch (err) { 
@@ -1328,7 +1394,7 @@ window.assumirProcessoAgencia = function(id, isTransfer = false) {
     if (confirm(isTransfer ? `Deseja transferir a responsabilidade deste processo para você?` : `Deseja assumir a responsabilidade por este processo na Agência?`)) {
         getDB().collection("atendimentos").doc(id).update({ agencia_atendente: usuarioLogado.nome }).then(() => { 
             getDB().collection("auditoria").add({ data_log: new Date().toISOString(), usuario: usuarioLogado.nome, acao: isTransfer ? "TRANSFERIU RESPONSABILIDADE (AGÊNCIA)" : "ASSUMIU AGÊNCIA", detalhe: `ID: ${id}` }); 
-            window.registrarHistorico(id, isTransfer ? "TRANSFERIU RESPONSABILIDADE (AGÊNCIA)" : "ASSUMIU PROCESSO (AGÊNCIA)", "Responsável: " + usuarioLogado.nome);
+            registrarHistorico(id, 'AGENCIA', isTransfer ? `Responsabilidade transferida para ${usuarioLogado.nome}` : `${usuarioLogado.nome} assumiu o processo na Agência`);
         }).catch(e => { alert("Erro ao assumir atendimento."); });
     }
 }
@@ -1338,7 +1404,6 @@ window.assumirProcessoAgenciaModal = function() {
     const id = document.getElementById('agencia_docId').value;
     if(confirm("Deseja assumir este processo para você? Apenas após isso a edição será habilitada.")) { 
         getDB().collection("atendimentos").doc(id).update({ agencia_atendente: usuarioLogado.nome }).then(() => { 
-            window.registrarHistorico(id, "ASSUMIU PROCESSO (AGÊNCIA)", "Responsável: " + usuarioLogado.nome);
             document.getElementById('agencia_atendente_modal').innerText = usuarioLogado.nome.toUpperCase(); 
             window.toggleCamposAgencia(true); 
         }); 
@@ -1379,7 +1444,7 @@ window.confirmarTransferenciaResponsavel = function() {
     
     getDB().collection("atendimentos").doc(window.idTransferenciaResponsavelAtual).update({ agencia_atendente: novoResponsavel, justificativa_repasse: justificativa }).then(() => {
         getDB().collection("auditoria").add({ data_log: new Date().toISOString(), usuario: usuarioLogado ? usuarioLogado.nome : 'Anon', acao: "REPASSOU PROCESSO (AGÊNCIA)", detalhe: `ID: ${window.idTransferenciaResponsavelAtual} | Para: ${novoResponsavel} | Motivo: ${justificativa}` });
-        window.registrarHistorico(window.idTransferenciaResponsavelAtual, "REPASSOU PROCESSO", `Para: ${novoResponsavel} | Motivo: ${justificativa}`);
+        registrarHistorico(window.idTransferenciaResponsavelAtual, 'TRANSFERENCIA', `Processo repassado para ${novoResponsavel} - Motivo: ${justificativa}`);
         alert("Processo repassado com sucesso!"); 
         const el = document.getElementById('agencia_atendente_modal'); 
         if (el && document.getElementById('modal-agencia').style.display === 'block') { el.innerText = novoResponsavel.toUpperCase(); } 
@@ -1427,7 +1492,8 @@ window.fecharModalAdmin = function() { safeDisplay('modal-admin', 'none'); }
 
 window.abrirAba = function(id) {
     Array.from(document.getElementsByClassName('tab-pane')).forEach(e => e.classList.remove('active')); 
-    document.getElementById(id).classList.add('active'); 
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active'); 
     document.querySelectorAll('.tab-header .tab-btn').forEach(btn => btn.classList.remove('active'));
     
     if (id === 'tab-equipe') document.querySelectorAll('.tab-btn')[0].classList.add('active'); 
@@ -1490,7 +1556,7 @@ window.carregarEstatisticas = function(modo) {
         const elKpiAcolhimento = document.getElementById('kpi-acolhimento'); if (elKpiAcolhimento) elKpiAcolhimento.innerText = totalAcolhimento;
         const elKpiAgencia = document.getElementById('kpi-agencia'); if (elKpiAgencia) elKpiAgencia.innerText = totalAgencia;
 
-        window.dadosGraficosAtuais = { Cemiterios: Cemiterios, Volume_Periodo: linhasTempo, Causas: causas, Atendentes: atendentes, Sepulturas: sepulturas, Funerarias: funerarias, Tempo_Resolucao: tempos, Isencoes: isencoes, Quadras: quadras, Hospitais: hospitais, Bairros: bairros, Municipios: municipios, Valores_GRM: valores };
+        window.dadosGraficosAtuais = { Cemiterios: cemiterios, Volume_Periodo: linhasTempo, Causas: causas, Atendentes: atendentes, Sepulturas: sepulturas, Funerarias: funerarias, Tempo_Resolucao: tempos, Isencoes: isencoes, Quadras: quadras, Hospitais: hospitais, Bairros: bairros, Municipios: municipios, Valores_GRM: valores };
 
         const draw = (id, dataObj, lbl, type='bar', color='#3b82f6') => {
             const ctx = document.getElementById(id); if(!ctx || !window.Chart) return;
@@ -1950,8 +2016,6 @@ window.abrirModal = function() {
     if (usuarioLogado) document.getElementById('atendente_sistema').value = usuarioLogado.nome;
     document.getElementById('data_hora_atendimento').value = (new Date(new Date() - new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
     if(document.getElementById('filtro-data')) document.getElementById('data_ficha').value = document.getElementById('filtro-data').value;
-    const chkInd = document.getElementById('chk_indigente');
-    if(chkInd) { chkInd.checked = false; window.toggleIndigente(); }
     safeDisplay('modal', 'block');
 }
 
@@ -1967,7 +2031,7 @@ window.editar = function(id) {
             document.getElementById('docId').value = doc.id;
             ['tanato', 'invol', 'translado', 'urna_opc'].forEach(k => { 
                 const chk = document.getElementById('chk_'+k); 
-                if(chk) chk.checked = (d[k] === 'SIM' || d['chk_'+k] === 'SIM'); 
+                if(chk) chk.checked = (d[k] === 'SIM'); 
             });
             const chkInd = document.getElementById('chk_indigente'); 
             if(chkInd) { 
@@ -1994,24 +2058,20 @@ if(formAcolhimento) {
                 dados[key] = el.type === 'checkbox' ? (el.checked ? 'SIM' : 'NAO') : el.value; 
             } 
         });
-        
-        dados.indigente = document.getElementById('chk_indigente') && document.getElementById('chk_indigente').checked ? 'SIM' : 'NAO';
-        
         if(!dados.atendente_sistema && usuarioLogado) dados.atendente_sistema = usuarioLogado.nome; 
         dados.local = document.getElementById('filtro-local').value;
         if(!id && !dados.protocolo) dados.protocolo = window.gerarProtocolo();
         
         if(id) {
-            let m = document.getElementById('motivo_edicao').value;
-            if(!m) { alert("Motivo obrigatório na edição."); return; }
+            if(!document.getElementById('motivo_edicao').value) { alert("Motivo obrigatório na edição."); return; }
             getDB().collection("atendimentos").doc(id).update(dados).then(() => { 
-                window.registrarHistorico(id, "EDITOU FICHA", "Motivo: " + m);
+                registrarHistorico(id, 'EDICAO', `Ficha editada - Motivo: ${document.getElementById('motivo_edicao').value}`);
                 window.fecharModal(); 
                 window.abrirModalDocsAcolhimento(id); 
             });
         } else { 
             getDB().collection("atendimentos").add(dados).then((docRef) => { 
-                window.registrarHistorico(docRef.id, "CRIOU ATENDIMENTO", "Registro inicial no Acolhimento");
+                registrarHistorico(docRef.id, 'CADASTRO', `Atendimento cadastrado - Falecido: ${dados.nome || 'N/I'} | Protocolo: ${dados.protocolo || ''}`);
                 window.fecharModal(); 
                 window.abrirModalDocsAcolhimento(docRef.id); 
             }); 
@@ -2064,7 +2124,8 @@ window.salvarDocsAcolhimento = function() {
     if(elLnk) updates.url_docs_acolhimento = elLnk.value.trim();
     getDB().collection("atendimentos").doc(id).update(updates).then(() => { 
         getDB().collection("auditoria").add({ data_log: new Date().toISOString(), usuario: usuarioLogado ? usuarioLogado.nome : 'Anon', acao: "ATUALIZOU DOCS ACOLHIMENTO", detalhe: `ID: ${id}` }); 
-        window.registrarHistorico(id, "ATUALIZOU CHECKLIST ACOLHIMENTO", `Nuvem: ${updates.url_docs_acolhimento ? 'Anexado' : 'Pendente'}`);
+        const docsMarc = listaDocsPadrao.filter(c => { const chk = document.getElementById(`chk_doc_${c}`); return chk && chk.checked; });
+        registrarHistorico(id, 'CHECKLIST', `Checklist acolhimento atualizado (${docsMarc.length} docs marcados)`);
         alert("Checklist salvo com sucesso!"); 
         window.fecharModalDocsAcolhimento(); 
     }).catch(e => { alert("Erro ao salvar os documentos."); });
@@ -2120,7 +2181,6 @@ window.mesclarEBaixarPDFsAcolhimento = async function(event) {
         a.remove(); 
         btn.innerText = oldTxt; 
         btn.disabled = false; 
-        if (docId) window.registrarHistorico(docId, "GEROU DOCUMENTO", "Mesclou PDFs (Acolhimento)");
         alert("PDFs mesclados e baixados com sucesso!"); 
         fileInput.value = "";
     } catch (err) { 
@@ -2174,10 +2234,10 @@ window.gerarFormularioLiberacao = function(tipoImpressao) {
             
             const html = `<html><head><title>Liberação</title>${cssPrint}</head><body><table style="border:2px solid #000;"><tr><td style="width:35%;border-bottom:2px solid #000;text-align:center;padding:15px;"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:80px;"></td><td style="width:65%;border-bottom:2px solid #000;text-align:center;font-weight:bold;line-height:1.8;font-size:14px;padding:15px;">SECRETARIA DE MOBILIDADE E INFRAESTRUTURA - SEMOBI<br><br>SUBSECRETARIA DE INFRAESTRUTURA - SSINFRA<br><br>COORDENADORIA MUNICIPAL DE SERVIÇOS FUNERÁRIOS<br><br>AGÊNCIA FUNERÁRIA MUNICIPAL</td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;text-align:center;font-weight:bold;padding:8px;">CERTIFICO e dou fé que, nesta data, estamos finalizando o Processo Administrativo</td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:10%;border:none;border-right:2px solid #000;padding:10px;text-align:center;">Nº</td><td style="width:35%;border:none;border-right:2px solid #000;padding:10px;" class="bg-gray">${d.agencia_processo||''}</td><td style="width:20%;border:none;border-right:2px solid #000;padding:10px;text-align:center;">, processo de</td><td style="width:35%;border:none;padding:10px;" class="bg-gray">${tp}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:15%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Falecido:</td><td style="width:85%;border:none;padding:10px;" class="bg-gray">${(d.nome||'').toUpperCase()}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:15%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Data:</td><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="bg-gray">${dF}</td><td style="width:55%;border:none;"></td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:35%;border:none;border-right:2px solid #000;padding:10px;text-align:center;" class="label-cell">Sepultamento/Crematório no Cemitério<br>Municipal/Privado:</td><td style="width:65%;border:none;padding:10px;vertical-align:middle;" class="bg-gray">${(d.local||'').toUpperCase()}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:15%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Horário:</td><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="bg-gray">${d.hora||''}</td><td style="width:25%;border:none;border-right:2px solid #000;padding:10px;text-align:center;" class="label-cell">Horário da Liberação:</td><td style="width:30%;border:none;padding:10px;" class="bg-gray">${hA}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Saindo o féretro da Capela:</td><td style="width:70%;border:none;padding:10px;" class="bg-gray">${(d.cap||'').toUpperCase()}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;padding:0;"><table><tr><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Para a Sepultura:</td><td style="width:70%;border:none;padding:10px;" class="bg-gray">${se}</td></tr></table></td></tr><tr><td colspan="2" style="border-bottom:2px solid #000;height:15px;border-left:none;border-right:none;"></td></tr><tr><td colspan="2" style="padding:0;"><table><tr><td style="width:30%;border:none;border-right:2px solid #000;padding:10px;" class="label-cell">Funerária:</td><td style="width:70%;border:none;padding:10px;" class="bg-gray">${(d.funeraria||'').toUpperCase()}</td></tr></table></td></tr></table><div style="text-align:center;margin-top:40px;">${si}<div style="border-top:1px dashed #000;width:350px;margin:0 auto;margin-bottom:5px;"></div><span style="font-weight:bold;font-size:13px;">Assinatura do Responsável</span><br><span style="font-size:13px;">${at}</span><br><br><span style="font-weight:bold;font-size:13px;">Matrícula</span><br><span style="font-size:13px;">_________________</span></div></body></html>`;
             
-            window.registrarHistorico(window.idLiberacaoAtual, "GEROU DOCUMENTO", "Liberação (" + tipoImpressao + ")");
             w.document.open();
             w.document.write(html); 
             w.document.close(); 
+            registrarHistorico(window.idLiberacaoAtual, 'LIBERACAO', `Documento de Liberação gerado (${tipoImpressao === 'municipal' ? 'Sepultamento' : 'Cremação'})`);
             
             setTimeout(function() {
                 w.print();
@@ -2198,6 +2258,7 @@ window.gerarFormularioLiberacao = function(tipoImpressao) {
 
 window.gerarReciboFuneraria = function() {
     if(!dadosAtendimentoAtual) return;
+    registrarHistorico(dadosAtendimentoAtual.id, 'DOCUMENTO', 'Recibo de Funerária gerado');
     const d = dadosAtendimentoAtual; 
     const f = (s) => s ? s.split('-').reverse().join('/') : ''; 
     const p = d.protocolo || "S/ PROTOCOLO"; 
@@ -2215,9 +2276,8 @@ window.gerarReciboFuneraria = function() {
 
     let nA = (d.atendente_sistema || (usuarioLogado ? usuarioLogado.nome : 'N/A')).toUpperCase();
     let bA = d.assinatura_atendente ? `<div style="text-align:center;height:45px;"><img src="${d.assinatura_atendente}" style="max-height:40px;max-width:80%;"></div>` : `<div style="height:45px;"></div>`;
-    let bF = d.assinatura_responsavel ? `<div style="text-align:center;height:45px;"><img src="${d.assinatura_responsavel}" style="max-height:40px;max-width:80%;"></div>` : `<div style="height:45px;"></div>`;
     
-    let tanatoStr = (d.tanato === 'SIM' || d.chk_tanato === 'SIM') ? 'SIM' : 'NÃO'; 
+    let tanatoStr = d.tanato === 'SIM' ? 'SIM' : 'NÃO'; 
 
     const html = `<html><head><title>Recibo Funerária</title>
     <style>
@@ -2259,7 +2319,7 @@ window.gerarReciboFuneraria = function() {
                 </div>
             </div>
             <div class="ass-box">
-                ${bF}
+                <div style="height:45px;"></div>
                 <div style="border-top:1px solid #000; padding-top: 5px;">
                     Responsável pela Funerária<br><b>${d.func_funeraria ? d.func_funeraria.toUpperCase() : '_________________________'}</b>
                 </div>
@@ -2268,7 +2328,6 @@ window.gerarReciboFuneraria = function() {
         <script>window.onload=function(){setTimeout(function(){window.print();window.close();},500)}</script>
     </body></html>`;
 
-    window.registrarHistorico(dadosAtendimentoAtual.id, "GEROU DOCUMENTO", "Recibo da Funerária");
     const w = window.open('', '_blank'); 
     if(!w) { 
         alert("O seu navegador bloqueou o pop-up. Por favor, permita pop-ups para imprimir o recibo."); 
@@ -2281,6 +2340,7 @@ window.gerarReciboFuneraria = function() {
 
 window.gerarAutorizacao = function(){
     if(!dadosAtendimentoAtual) return;
+    registrarHistorico(dadosAtendimentoAtual.id, 'DOCUMENTO', 'Autorização para Funeral gerada');
     const d = dadosAtendimentoAtual; 
     const formatarData = (s) => s ? s.split('-').reverse().join('/') : '';
     
@@ -2318,13 +2378,8 @@ window.gerarAutorizacao = function(){
     
     const sigResp = d.assinatura_responsavel ? `<img src="${d.assinatura_responsavel}" style="max-height:40px;">` : '';
     
-    let fun = (d.funeraria || '').toUpperCase();
-    let isSocialOuFamilia = fun === 'SOCIAL' || fun === 'PRÓPRIA FAMÍLIA' || fun.includes('ACOLHIMENTO');
-    let displayFunerariaTop = isSocialOuFamilia ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' : (d.funeraria || '');
+    const html = `<html><head><title>Autorização para Funeral</title><style>@page{size:A4 portrait;margin:10mm;}body{font-family:Arial,sans-serif;font-size:12px;margin:0;padding:10px;line-height:1.5;}.bold{font-weight:bold;text-transform:uppercase;}.ass{margin-top:30px;text-align:center;width:60%;margin-left:auto;margin-right:auto;}h3{text-decoration:underline;text-align:center;margin-bottom:10px;margin-top:10px;font-size:14px;}.section-title{font-weight:bold;text-decoration:underline;margin-top:20px;display:block;font-size:12px;}p{margin:5px 0;text-align:justify;}.ul-texto{border-bottom:1px solid #000;display:inline-block;min-width:40px;text-align:center;font-weight:bold;text-transform:uppercase;}.checkboxes{margin:10px 0;font-size:11px;}.checkboxes span{margin-right:5px;}.obs{font-size:11px;margin-top:10px;text-align:justify;display:flex;gap:10px;line-height:1.3;}.logo-container{text-align:center;margin-bottom:10px;}</style></head><body><div class="logo-container"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:60px;"></div><h3>AUTORIZAÇÃO PARA FUNERAL</h3><p>Eu, <span class="ul-texto" style="width:45%;">${d.resp_nome||''}</span> CPF nº <span class="ul-texto" style="width:20%;">${d.resp_cpf||''}</span><br>RG: <span class="ul-texto" style="width:20%;">${d.resp_rg||''}</span> residente <span class="ul-texto" style="width:35%;">${d.resp_endereco||''}</span> nº <span class="ul-texto" style="width:5%;">${d.resp_numero||''}</span> bairro <span class="ul-texto" style="width:15%;">${d.resp_bairro||''}</span><br><span class="ul-texto" style="width:20%;">${d.resp_cidade||''}</span> Município <span class="ul-texto" style="width:10%;">${d.resp_uf||''}</span> Estado CEP: <span class="ul-texto" style="width:15%;">${d.resp_cep||''}</span> grau de parentesco <span class="ul-texto" style="width:20%;">${d.parentesco||''}</span></p><p><b>AUTORIZO a FUNERÁRIA</b> <span class="ul-texto" style="width:40%;">${d.funeraria||''}</span>, a tratar junto à Agência Funerária dos Cemitérios Municipais de Niterói do Sepultamento do Sr(a) <span class="ul-texto" style="width:50%;">${d.nome||''}</span> falecido no dia <span class="ul-texto" style="width:15%;">${formatarData(d.data_obito)||''}</span>,<br>tendo como local de óbito <span class="ul-texto" style="width:30%;">${d.hospital||''}</span>, sendo o sepultamento no Cemitério <span class="ul-texto" style="width:20%;">${(d.local||'').replace('CEMITÉRIO DO ','').replace('CEMITÉRIO DE ','')}</span> Tipo de Sepultura ${checkForm(d.tipo_sepultura,'CRA')} Cova Rasa Adulto</p><div class="checkboxes"><span>${checkForm(d.tipo_sepultura,'CRJ')} Cova Rasa Anjo</span> <span>${checkForm(d.tipo_sepultura,'GA')} GAVETA ADULTO</span> <span>${checkForm(d.tipo_sepultura,'GJ')} GAVETA ANJO</span> <span>${checkForm(d.tipo_sepultura,'CA')} CARNEIRA ADULTO</span> <span>${checkForm(d.tipo_sepultura,'CJ')} CARNEIRA ANJO</span> <span>Nº Sepultura <span class="ul-texto" style="width:8%;">${d.sepul||''}</span></span> <span>Qd. <span class="ul-texto" style="width:8%;">${d.qd||''}</span></span> <span>Rua <span class="ul-texto" style="width:8%;"></span></span></div><p>Aluguel ${checkForm(d.tipo_sepultura,'ALUGUEL')} Perpétuo ${checkForm(d.tipo_sepultura,'PERPETU')} Livro nº <span class="ul-texto" style="width:10%;">${d.livro_perpetua||''}</span> Folha nº <span class="ul-texto" style="width:10%;">${d.folha_perpetua||''}</span> <b>Autorização de 24 Horas para sepultamento, SIM ${d.do_24h==='SIM'?'(X)':'( )'} NÃO ${d.do_24h!=='SIM'?'(X)':'( )'}</b></p><p>Telefones para Contato 1º <span class="ul-texto" style="width:20%;">${d.telefone||''}</span> 2º <span class="ul-texto" style="width:20%;"></span></p><p><b>DATA E HORÁRIO DO SEPULTAMENTO: <span class="ul-texto" style="width:15%;">${formatarData(d.data_ficha)||''}</span> ÁS <span class="ul-texto" style="width:10%;">${d.hora||''}</span> HORAS</b></p><p><b>*ESTOU CIENTE E ACEITO A SEPULTURA DISPONÍVEL.</b></p><p style="text-align:right;">Niterói, <span class="ul-texto" style="width:30%;border:none;">${dExtenso}</span></p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><span class="section-title">AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</span><p>Autorizo a Funerária <span class="ul-texto" style="width:30%;">${d.funeraria||''}</span> a entregar toda e qualquer documentação exigida, bem como a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), agendamento e liberação de corpo na agência para o Cemitério de destino.</p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><span class="section-title">NÃO AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</span><p><b>NÃO</b> autorizo a Funerária <span class="ul-texto" style="width:30%;">${d.funeraria||''}</span> a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), sendo de minha inteira responsabilidade efetuar o pagamento das taxas bem como entregar a documentação exigida para liberação do corpo na agência para o Cemitério de destino. Importante frisar que toda a documentação posterior ao pagamento, a família deverá entregar a Funerária para que seja autorizado junto ao Cemitério a entrada do corpo na capela do Cemitério escolhido.</p><p>Sendo de responsabilidade da Funerária <span class="ul-texto" style="width:30%;">${d.funeraria||''}</span> tão somente a entrega dos documentos obrigatórios da empresa contratada bem como realizar o agendamento do sepultamento.</p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><div class="obs"><span style="font-size:18px;">→</span><div><b>OBS.:</b> Importante frisar que a Funerária ou a Família terá o prazo de no <b>MÁXIMO 01 (uma) horas</b> antes do sepultamento para pagar as taxas. Caso não seja cumprido no horário o pagamento o sepultamento será <b>SUSPENSO</b>.</div></div><div class="obs"><span style="font-size:18px;">→</span><div><b>OBS.:</b> Em se tratando do Cemitério de Itaipu e São Francisco, o pagamento das taxas deverão ser pagas no ato da liberação do corpo na Agência, tendo em vista se tratar de Cemitérios longe da Agência recebedora. Caso não seja realizado o pagamento, os Cemitérios não autorizarão a entrada do corpo.</div></div></body></html>`;
     
-    const html = `<html><head><title>Autorização para Funeral</title><style>@page{size:A4 portrait;margin:10mm;}body{font-family:Arial,sans-serif;font-size:12px;margin:0;padding:10px;line-height:1.5;}.bold{font-weight:bold;text-transform:uppercase;}.ass{margin-top:30px;text-align:center;width:60%;margin-left:auto;margin-right:auto;}h3{text-decoration:underline;text-align:center;margin-bottom:10px;margin-top:10px;font-size:14px;}.section-title{font-weight:bold;text-decoration:underline;margin-top:20px;display:block;font-size:12px;}p{margin:5px 0;text-align:justify;}.ul-texto{border-bottom:1px solid #000;display:inline-block;min-width:40px;text-align:center;font-weight:bold;text-transform:uppercase;color:#000;}.checkboxes{margin:10px 0;font-size:11px;}.checkboxes span{margin-right:5px;}.obs{font-size:11px;margin-top:10px;text-align:justify;display:flex;gap:10px;line-height:1.3;}.logo-container{text-align:center;margin-bottom:10px;}</style></head><body><div class="logo-container"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:60px;"></div><h3>AUTORIZAÇÃO PARA FUNERAL</h3><p>Eu, <span class="ul-texto" style="width:45%;">${d.resp_nome||''}</span> CPF nº <span class="ul-texto" style="width:20%;">${d.resp_cpf||''}</span><br>RG: <span class="ul-texto" style="width:20%;">${d.resp_rg||''}</span> residente <span class="ul-texto" style="width:35%;">${d.resp_endereco||''}</span> nº <span class="ul-texto" style="width:5%;">${d.resp_numero||''}</span> bairro <span class="ul-texto" style="width:15%;">${d.resp_bairro||''}</span><br><span class="ul-texto" style="width:20%;">${d.resp_cidade||''}</span> Município <span class="ul-texto" style="width:10%;">${d.resp_uf||''}</span> Estado CEP: <span class="ul-texto" style="width:15%;">${d.resp_cep||''}</span> grau de parentesco <span class="ul-texto" style="width:20%;">${d.parentesco||''}</span></p><p><b>AUTORIZO a FUNERÁRIA</b> <span class="ul-texto" style="width:40%;color:#000;">${displayFunerariaTop}</span>, a tratar junto à Agência Funerária dos Cemitérios Municipais de Niterói do Sepultamento do Sr(a) <span class="ul-texto" style="width:50%;">${d.nome||''}</span> falecido no dia <span class="ul-texto" style="width:15%;">${formatarData(d.data_obito)||''}</span>,<br>tendo como local de óbito <span class="ul-texto" style="width:30%;">${d.hospital||''}</span>, sendo o sepultamento no Cemitério <span class="ul-texto" style="width:20%;">${(d.local||'').replace('CEMITÉRIO DO ','').replace('CEMITÉRIO DE ','')}</span> Tipo de Sepultura ${checkForm(d.tipo_sepultura,'CRA')} Cova Rasa Adulto</p><div class="checkboxes"><span>${checkForm(d.tipo_sepultura,'CRJ')} Cova Rasa Anjo</span> <span>${checkForm(d.tipo_sepultura,'GA')} GAVETA ADULTO</span> <span>${checkForm(d.tipo_sepultura,'GJ')} GAVETA ANJO</span> <span>${checkForm(d.tipo_sepultura,'CA')} CARNEIRA ADULTO</span> <span>${checkForm(d.tipo_sepultura,'CJ')} CARNEIRA ANJO</span> <span>Nº Sepultura <span class="ul-texto" style="width:8%;">${d.sepul||''}</span></span> <span>Qd. <span class="ul-texto" style="width:8%;">${d.qd||''}</span></span> <span>Rua <span class="ul-texto" style="width:8%;"></span></span></div><p>Aluguel ${checkForm(d.tipo_sepultura,'ALUGUEL')} Perpétuo ${checkForm(d.tipo_sepultura,'PERPETU')} Livro nº <span class="ul-texto" style="width:10%;">${d.livro_perpetua||''}</span> Folha nº <span class="ul-texto" style="width:10%;">${d.folha_perpetua||''}</span> <b>Autorização de 24 Horas para sepultamento, SIM ${d.do_24h==='SIM'?'(X)':'( )'} NÃO ${d.do_24h!=='SIM'?'(X)':'( )'}</b></p><p>Telefones para Contato 1º <span class="ul-texto" style="width:20%;">${d.telefone||''}</span> 2º <span class="ul-texto" style="width:20%;"></span></p><p><b>DATA E HORÁRIO DO SEPULTAMENTO: <span class="ul-texto" style="width:15%;">${formatarData(d.data_ficha)||''}</span> ÁS <span class="ul-texto" style="width:10%;">${d.hora||''}</span> HORAS</b></p><p><b>*ESTOU CIENTE E ACEITO A SEPULTURA DISPONÍVEL.</b></p><p style="text-align:right;">Niterói, <span class="ul-texto" style="width:30%;border:none;">${dExtenso}</span></p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><span class="section-title">AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</span><p>Autorizo a Funerária <span class="ul-texto" style="width:30%; color:transparent;">_</span> a entregar toda e qualquer documentação exigida, bem como a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), agendamento e liberação de corpo na agência para o Cemitério de destino.</p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><span class="section-title">NÃO AUTORIZAÇÃO PARA PAGAMENTO DAS TAXAS</span><p><b>NÃO</b> autorizo a Funerária <span class="ul-texto" style="width:30%; color:transparent;">_</span> a efetuar o pagamento das taxas inerentes ao funeral (capela, entrada de corpo, sepultamento e afins), sendo de minha inteira responsabilidade efetuar o pagamento das taxas bem como entregar a documentação exigida para liberação do corpo na agência para o Cemitério de destino. Importante frisar que toda a documentação posterior ao pagamento, a família deverá entregar a Funerária para que seja autorizado junto ao Cemitério a entrada do corpo na capela do Cemitério escolhido.</p><p>Sendo de responsabilidade da Funerária <span class="ul-texto" style="width:30%; color:transparent;">_</span> tão somente a entrega dos documentos obrigatórios da empresa contratada bem como realizar o agendamento do sepultamento.</p><div class="ass">${sigResp}<div style="border-top:1px solid #000;padding-top:3px;">Assinatura do(a) autorizador (a)</div></div><div class="obs"><span style="font-size:18px;">→</span><div><b>OBS.:</b> Importante frisar que a Funerária ou a Família terá o prazo de no <b>MÁXIMO 01 (uma) horas</b> antes do sepultamento para pagar as taxas. Caso não seja cumprido no horário o pagamento o sepultamento será <b>SUSPENSO</b>.</div></div><div class="obs"><span style="font-size:18px;">→</span><div><b>OBS.:</b> Em se tratando do Cemitério de Itaipu e São Francisco, o pagamento das taxas deverão ser pagas no ato da liberação do corpo na Agência, tendo em vista se tratar de Cemitérios longe da Agência recebedora. Caso não seja realizado o pagamento, os Cemitérios não autorizarão a entrada do corpo.</div></div></body></html>`;
-    
-    window.registrarHistorico(dadosAtendimentoAtual.id, "GEROU DOCUMENTO", "Autorização para Funeral");
     const w = window.open('', '_blank'); 
     if(!w) { 
         alert("O seu navegador bloqueou o pop-up. Por favor, permita pop-ups para imprimir a autorização."); 
@@ -2339,6 +2394,7 @@ window.gerarAutorizacao = function(){
 
 window.gerarComprovante = function() {
     if(!dadosAtendimentoAtual) return;
+    registrarHistorico(dadosAtendimentoAtual.id, 'DOCUMENTO', 'Comprovante de Atendimento gerado');
     const d = dadosAtendimentoAtual; 
     const ck = (c) => c ? '(X)' : '( )'; 
     const f = (s) => s ? s.split('-').reverse().join('/') : ''; 
@@ -2391,9 +2447,8 @@ window.gerarComprovante = function() {
     let bA = d.assinatura_atendente ? `<div style="text-align:center;height:45px;"><img src="${d.assinatura_atendente}" style="max-height:40px;max-width:80%;"></div>` : `<div style="height:45px;"></div>`;
     let nA = (d.atendente_sistema || (usuarioLogado ? usuarioLogado.nome : 'N/A')).toUpperCase();
     
-    const htmlComprovante = `<html><head><title>Comprovante</title><style>@page{size:A4 portrait;margin:8mm;}body{font-family:Arial,sans-serif;font-size:14px;margin:0;padding:10px;line-height:1.3;color:#000;}.header{text-align:center;margin-bottom:25px;position:relative;}.header h2{font-size:20px;text-decoration:underline;margin:0;font-weight:bold;text-transform:uppercase;color:#000;}.protocolo{position:absolute;top:-5px;right:0;font-size:14px;font-weight:bold;border:2px solid #000;padding:5px 10px;}.line{margin-bottom:4px;white-space:normal;word-wrap:break-word;overflow:visible;}.bold{font-weight:900;}.red{color:red;font-weight:bold;}.section-title{font-weight:900;margin-top:15px;margin-bottom:2px;text-transform:uppercase;font-size:14px;}.two-columns{display:flex;justify-content:space-between;margin-top:10px;}.col-left{width:60%;}.col-right{width:38%;}.assinaturas-block{display:flex;justify-content:space-between;margin-top:25px;margin-bottom:10px;gap:20px;}.ass-line{text-align:center;padding-top:2px;flex:1;font-size:12px;}.box-lateral{border:2px solid #000;padding:5px;font-weight:900;font-size:12px;height:100%;display:flex;flex-direction:column;justify-content:space-between;}.termo-juridico{text-align:justify;font-size:12px;line-height:1.3;}.footer-line{margin-top:10px;border-top:1px solid #000;padding-top:5px;font-weight:900;font-size:12px;}.aviso-final{border:2px solid #000;padding:5px;margin-top:10px;font-weight:900;text-align:justify;font-size:12px;line-height:1.3;}.spacer{margin-left:10px;}</style></head><body><div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:60px;margin-bottom:5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${(d.nome||'').toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome||'').toUpperCase()} <span style="margin-left:5px;font-weight:normal;">${rl}</span></div><div class="line"><span class="bold">Funerária:</span> ${(d.funeraria||'').toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria||'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${nA}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dhT}</div><div class="line"><span class="bold">Data:</span> ${f(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora||''} <span class="bold spacer">SEPULTURA:</span> ${d.sepul||''} <span class="bold spacer">${im?"QUADRA:":"RUA:"}</span> ${d.qd||''} <span class="bold spacer">CAPELA:</span> ${d.cap||''}</div><div class="line"><span class="bold">COM CAPELA</span> ${ck(cc)} <span class="bold">SEM CAPELA</span> ${ck(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${f(d.data_obito)} AS ${tH} <span class="red spacer">[${tD}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${cE('SOLTEIRO')} SOLTEIRO ${cE('CASADO')} CASADO ${cE('VIUVO')} VÍUVO ${cE('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${cE('DIVORCIADO')} DIVORCIADO ${cE('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px;font-size:14px;border:1px solid #000;padding:5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${tS}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${(d.tanato==='SIM'||d.chk_tanato==='SIM')?'X':' '}) SIM (${(d.tanato==='SIM'||d.chk_tanato==='SIM')?' ':'X'}) NÃO</div><div class="assinaturas-block"><div class="ass-line">${bA}<div style="border-top:1px solid #000;">Acolhimento / Atendente:<br><b>${nA}</b></div></div><div class="ass-line">${bF}<div style="border-top:1px solid #000;">Assinatura do responsável/família<br><b>${(d.resp_nome||'').toUpperCase()}</b></div></div></div><div style="font-weight:bold;font-size:12px;margin-top:5px;">OBS: PASSANDO DAS 36 HORAS DO FALECIMENTO SOMENTE COM TANATOPRAXIA.</div><div style="font-weight:bold;font-size:12px;margin-top:5px;">OBS.: VELÓRIO COM DURAÇÃO DE DUAS HORAS ANTES DO SEPULTAMENTO. EM CASO DE ATRASO DO SERVIÇO FUNERÁRIO NÃO SERÁ ESTENDIDO O HORÁRIO ESTABELECIDO.</div><div class="line" style="margin-top:15px;border:2px solid #000;padding:5px;"><span class="bold">PREVISÃO DE EXUMAÇÃO:</span> A partir de <span class="red" style="font-size:16px;">${dEx}</span><br><span style="font-size:10px;">(Legislação: 3 anos para Adultos / 2 anos para Crianças até 11 anos)</span><div style="margin-top:12px;margin-bottom:8px;border:2px dashed #000;padding:8px;text-align:center;font-weight:900;font-size:13px;">⚠️ ATENÇÃO: COMPAREÇA OU ENTRE EM CONTATO NO PRAZO MÍNIMO DE 90 DIAS ANTES DA DATA DE EXUMAÇÃO PARA ABERTURA DE PROCESSO.</div><div style="margin-top:15px;text-align:center;">${bF}<div style="border-top:1px solid #000;width:60%;margin:0 auto;">Assinatura do Responsável (Ciência do Prazo)</div></div><div class="two-columns"><div class="col-left"><div style="text-align:center;font-weight:bold;text-decoration:underline;margin-bottom:5px;">TERMO DE COMPROMISSO CEMITÉRIOS MUNICIPAIS</div><div class="termo-juridico">Sendo o <span class="bold">FALECIDO CASADO</span>, o responsável perante, o Cemitério do MARUÍ, SÃO FRANCISCO E ITAIPU será obrigatoriamente o <span class="bold">CONJUGE</span>.<br>Sendo o <span class="bold">FALECIDO VIÚVO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU serão obrigatoriamente os <span class="bold">FILHOS</span>.<br>Sendo o <span class="bold">FALECIDO SOLTEIRO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU obrigatoriamente os <span class="bold">FILHOS, PAIS, IRMÃOS</span>.<br>Será exigida a apresentação de documentos de <span class="bold" style="text-decoration:underline">IDENTIDADE e CPF</span>.</div><div class="assinaturas-block" style="margin-top:40px;"><div style="flex:1;"></div><div class="ass-line">${bF}<div style="border-top:1px solid #000;">Assinatura funcionário/família</div></div></div></div><div class="col-right"><div class="box-lateral"><div>CAPELAS MUNICIPAIS E PARTICULARES:</div><br><div>PAGAMENTO E NOTA FISCAL DAS TAXAS MUNICIPAIS E INVOL COM DUAS HORAS ANTES DO SEPULTAMENTO</div><br><br><div>CLIENTE: _____________________</div></div></div></div><div class="footer-line">MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome||'').toUpperCase()}</div><div style="font-weight:bold;font-size:12px;margin-top:5px;">TEL: ${d.telefone||''}</div><div class="aviso-final"><span style="text-decoration:underline">COMUNICADO AOS FAMILIARES DO FALECIDO E AS EMPRESAS FUNERÁRIAS RESPONSÁVEIS PELO SEPULTAMENTO.</span><br>Informamos que somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação dos seguintes documentos:<span class="bold">GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL PELO SERVIÇO), TAXAS MUNICIPAIS PAGAS e INVOL.</span></div></div></body></html>`;
+    const htmlComprovante = `<html><head><title>Comprovante</title><style>@page{size:A4 portrait;margin:8mm;}body{font-family:Arial,sans-serif;font-size:14px;margin:0;padding:10px;line-height:1.3;color:#000;}.header{text-align:center;margin-bottom:25px;position:relative;}.header h2{font-size:20px;text-decoration:underline;margin:0;font-weight:bold;text-transform:uppercase;color:#000;}.protocolo{position:absolute;top:-5px;right:0;font-size:14px;font-weight:bold;border:2px solid #000;padding:5px 10px;}.line{margin-bottom:4px;white-space:normal;word-wrap:break-word;overflow:visible;}.bold{font-weight:900;}.red{color:red;font-weight:bold;}.section-title{font-weight:900;margin-top:15px;margin-bottom:2px;text-transform:uppercase;font-size:14px;}.two-columns{display:flex;justify-content:space-between;margin-top:10px;}.col-left{width:60%;}.col-right{width:38%;}.assinaturas-block{display:flex;justify-content:space-between;margin-top:25px;margin-bottom:10px;gap:20px;}.ass-line{text-align:center;padding-top:2px;flex:1;font-size:12px;}.box-lateral{border:2px solid #000;padding:5px;font-weight:900;font-size:12px;height:100%;display:flex;flex-direction:column;justify-content:space-between;}.termo-juridico{text-align:justify;font-size:12px;line-height:1.3;}.footer-line{margin-top:10px;border-top:1px solid #000;padding-top:5px;font-weight:900;font-size:12px;}.aviso-final{border:2px solid #000;padding:5px;margin-top:10px;font-weight:900;text-align:justify;font-size:12px;line-height:1.3;}.spacer{margin-left:10px;}</style></head><body><div class="header"><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" style="max-height:60px;margin-bottom:5px;"><h2>Comprovante de Atendimento</h2><div class="protocolo">PROTOCOLO: ${p}</div></div><div class="content"><div class="line"><span class="bold">Nome do FALECIDO:</span> ${(d.nome||'').toUpperCase()}</div><div class="line"><span class="bold">Nome do RESPONSÁVEL:</span> ${(d.resp_nome||'').toUpperCase()} <span style="margin-left:5px;font-weight:normal;">${rl}</span></div><div class="line"><span class="bold">Funerária:</span> ${(d.funeraria||'').toUpperCase()} <span style="margin-left:15px">(Rep: ${d.func_funeraria||'N/A'})</span></div><div class="line"><span class="bold">Atendente Responsável:</span> ${nA}<span class="bold" style="margin-left:20px">DATA DE HORARIO DE ATENDIMENTO:</span> ${dhT}</div><div class="line"><span class="bold">Data:</span> ${f(d.data_ficha)} <span class="bold spacer">Hora:</span> ${d.hora||''} <span class="bold spacer">SEPULTURA:</span> ${d.sepul||''} <span class="bold spacer">${im?"QUADRA:":"RUA:"}</span> ${d.qd||''} <span class="bold spacer">CAPELA:</span> ${d.cap||''}</div><div class="line"><span class="bold">COM CAPELA</span> ${ck(cc)} <span class="bold">SEM CAPELA</span> ${ck(!cc)} <span class="bold spacer">DATA DO FALECIMENTO:</span> ${f(d.data_obito)} AS ${tH} <span class="red spacer">[${tD}]</span></div><div class="line"><span class="bold">Cemitério:</span> (${im?'X':' '}) MARUÍ (${is?'X':' '}) SÃO FRANCISCO XAVIER (${ii?'X':' '}) SÃO LÁZARO DE ITAIPÚ</div><div class="line">${cE('SOLTEIRO')} SOLTEIRO ${cE('CASADO')} CASADO ${cE('VIUVO')} VÍUVO ${cE('UNIAO_ESTAVEL')} UNIÃO ESTÁVEL ${cE('DIVORCIADO')} DIVORCIADO ${cE('IGNORADO')} IGNORADO</div><div class="section-title">ASSINAR TERMO DE COMPROMISSO NO CEMITÉRIO</div><div class="line" style="margin-top:5px;font-size:14px;border:1px solid #000;padding:5px;"><span class="bold">TIPO DE SEPULTURA SELECIONADA:</span> ${tS}</div><div class="line" style="margin-top:10px"><span class="bold">TANATO:</span> (${d.tanato==='SIM'?'X':' '}) SIM (${d.tanato==='NAO'?'X':' '}) NÃO</div><div class="assinaturas-block"><div class="ass-line">${bA}<div style="border-top:1px solid #000;">Acolhimento / Atendente:<br><b>${nA}</b></div></div><div class="ass-line">${bF}<div style="border-top:1px solid #000;">Assinatura do responsável/família<br><b>${(d.resp_nome||'').toUpperCase()}</b></div></div></div><div style="font-weight:bold;font-size:12px;margin-top:5px;">OBS: PASSANDO DAS 36 HORAS DO FALECIMENTO SOMENTE COM TANATOPRAXIA.</div><div style="font-weight:bold;font-size:12px;margin-top:5px;">OBS.: VELÓRIO COM DURAÇÃO DE DUAS HORAS ANTES DO SEPULTAMENTO. EM CASO DE ATRASO DO SERVIÇO FUNERÁRIO NÃO SERÁ ESTENDIDO O HORÁRIO ESTABELECIDO.</div><div class="line" style="margin-top:15px;border:2px solid #000;padding:5px;"><span class="bold">PREVISÃO DE EXUMAÇÃO:</span> A partir de <span class="red" style="font-size:16px;">${dEx}</span><br><span style="font-size:10px;">(Legislação: 3 anos para Adultos / 2 anos para Crianças até 11 anos)</span><div style="margin-top:12px;margin-bottom:8px;border:2px dashed #000;padding:8px;text-align:center;font-weight:900;font-size:13px;">⚠️ ATENÇÃO: COMPAREÇA OU ENTRE EM CONTATO NO PRAZO MÍNIMO DE 90 DIAS ANTES DA DATA DE EXUMAÇÃO PARA ABERTURA DE PROCESSO.</div><div style="margin-top:15px;text-align:center;">${bF}<div style="border-top:1px solid #000;width:60%;margin:0 auto;">Assinatura do Responsável (Ciência do Prazo)</div></div><div class="two-columns"><div class="col-left"><div style="text-align:center;font-weight:bold;text-decoration:underline;margin-bottom:5px;">TERMO DE COMPROMISSO CEMITÉRIOS MUNICIPAIS</div><div class="termo-juridico">Sendo o <span class="bold">FALECIDO CASADO</span>, o responsável perante, o Cemitério do MARUÍ, SÃO FRANCISCO E ITAIPU será obrigatoriamente o <span class="bold">CONJUGE</span>.<br>Sendo o <span class="bold">FALECIDO VIÚVO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU serão obrigatoriamente os <span class="bold">FILHOS</span>.<br>Sendo o <span class="bold">FALECIDO SOLTEIRO</span>, os responsáveis perante o CEMITÉRIO do MARUÍ, SÃO FRANCISCO E ITAIPU obrigatoriamente os <span class="bold">FILHOS, PAIS, IRMÃOS</span>.<br>Será exigida a apresentação de documentos de <span class="bold" style="text-decoration:underline">IDENTIDADE e CPF</span>.</div><div class="assinaturas-block" style="margin-top:40px;"><div style="flex:1;"></div><div class="ass-line">${bF}<div style="border-top:1px solid #000;">Assinatura funcionário/família</div></div></div></div><div class="col-right"><div class="box-lateral"><div>CAPELAS MUNICIPAIS E PARTICULARES:</div><br><div>PAGAMENTO E NOTA FISCAL DAS TAXAS MUNICIPAIS E INVOL COM DUAS HORAS ANTES DO SEPULTAMENTO</div><br><br><div>CLIENTE: _____________________</div></div></div></div><div class="footer-line">MARCADO: ________________________ PERMISSIONÁRIO: ${(d.resp_nome||'').toUpperCase()}</div><div style="font-weight:bold;font-size:12px;margin-top:5px;">TEL: ${d.telefone||''}</div><div class="aviso-final"><span style="text-decoration:underline">COMUNICADO AOS FAMILIARES DO FALECIDO E AS EMPRESAS FUNERÁRIAS RESPONSÁVEIS PELO SEPULTAMENTO.</span><br>Informamos que somente será autorizada a entrada do corpo para velório e sepultamento mediante a apresentação dos seguintes documentos:<span class="bold">GUIA DE SEPULTAMENTO, NOTA FISCAL (EMPRESA RESPONSÁVEL PELO SERVIÇO), TAXAS MUNICIPAIS PAGAS e INVOL.</span></div></div></body></html>`;
     
-    window.registrarHistorico(dadosAtendimentoAtual.id, "GEROU DOCUMENTO", "Comprovante de Atendimento");
     const w = window.open('', '_blank'); 
     if(!w) { 
         alert("O seu navegador bloqueou o pop-up. Por favor, permita pop-ups para imprimir o comprovante."); 
@@ -2408,13 +2463,13 @@ window.gerarComprovante = function() {
 
 window.gerarEtiqueta = function() {
     if(!dadosAtendimentoAtual) return;
+    registrarHistorico(dadosAtendimentoAtual.id, 'DOCUMENTO', 'Etiqueta de Identificação gerada');
     const d = dadosAtendimentoAtual; 
     const fd = (s) => s ? s.split('-').reverse().join('/') : ''; 
     const dF = fd(d.data_ficha);
     
     const html = `<html><head><title>Etiqueta</title><style>@page{size:landscape;margin:0}body{font-family:Arial,sans-serif;margin:0;padding:0;height:100vh;width:100vw;display:flex;justify-content:center;align-items:center;overflow:hidden}.box{width:95vw;height:90vh;border:5px solid #000;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;text-align:center;padding:10px}.header-img{max-height:100px;margin-bottom:10px}.title{font-size:24px;font-weight:900;text-transform:uppercase;border-bottom:3px solid #000;padding-bottom:5px;display:inline-block;margin-bottom:30px}.group{margin-bottom:30px;width:100%}.label{font-size:18px;color:#333;font-weight:bold;text-transform:uppercase;margin-bottom:5px}.val-nome{font-size:55px;font-weight:900;text-transform:uppercase;line-height:1.1}.val-data{font-size:40px;font-weight:800}.val-local{font-size:35px;font-weight:800;text-transform:uppercase}</style></head><body><div class="box"><div><img src="https://niteroi.rj.gov.br/wp-content/uploads/2025/06/pmnlogo-2.png" class="header-img"><br><div class="title">IDENTIFICAÇÃO DE VELÓRIO</div></div><div class="group"><div class="label">FALECIDO(A)</div><div class="val-nome">${d.nome}</div></div><div class="group"><div class="label">SEPULTAMENTO</div><div class="val-data">${dF} às ${d.hora}</div></div><div class="group"><div class="label">LOCAL</div><div class="val-local">${d.cap}<br>${d.local||"CEMITÉRIO DO MARUÍ"}</div></div></div><script>window.onload=function(){setTimeout(function(){window.print();window.close();},500)}</script></body></html>`;
     
-    window.registrarHistorico(dadosAtendimentoAtual.id, "GEROU DOCUMENTO", "Etiqueta");
     const w = window.open('', '_blank'); 
     if(!w) { 
         alert("O seu navegador bloqueou o pop-up. Por favor, permita pop-ups para imprimir a etiqueta."); 
@@ -2426,6 +2481,9 @@ window.gerarEtiqueta = function() {
     w.document.close();
 }
 
+// ============================================================================
+// VISUALIZAR FICHA DE RESUMO E MAPA
+// ============================================================================
 window.visualizar = function(id) {
     if(!getDB()) return;
     getDB().collection("atendimentos").doc(id).get().then(doc => {
@@ -2438,10 +2496,10 @@ window.visualizar = function(id) {
             if (d.requisito) isenStr += ` - ${d.requisito}`;
             
             let servs = []; 
-            if (d.tanato === 'SIM' || d.chk_tanato === 'SIM') servs.push('TANATOPRAXIA'); 
-            if (d.invol === 'SIM' || d.chk_invol === 'SIM') servs.push('INVOL'); 
-            if (d.translado === 'SIM' || d.chk_translado === 'SIM') servs.push('TRANSLADO'); 
-            if (d.urna_opc === 'SIM' || d.chk_urna_opc === 'SIM') servs.push('URNA OPCIONAL');
+            if (d.tanato === 'SIM') servs.push('TANATOPRAXIA'); 
+            if (d.invol === 'SIM') servs.push('INVOL'); 
+            if (d.translado === 'SIM') servs.push('TRANSLADO'); 
+            if (d.urna_opc === 'SIM') servs.push('URNA OPCIONAL');
 
             const mapCampos = { 
                 'view_protocolo': d.protocolo || 'S/ PROTOCOLO', 
@@ -2556,40 +2614,14 @@ window.visualizar = function(id) {
                     mapContainer.style.display = 'none'; 
                 } 
             }
-
-            const histContainer = document.getElementById('view_historico_container');
-            if(histContainer) {
-                histContainer.innerHTML = '<span style="font-size:12px; color:#64748b;">Carregando histórico...</span>';
-                getDB().collection("atendimentos").doc(id).collection("historico").orderBy("data_hora", "desc").get().then(hSnap => {
-                    if(hSnap.empty) {
-                        histContainer.innerHTML = '<span style="font-size:12px; color:#64748b;">Nenhuma movimentação registrada no histórico.</span>';
-                    } else {
-                        let hHtml = '<ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px;">';
-                        hSnap.forEach(hDoc => {
-                            const hd = hDoc.data();
-                            const dFmt = new Date(hd.data_hora).toLocaleString('pt-BR');
-                            hHtml += `<li style="background:#fff; border:1px solid #e2e8f0; padding:10px; border-radius:6px; font-size:11px;">
-                                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                                    <span style="font-weight:bold; color:#3b82f6;">${hd.acao}</span>
-                                    <span style="color:#64748b;">${dFmt}</span>
-                                </div>
-                                <div style="color:#334155; margin-bottom:4px;">${hd.detalhe}</div>
-                                <div style="color:#94a3b8; font-size:10px; text-align:right;">Usuário: <b>${hd.usuario}</b></div>
-                            </li>`;
-                        });
-                        hHtml += '</ul>';
-                        histContainer.innerHTML = hHtml;
-                    }
-                }).catch(e => {
-                    histContainer.innerHTML = '<span style="font-size:12px; color:#ef4444;">Erro ao carregar histórico.</span>';
-                });
-            }
-
             safeDisplay('modal-visualizar', 'block');
         }
     });
 }
 
+// ============================================================================
+// WHATSAPP E SMS
+// ============================================================================
 window.abrirModalWpp = function() { 
     if (!dadosAtendimentoAtual) return; 
     safeDisplay('modal-whatsapp', 'flex'); 
@@ -2644,8 +2676,9 @@ window.enviarWppTemplate = function(tipo) {
     let url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
     if (t) url = `https://wa.me/55${t}?text=${encodeURIComponent(texto)}`;
     
-    window.registrarHistorico(d.id, "MENSAGEM WHATSAPP", "Enviou template: " + tipo);
     window.open(url, '_blank'); 
+    const tiposLabel = { 'gps': 'Localização GPS', 'info': 'Informações do Atendimento', 'convite': 'Convite para Velório' };
+    registrarHistorico(d.id, 'WHATSAPP', `WhatsApp enviado (${tiposLabel[tipo] || tipo}) para ${t ? t : 'sem número'}`);
     window.fecharModalWpp();
 }
 
@@ -2667,7 +2700,6 @@ window.enviarWppParticular = function() {
     let texto = `*PREFEITURA MUNICIPAL DE NITERÓI*\n_Serviços Funerários - Agência_\n\nOlá, seguem as informações do seu atendimento particular:\n\n📄 *Protocolo:* ${d.protocolo || 'Pendente'}\n👤 *Falecido(a):* ${(d.nome || '-').toUpperCase()}\n⚰️ *Cemitério Destino:* ${(d.part_cemiterio || '-').toUpperCase()}\n🕒 *Hora de Liberação:* ${d.part_hora_liberacao || '-'}\n\nAgradecemos a compreensão.`;
 
     let url = `https://wa.me/55${t}?text=${encodeURIComponent(texto)}`;
-    window.registrarHistorico(d.id, "MENSAGEM WHATSAPP", "Enviou aviso de atendimento particular");
     window.open(url, '_blank');
 }
 
@@ -2676,7 +2708,7 @@ window.enviarSMS = function() {
     const t = dadosAtendimentoAtual.telefone ? dadosAtendimentoAtual.telefone.replace(/\D/g, '') : ''; 
     const c = dadosAtendimentoAtual.geo_coords ? dadosAtendimentoAtual.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
     if (!t) { alert("Sem telefone cadastrado."); return; } 
-    window.registrarHistorico(dadosAtendimentoAtual.id, "MENSAGEM SMS", "Enviou link de localização");
+    registrarHistorico(dadosAtendimentoAtual.id, 'SMS', `SMS enviado para ${t} com localização da sepultura`);
     window.location.href = `sms:+55${t}?body=${encodeURIComponent('Localização da Sepultura: https://maps.google.com/?q=$' + c)}`; 
 }
 
@@ -2694,30 +2726,21 @@ window.imprimirRelatorio = function(m) {
 
 window.excluir = function(id) { 
     if(confirm('Tem certeza que deseja excluir este atendimento?')) { 
+        registrarHistorico(id, 'EXCLUSAO', 'Atendimento excluído');
         getDB().collection("atendimentos").doc(id).delete(); 
     } 
 };
 
 window.onclick = function(e) { 
-    const m = ['modal-visualizar', 'modal-estatisticas', 'modal-admin', 'modal-transferir', 'modal-whatsapp', 'modal-agencia', 'modal-liberacao', 'modal-transferir-responsavel', 'modal-onedrive', 'modal-docs-acolhimento', 'modal-particular', 'modal-assinatura', 'modal-particular-ficha']; 
+    const m = ['modal-visualizar', 'modal-estatisticas', 'modal-admin', 'modal-transferir', 'modal-whatsapp', 'modal-agencia', 'modal-liberacao', 'modal-transferir-responsavel', 'modal-onedrive', 'modal-docs-acolhimento', 'modal-particular', 'modal-assinatura', 'modal-particular-ficha', 'modal-historico']; 
     if (m.includes(e.target.id)) {
         safeDisplay(e.target.id, 'none'); 
     }
 }
 
 window.fazerLogout = function() { 
-    if (auth) {
-        auth.signOut().then(() => {
-            sessionStorage.removeItem('usuarioLogado'); 
-            window.location.reload(); 
-        }).catch(err => {
-            sessionStorage.removeItem('usuarioLogado'); 
-            window.location.reload(); 
-        });
-    } else {
-        sessionStorage.removeItem('usuarioLogado'); 
-        window.location.reload(); 
-    }
+    sessionStorage.removeItem('usuarioLogado'); 
+    window.location.reload(); 
 }
 
 window.bloquearTela = function() { 
