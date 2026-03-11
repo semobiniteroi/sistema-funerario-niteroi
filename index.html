@@ -137,10 +137,23 @@
             </div>
         </div>
         <div class="info-area">
-            <div class="controles-topo">
-                <div class="topo-box"><span class="topo-icon">📍</span><div class="topo-content"><label>Cemitério</label><select id="filtro-local"><option value="CEMITÉRIO DO MARUÍ">MARUÍ</option><option value="CEMITÉRIO DE SÃO FRANCISCO">SÃO FRANCISCO</option><option value="CEMITÉRIO DE ITAIPU">ITAIPU</option></select></div></div>
-                <div class="topo-box"><span class="topo-icon">📅</span><div class="topo-content"><label>Data</label><input type="date" id="filtro-data"></div></div>
-                <div class="topo-box search-box"><input type="text" id="input-busca" placeholder="Buscar Nome ou Protocolo..."><button onclick="realizarBusca()" class="btn-search" title="Pesquisar">🔍</button></div>
+            <div class="controles-topo filtros-minimalistas">
+                <div class="filtro-item">
+                    <select id="filtro-local">
+                        <option value="CEMITÉRIO DO MARUÍ">📍 Maruí</option>
+                        <option value="CEMITÉRIO DE SÃO FRANCISCO">📍 São Francisco</option>
+                        <option value="CEMITÉRIO DE ITAIPU">📍 Itaipu</option>
+                    </select>
+                </div>
+                <div class="filtro-item">
+                    <input type="date" id="filtro-data">
+                </div>
+                <div class="filtro-item filtro-busca">
+                    <input type="text" id="input-busca" placeholder="🔍 Buscar...">
+                    <button onclick="realizarBusca()" class="btn-busca-mini" title="Pesquisar">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    </button>
+                </div>
             </div>
             <div class="user-controls">
                 <span id="user-display"></span>
