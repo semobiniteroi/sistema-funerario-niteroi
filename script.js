@@ -23,7 +23,7 @@ let tipoAssinaturaAtual = '';
 let dashboardAtual = 'acolhimento';
 let dadosAtendimentoAtual = null;
 let dadosEstatisticasExportacao = [];
-let numeroWppFixo = ''; // Número recuperado do painel admin
+let numeroWppFixo = ''; 
 
 window.idLiberacaoAtual = null; 
 window.idTransferenciaResponsavelAtual = null; 
@@ -138,109 +138,142 @@ function safeDisplay(id, type) {
 }
 
 // ============================================================================
-// LOGIN E ACESSO
+// LOGIN E ACESSO VIA FIREBASE AUTH
 // ============================================================================
-function fazerLogin() {
-    const u = document.getElementById('login-usuario').value.trim(); 
-    const p = document.getElementById('login-senha').value.trim();
+window.fazerLogin = async function() {
+    const inputU = document.getElementById('login-usuario');
+    const inputP = document.getElementById('login-senha');
     
-    if (p === "2026") { 
+    if(!inputU || !inputP) return;
+
+    const u = inputU.value.trim(); 
+    const p = inputP.value; 
+    
+    const msgErro = document.getElementById('msg-erro-login');
+    msgErro.style.display = 'none';
+
+    // Acesso hardcoded do admin geral mantido para fallback extremo
+    if (p === "2026" && (u === "admin" || u === "Admin")) { 
         usuarioLogado = {nome: "Admin", login: "admin", nivel: "COMPLETO"}; 
-        liberarAcesso(); 
+        window.liberarAcesso(); 
         return; 
     }
     
-    if (!getDB()) { 
-        alert("Sem conexão com o banco de dados."); 
+    if (!getDB() || !auth) { 
+        alert("Sem conexão com o banco de dados ou Firebase Auth."); 
         return; 
     }
-    
-    const isEmail = u.includes('@');
-    
-    let authChain;
-    if (auth && isEmail) {
-        authChain = auth.signInWithEmailAndPassword(u, p)
-            .then(cred => ({ cred, method: 'email' }))
-            .catch(() => {
-                return auth.signInAnonymously()
-                    .then(cred => ({ cred, method: 'anonymous' }))
-                    .catch(() => ({ cred: null, method: 'none' }));
-            });
-    } else if (auth) {
-        authChain = auth.signInAnonymously()
-            .then(cred => ({ cred, method: 'anonymous' }))
-            .catch(() => ({ cred: null, method: 'none' }));
-    } else {
-        authChain = Promise.resolve({ cred: null, method: 'none' });
+
+    if (!u.includes('@')) {
+        msgErro.innerText = "Digite o e-mail cadastrado no sistema para fazer login.";
+        msgErro.style.color = "red";
+        msgErro.style.display = 'block';
+        return;
     }
-    
-    authChain.then(({ cred, method }) => {
-        if (method === 'email' && cred && cred.user) {
-            const authEmail = cred.user.email;
-            return getDB().collection("equipe").where("email", "==", authEmail).get()
-                .then(snap => {
-                    if (!snap.empty) return snap;
-                    return getDB().collection("equipe").get().then(allSnap => {
-                        const emailPrefix = authEmail.split('@')[0].toLowerCase();
-                        let found = null;
-                        allSnap.forEach(doc => {
-                            const d = doc.data();
-                            if (d.email && d.email.toLowerCase().split('@')[0] === emailPrefix) {
-                                found = doc;
-                            }
-                        });
-                        if (found) {
-                            return { empty: false, docs: [found], size: 1 };
-                        }
-                        return getDB().collection("equipe").where("login", "==", u).where("senha", "==", p).get();
-                    });
-                });
+
+    msgErro.innerText = "Autenticando...";
+    msgErro.style.color = "#64748b";
+    msgErro.style.display = 'block';
+
+    try {
+        // Limpa estado anterior corrompido, se houver
+        await auth.signOut().catch(() => {});
+        
+        // 1. TENTA LOGIN EXCLUSIVAMENTE PELO FIREBASE AUTH
+        const userCredential = await auth.signInWithEmailAndPassword(u, p);
+        const userEmail = userCredential.user.email.toLowerCase();
+
+        // 2. SE SUCESSO, BUSCA O NÍVEL DE ACESSO NA COLEÇÃO 'equipe'
+        const db = getDB();
+        const snapshot = await db.collection("equipe").where("email", "==", userEmail).get();
+        
+        if (!snapshot.empty) {
+            // Usuário achado na equipe de forma exata
+            usuarioLogado = snapshot.docs[0].data();
+            usuarioLogado.id = snapshot.docs[0].id;
         } else {
-            return getDB().collection("equipe").where("login", "==", u).where("senha", "==", p).get();
-        }
-    }).then(snap => {
-        if (!snap.empty) { 
-            usuarioLogado = snap.docs[0].data(); 
-            liberarAcesso(); 
-        } else { 
-            document.getElementById('msg-erro-login').style.display = 'block'; 
-        }
-    }).catch(err => { 
-        console.error("Erro no login:", err);
-        alert("Erro ao logar. Verifique suas credenciais."); 
-    });
-}
+            // Busca manual ignorando case sensitive, caso o banco tenha sido salvo com Maiúsculas
+            const allUsers = await db.collection("equipe").get();
+            let foundUser = null;
+            allUsers.forEach(doc => {
+                const d = doc.data();
+                if (d.email && d.email.toLowerCase() === userEmail) {
+                    foundUser = d;
+                    foundUser.id = doc.id;
+                }
+            });
 
-function checarLoginEnter(e) { 
-    if(e.key === 'Enter') {
-        fazerLogin(); 
+            if (foundUser) {
+                usuarioLogado = foundUser;
+            } else {
+                // AUTORIZAÇÃO EXCEPCIONAL: Auth passou, mas não existe no BD equipe.
+                let nomeBase = userEmail.split('@')[0];
+                usuarioLogado = {
+                    nome: nomeBase.charAt(0).toUpperCase() + nomeBase.slice(1),
+                    email: userEmail,
+                    login: nomeBase,
+                    nivel: "COMPLETO" // Garante o acesso se a restrição não foi definida no painel
+                };
+            }
+        }
+
+        msgErro.style.display = 'none';
+        msgErro.style.color = "red"; 
+        window.liberarAcesso();
+
+    } catch (error) {
+        console.error("Erro no login Firebase Auth:", error);
+        msgErro.innerText = "E-mail ou senha incorretos! Acesso negado.";
+        msgErro.style.color = "red";
     }
 }
 
-window.fazerLogin = fazerLogin; 
-window.checarLoginEnter = checarLoginEnter;
+window.checarLoginEnter = function(e) { 
+    if(e.key === 'Enter') {
+        window.fazerLogin(); 
+    }
+}
+
+window.getNivelAcesso = function() {
+    if (!usuarioLogado) return 'COMPLETO';
+    let n = usuarioLogado.nivel || 'COMPLETO';
+    // Conversão de legados para os novos níveis mantendo compatibilidade
+    if (n === 'ACOLHIMENTO') return 'ACOLHIMENTO_AGENCIA';
+    if (n === 'AGENCIA') return 'AGENCIA_ACOLHIMENTO';
+    return n;
+}
 
 window.liberarAcesso = function() { 
     safeDisplay('tela-bloqueio', 'none'); 
     sessionStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado)); 
     
+    // O carregamento do número do Whatsapp fixo
+    if(getDB()) {
+        // Usa o token Auth que acabou de ser gerado, acesso autorizado.
+        getDB().collection("config").doc("geral").get().then(doc => {
+            if(doc.exists && doc.data().wpp_fixo) { numeroWppFixo = doc.data().wpp_fixo; }
+        }).catch(e => console.log("Aviso: Configurações de WhatsApp não carregadas.", e));
+    }
+
     const btnAcolhimento = document.getElementById('nav-btn-acolhimento');
     const btnAgencia = document.getElementById('nav-btn-agencia');
     const btnAdmin = document.querySelector('.btn-admin');
+    const btnNovoAcolhimento = document.querySelector('#dashboard-acolhimento .btn-novo');
+    const btnNovoAgencia = document.querySelector('#dashboard-agencia .btn-novo');
     
+    let nAcesso = window.getNivelAcesso();
+
     if(btnAcolhimento) btnAcolhimento.style.display = '';
     if(btnAgencia) btnAgencia.style.display = '';
-    if(btnAdmin) btnAdmin.style.display = '';
-
-    let nivelAcesso = usuarioLogado.nivel || 'COMPLETO'; 
     
-    if (nivelAcesso === 'ACOLHIMENTO') { 
-        if(btnAgencia) btnAgencia.style.display = 'none'; 
-        if(btnAdmin) btnAdmin.style.display = 'none'; 
-        window.alternarDashboard('acolhimento'); 
-    } else if (nivelAcesso === 'AGENCIA') { 
-        if(btnAcolhimento) btnAcolhimento.style.display = 'none'; 
-        if(btnAdmin) btnAdmin.style.display = 'none'; 
+    // Admin apenas para nível COMPLETO
+    if(btnAdmin) btnAdmin.style.display = (nAcesso === 'COMPLETO') ? '' : 'none';
+
+    // Regras dos botões + Novo
+    if(btnNovoAcolhimento) btnNovoAcolhimento.style.display = (nAcesso === 'AGENCIA_ACOLHIMENTO') ? 'none' : '';
+    if(btnNovoAgencia) btnNovoAgencia.style.display = (nAcesso === 'ACOLHIMENTO_AGENCIA') ? 'none' : '';
+
+    if (nAcesso === 'AGENCIA_ACOLHIMENTO') { 
         window.alternarDashboard('agencia'); 
     } else { 
         window.alternarDashboard('acolhimento'); 
@@ -309,12 +342,6 @@ function inicializarSistema() {
             window.atualizarLabelQuadra(e.target.value); 
         }); 
     }
-    
-    if(getDB()) {
-        getDB().collection("config").doc("geral").get().then(doc => {
-            if(doc.exists && doc.data().wpp_fixo) { numeroWppFixo = doc.data().wpp_fixo; }
-        }).catch(e => console.log("Config não carregada", e));
-    }
 
     const sessao = sessionStorage.getItem('usuarioLogado'); 
     if (sessao) { 
@@ -328,29 +355,33 @@ function inicializarSistema() {
                 const authReady = auth ? new Promise((resolve) => {
                     const unsub = auth.onAuthStateChanged((user) => {
                         unsub();
-                        if (user) {
-                            resolve(user);
-                        } else {
-                            auth.signInAnonymously()
-                                .then(cred => resolve(cred.user))
-                                .catch(() => resolve(null));
-                        }
+                        resolve(user);
                     });
                 }) : Promise.resolve(null);
                 
-                authReady.then(() => {
-                    dbInst.collection("equipe").where("login", "==", uTemp.login).get().then(snap => { 
-                        if (!snap.empty) { 
-                            usuarioLogado = snap.docs[0].data(); 
+                authReady.then((user) => {
+                    // Para garantir que a sessão persista mesmo se não houver documento na equipe,
+                    // validamos pelo email logado do Auth ou pelo email salvo no uTemp
+                    let queryEmail = (user && user.email) ? user.email : (uTemp.email || "");
+                    
+                    if (queryEmail) {
+                        dbInst.collection("equipe").where("email", "==", queryEmail).get().then(snap => { 
+                            if (!snap.empty) { 
+                                usuarioLogado = snap.docs[0].data(); 
+                            } else {
+                                // Se não encontrar exato, procura manual ou aceita o uTemp direto
+                                usuarioLogado = uTemp; 
+                            }
+                            window.liberarAcesso();
+                        }).catch(e => { 
+                            usuarioLogado = uTemp; 
                             window.liberarAcesso(); 
-                        } else { 
-                            window.fazerLogout(); 
-                        } 
-                    }).catch(e => { 
-                        console.warn("Erro ao restaurar sessão, usando dados locais:", e.message);
+                        });
+                    } else {
+                        // Sem email na sessão/auth
                         usuarioLogado = uTemp; 
                         window.liberarAcesso(); 
-                    });
+                    }
                 });
             } else { 
                 usuarioLogado = uTemp; 
@@ -385,12 +416,9 @@ if (document.readyState === 'loading') {
 // NAVEGAÇÃO E DASHBOARD
 // ============================================================================
 window.alternarDashboard = function(dash) {
-    let nivelAcesso = (usuarioLogado && usuarioLogado.nivel) ? usuarioLogado.nivel : 'COMPLETO';
-    
-    if (dash === 'agencia' && nivelAcesso === 'ACOLHIMENTO') return;
-    if (dash === 'acolhimento' && nivelAcesso === 'AGENCIA') return;
-
+    let nAcesso = window.getNivelAcesso();
     dashboardAtual = dash; 
+    
     const btnAcolhimento = document.getElementById('nav-btn-acolhimento');
     const btnAgencia = document.getElementById('nav-btn-agencia');
     const divAcolhimento = document.getElementById('dashboard-acolhimento');
@@ -822,27 +850,38 @@ window.renderizarTabela = function(lista) {
         return; 
     }
     
+    let nAcesso = window.getNivelAcesso();
+    let isReadOnlyAcolhimento = (nAcesso === 'AGENCIA_ACOLHIMENTO');
+
     const fragment = document.createDocumentFragment(); 
     const doencasInfecciosas = ['COVID', 'MENINGITE', 'TUBERCULOSE', 'H1N1', 'HIV', 'SIDA', 'SARAMPO'];
 
     lista.forEach(item => {
         const tr = document.createElement('tr'); 
         
+        let btnMap = ''; 
+        const clCoords = item.geo_coords ? item.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
+        if (clCoords && clCoords.includes(',')) { 
+            btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://maps.google.com/?q=${clCoords}', '_blank')" title="Ver Localização">📍</button>`; 
+        }
+
         if (item.tipo_registro === 'PARTICULAR') {
             let responsavelTxt = item.chk_pessoa_fisica ? `PF: ${item.part_pf_nome || ''}` : `FUNERÁRIA: ${item.part_funeraria || ''}`;
             tr.style.backgroundColor = '#f5f3ff';
+            
+            let acoesParticular = isReadOnlyAcolhimento ? 
+                `<span style="font-size:10px;color:#94a3b8;">Apenas Visualização</span>` : 
+                `<div style="display:flex; gap:5px; justify-content:flex-end;">
+                    <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')" title="Excluir">🗑️</button>
+                </div>`;
+
             tr.innerHTML = `
                 <td style="vertical-align:middle;"><b>${responsavelTxt}</b></td>
                 <td style="text-align: center; vertical-align:middle;">${item.part_hora_liberacao||''}</td>
                 <td style="text-align: center; vertical-align:middle;"><b>${(item.nome||'').toUpperCase()}</b><br><span style="font-size:9px; color:#8b5cf6; font-weight:bold; border: 1px solid #8b5cf6; padding: 2px 4px; border-radius: 4px; display:inline-block; margin-top: 4px;">ATEND. PARTICULAR</span></td>
                 <td style="text-align: center; vertical-align:middle;" colspan="6"><b style="color:#6d28d9;">Cemitério:</b> ${item.part_cemiterio || ''} - ${item.part_tipo || ''}</td>
                 <td style="text-align: center; vertical-align:middle;">${item.data_ficha ? item.data_ficha.split('-').reverse().join('/') : ''}</td>
-                <td style="text-align:right; vertical-align:middle;">
-                    <div style="display:flex; gap:5px; justify-content:flex-end;">
-                        <button class="btn-icon" style="background:#dcfce3; color:#16a34a; border-radius:50%; width:32px; height:32px; border:none; cursor:pointer;" onclick="event.stopPropagation();window.enviarWppFixo('${item.id}')" title="Notificar Central via WhatsApp">📲</button>
-                        <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')" title="Excluir">🗑️</button>
-                    </div>
-                </td>`;
+                <td style="text-align:right; vertical-align:middle;">${acoesParticular}</td>`;
             fragment.appendChild(tr); 
             return;
         }
@@ -898,12 +937,17 @@ window.renderizarTabela = function(lista) {
         } else if (item.falecimento) { 
             displayFalecimento = `<div>${item.falecimento}</div>`; 
         }
-        
-        let btnMap = ''; 
-        const clCoords = item.geo_coords ? item.geo_coords.replace(/[^0-9.,\-]/g, '') : ''; 
-        if (clCoords && clCoords.includes(',')) { 
-            btnMap = `<button class="btn-icon btn-mapa-circle" onclick="event.stopPropagation(); window.open('https://maps.google.com/?q=${clCoords}', '_blank')" title="Ver Localização">📍</button>`; 
-        }
+
+        let acoesNormal = isReadOnlyAcolhimento ?
+            `<div style="display:flex; gap:5px; justify-content:flex-end;">
+                ${btnMap} <span style="font-size:10px;color:#94a3b8;line-height:32px;">Apenas Visualização</span>
+            </div>` :
+            `<div style="display:flex; gap:5px; justify-content:flex-end;">
+                ${btnMap}
+                <button class="btn-icon" style="background:#dcfce3; color:#16a34a; border-radius:50%; width:32px; height:32px; border:none; cursor:pointer;" onclick="event.stopPropagation();window.enviarWppFixo('${item.id}')" title="Notificar Central via WhatsApp">📲</button>
+                <button class="btn-icon btn-editar-circle" onclick="event.stopPropagation();window.editar('${item.id}')">✏️</button>
+                <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')">🗑️</button>
+            </div>`;
         
         tr.innerHTML = `
             <td style="vertical-align:middle;">${displayResponsavel}</td>
@@ -916,14 +960,7 @@ window.renderizarTabela = function(lista) {
             <td style="text-align: center; vertical-align:middle; font-size:11px;">${item.hospital||''}</td>
             <td style="text-align: center; vertical-align:middle;">${item.cap||''}</td>
             <td style="text-align: center; vertical-align:middle;">${displayFalecimento}</td>
-            <td style="text-align:right; vertical-align:middle;">
-                <div style="display:flex; gap:5px; justify-content:flex-end;">
-                    ${btnMap}
-                    <button class="btn-icon" style="background:#dcfce3; color:#16a34a; border-radius:50%; width:32px; height:32px; border:none; cursor:pointer;" onclick="event.stopPropagation();window.enviarWppFixo('${item.id}')" title="Notificar Central via WhatsApp">📲</button>
-                    <button class="btn-icon btn-editar-circle" onclick="event.stopPropagation();window.editar('${item.id}')">✏️</button>
-                    <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')">🗑️</button>
-                </div>
-            </td>`;
+            <td style="text-align:right; vertical-align:middle;">${acoesNormal}</td>`;
         fragment.appendChild(tr);
     });
     
@@ -940,6 +977,9 @@ window.renderizarTabelaAgencia = function(lista) {
         return; 
     }
     
+    let nAcesso = window.getNivelAcesso();
+    let isReadOnlyAgencia = (nAcesso === 'ACOLHIMENTO_AGENCIA');
+
     const renderChip = (key, label, item) => { 
         let isAnexado = !!item.url_docs_agencia; 
         let onClickStr = isAnexado ? `onclick="event.stopPropagation(); window.open('${item.url_docs_agencia}', '_blank');"` : `onclick="event.stopPropagation(); alert('Nenhum documento anexado na nuvem.')"`; 
@@ -961,6 +1001,11 @@ window.renderizarTabelaAgencia = function(lista) {
             
             let statusNuvem = item.part_link_nuvem ? `<a href="${item.part_link_nuvem}" target="_blank" onclick="event.stopPropagation();" style="text-decoration:none; font-size:10px; color:#3b82f6; font-weight:bold;">🔗 VER DOCUMENTOS (NUVEM)</a>` : `<span style="font-size:10px; color:#ef4444; font-weight:bold;">⚠️ NENHUM LINK ANEXADO</span>`;
             
+            let footerPart = isReadOnlyAgencia ? 
+                `<span style="font-size:10px;color:#94a3b8;margin-top:5px;display:block;text-align:center;font-weight:bold;">Apenas Visualização</span>` : 
+                `<button class="btn-novo" style="background:#8b5cf6; color:white; padding: 6px 12px; font-size: 12px; flex:1;" onclick="event.stopPropagation(); window.abrirFichaParticular('${item.id}')">📝 Ficha / Docs</button>
+                 <button class="btn-novo" style="background:#ef4444; color:white; padding: 6px 12px; font-size: 12px; flex:1;" onclick="event.stopPropagation(); window.excluir('${item.id}')">🗑️ Remover</button>`;
+
             card.style.borderTopColor = '#8b5cf6'; 
             card.style.background = '#faf5ff';
             card.innerHTML = `
@@ -980,8 +1025,7 @@ window.renderizarTabelaAgencia = function(lista) {
                     </div>
                 </div>
                 <div class="agencia-card-footer" style="background: #f3e8ff; border-top: 1px solid #e9d5ff; display:flex; gap:10px;">
-                    <button class="btn-novo" style="background:#8b5cf6; color:white; padding: 6px 12px; font-size: 12px; flex:1;" onclick="event.stopPropagation(); window.abrirFichaParticular('${item.id}')">📝 Ficha / Docs</button>
-                    <button class="btn-novo" style="background:#ef4444; color:white; padding: 6px 12px; font-size: 12px; flex:1;" onclick="event.stopPropagation(); window.excluir('${item.id}')">🗑️ Remover</button>
+                    ${footerPart}
                 </div>`;
             card.onclick = () => window.abrirFichaParticular(item.id);
             fragment.appendChild(card); 
@@ -991,14 +1035,14 @@ window.renderizarTabelaAgencia = function(lista) {
         card.onclick = () => window.visualizar(item.id);
         
         let statusGRM = item.agencia_grm || 'PENDENTE'; 
-        if (item.isencao === 'SIM') statusGRM = 'ISENTO'; 
+        if (item.isencao === 'SIM') statusGRM = 'ISENTO'; // Força status ISENTO se tiver gratuidade total
         
         let badgeGRM = `<span class="badge-status ${statusGRM === 'PENDENTE' ? 'badge-pendente' : 'badge-sucesso'}">${statusGRM}</span>`;
         let statusLib = item.agencia_status_liberacao || 'PENDENTE'; 
         let badgeLib = `<span class="badge-status ${statusLib === 'PENDENTE' ? 'badge-pendente' : 'badge-sucesso'}">${statusLib === 'LIBERADO' ? 'LIBERADO' : 'AGUARDANDO'}</span>`;
         
         let docsHTML = renderChip('invol', 'INVOL', item) + renderChip('nf', 'NF', item) + renderChip('tanato', 'TANATO', item);
-        if (item.isencao !== 'SIM') { 
+        if (item.isencao !== 'SIM') { // Esconde os chips de pagamento e guia GRM se for gratuidade
             docsHTML += renderChip('comprovante', 'COMP. PGTO', item) + renderChip('guia_grm', 'GRM', item);
         }
         
@@ -1021,7 +1065,7 @@ window.renderizarTabelaAgencia = function(lista) {
         if (statusLib === 'LIBERADO') {
             let pendentes = [];
             
-            if (item.isencao !== 'SIM') { 
+            if (item.isencao !== 'SIM') { // Remove alerta de documentos faltando caso tenha gratuidade
                 if(!item.agencia_chk_invol) pendentes.push("INVOL"); 
                 if(!item.agencia_chk_nf) pendentes.push("NF"); 
                 if(!item.agencia_chk_comprovante) pendentes.push("PGTO"); 
@@ -1033,6 +1077,15 @@ window.renderizarTabelaAgencia = function(lista) {
                 }
             }
         }
+
+        let acoesAgenciaNormal = isReadOnlyAgencia ? 
+            `<span style="font-size:10px;color:#94a3b8;text-align:center;width:100%;font-weight:bold;">Apenas Visualização</span>` : 
+            `<div style="display:flex; gap:5px; flex-wrap: wrap;">
+                ${btnAssumir}
+                ${btnRepassar}
+                <button class="btn-novo" style="background:#f1f5f9; color:#ea580c; border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 12px; width:auto;" onclick="event.stopPropagation(); window.abrirModalAgencia('${item.id}')">✏️ Editar</button>
+            </div>
+            <button class="btn-novo" style="background:${statusLib === 'LIBERADO' ? '#10b981' : '#3b82f6'}; color:white; padding: 6px 12px; font-size: 12px; margin-top: 5px; width:auto; cursor:pointer;" onclick="event.stopPropagation(); window.abrirModalLiberacao('${item.id}')">✅ Liberação</button>`;
 
         card.innerHTML = `
             <div class="agencia-card-header">
@@ -1054,12 +1107,7 @@ window.renderizarTabelaAgencia = function(lista) {
                 </div>
             </div>
             <div class="agencia-card-footer" style="flex-wrap: wrap;">
-                <div style="display:flex; gap:5px; flex-wrap: wrap;">
-                    ${btnAssumir}
-                    ${btnRepassar}
-                    <button class="btn-novo" style="background:#f1f5f9; color:#ea580c; border: 1px solid #cbd5e1; padding: 6px 12px; font-size: 12px; width:auto;" onclick="event.stopPropagation(); window.abrirModalAgencia('${item.id}')">✏️ Editar</button>
-                </div>
-                <button class="btn-novo" style="background:${statusLib === 'LIBERADO' ? '#10b981' : '#3b82f6'}; color:white; padding: 6px 12px; font-size: 12px; margin-top: 5px; width:auto; cursor:pointer;" onclick="event.stopPropagation(); window.abrirModalLiberacao('${item.id}')">✅ Liberação</button>
+                ${acoesAgenciaNormal}
             </div>`;
         fragment.appendChild(card);
     });
@@ -1071,6 +1119,7 @@ window.renderizarTabelaAgencia = function(lista) {
 // NOVO MODAL PARTICULAR (AGÊNCIA)
 // ============================================================================
 window.abrirModalParticular = function() {
+    if (window.getNivelAcesso() === 'ACOLHIMENTO_AGENCIA') return;
     const form = document.getElementById('form-particular'); 
     if(form) form.reset(); 
     document.getElementById('part_docId').value = ""; 
@@ -1249,6 +1298,7 @@ window.enviarWppParticular = function() {
 // AGÊNCIA E ONEDRIVE
 // ============================================================================
 window.abrirModalAgencia = function(id) {
+    if (window.getNivelAcesso() === 'ACOLHIMENTO_AGENCIA') return;
     getDB().collection("atendimentos").doc(id).get().then(doc => {
         if(doc.exists) {
             const d = doc.data(); 

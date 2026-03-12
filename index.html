@@ -657,12 +657,12 @@
                     <button type="button" class="btn-tag" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
                 </div>
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;">
-                    <button type="button" class="btn-novo" style="background-color: #3b82f6;" onclick="abrirModalDocsAcolhimentoModal()">📂 Docs Acolhimento</button>
+                    <button type="button" id="btn-view-docs-acolhimento" class="btn-novo" style="background-color: #3b82f6;" onclick="abrirModalDocsAcolhimentoModal()">📂 Docs Acolhimento</button>
                     <button type="button" class="btn-wpp" style="background-color: #059669 !important;" onclick="enviarWppFixoAtual()">📲 Notificar Central</button>
-                    <button type="button" class="btn-sign-fam" onclick="abrirModalAssinatura('responsavel')">✍️ Assinar Família</button>
-                    <button type="button" class="btn-sign-func" onclick="abrirModalAssinatura('atendente')">✍️ Assinar Equipe</button>
+                    <button type="button" id="btn-view-assinar-fam" class="btn-sign-fam" onclick="abrirModalAssinatura('responsavel')">✍️ Assinar Família</button>
+                    <button type="button" id="btn-view-assinar-func" class="btn-sign-func" onclick="abrirModalAssinatura('atendente')">✍️ Assinar Equipe</button>
                     <button type="button" class="btn-wpp" onclick="abrirModalWpp()">📱 WhatsApp</button>
-                    <button type="button" class="btn-transfer" onclick="abrirModalTransferir()">🔄 Transferir</button>
+                    <button type="button" id="btn-view-transferir" class="btn-transfer" onclick="abrirModalTransferir()">🔄 Transferir</button>
                     <button type="button" style="background-color:#475569;color:white;" onclick="if(dadosAtendimentoAtual)abrirModalHistorico(dadosAtendimentoAtual.id)">📋 Histórico</button>
                     <button type="button" class="btn-close" onclick="fecharModalVisualizar()">Fechar</button>
                 </div>
@@ -700,8 +700,8 @@
                                  <label>NÍVEL DE ACESSO</label>
                                  <select id="novo-nivel">
                                      <option value="COMPLETO">Completo (Admin + Tudo)</option>
-                                     <option value="ACOLHIMENTO">Apenas Acolhimento</option>
-                                     <option value="AGENCIA">Apenas Agência</option>
+                                     <option value="ACOLHIMENTO_AGENCIA">Acolhimento + Agência (Leitura Agência)</option>
+                                     <option value="AGENCIA_ACOLHIMENTO">Agência + Acolhimento (Leitura Acolhimento)</option>
                                  </select>
                              </div>
                         </div>
@@ -722,8 +722,8 @@
                                  <label>NÍVEL DE ACESSO</label>
                                  <select id="edit-nivel">
                                      <option value="COMPLETO">Completo (Admin + Tudo)</option>
-                                     <option value="ACOLHIMENTO">Apenas Acolhimento</option>
-                                     <option value="AGENCIA">Apenas Agência</option>
+                                     <option value="ACOLHIMENTO_AGENCIA">Acolhimento + Agência (Leitura Agência)</option>
+                                     <option value="AGENCIA_ACOLHIMENTO">Agência + Acolhimento (Leitura Acolhimento)</option>
                                  </select>
                              </div>
                         </div>
@@ -949,7 +949,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js?v=36"></script>
+    <script src="script.js?v=37"></script>
     <script>
         window.pegarLocalizacaoGPS = function() {
             if (navigator.geolocation) {
