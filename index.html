@@ -216,7 +216,7 @@
                         <th>Hospital</th>
                         <th>Cap</th>
                         <th>Falecimento</th>
-                        <th style="text-align: right; min-width: 120px;">Ações</th>
+                        <th style="text-align: right; min-width: 140px;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabela-corpo-acolhimento"></tbody>
@@ -658,6 +658,7 @@
                 </div>
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;">
                     <button type="button" class="btn-novo" style="background-color: #3b82f6;" onclick="abrirModalDocsAcolhimentoModal()">📂 Docs Acolhimento</button>
+                    <button type="button" class="btn-wpp" style="background-color: #059669 !important;" onclick="enviarWppFixoAtual()">📲 Notificar Central</button>
                     <button type="button" class="btn-sign-fam" onclick="abrirModalAssinatura('responsavel')">✍️ Assinar Família</button>
                     <button type="button" class="btn-sign-func" onclick="abrirModalAssinatura('atendente')">✍️ Assinar Equipe</button>
                     <button type="button" class="btn-wpp" onclick="abrirModalWpp()">📱 WhatsApp</button>
@@ -681,6 +682,7 @@
                 <button class="tab-btn" onclick="abrirAba('tab-backup')">💾 Backup</button>
                 <button class="tab-btn" onclick="abrirAba('tab-stats')">📊 Estatísticas</button>
                 <button class="tab-btn" onclick="abrirAba('tab-logs')">🕵️ Auditoria</button>
+                <button class="tab-btn" onclick="abrirAba('tab-config')">⚙️ Configurações</button>
             </div>
             <div class="tab-content-area" style="flex-grow: 1; overflow-y: auto; padding: 20px;">
                 
@@ -876,6 +878,18 @@
                     </div>
                 </div>
 
+                <div id="tab-config" class="tab-pane">
+                    <h4 style="color: #334155; margin-bottom: 15px;">Configurações do Sistema</h4>
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                        <label style="color: #3b82f6; font-weight: bold; font-size: 13px; display: block; margin-bottom: 8px;">Número WhatsApp Fixo (Notificações de Agendamento)</label>
+                        <p style="font-size: 11px; color: #64748b; margin-top: 0; margin-bottom: 15px;">Este número receberá a mensagem quando clicar no botão "📲 Notificar Central". Formato: 55 + DDD + Número.</p>
+                        <div style="display: flex; gap: 10px; max-width: 400px;">
+                            <input type="text" id="config_wpp_fixo" placeholder="Ex: 5521999999999">
+                            <button onclick="salvarConfigWpp()" class="btn-novo" style="background-color: #10b981; width: auto;">💾 Salvar</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -935,7 +949,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js?v=35"></script>
+    <script src="script.js?v=36"></script>
     <script>
         window.pegarLocalizacaoGPS = function() {
             if (navigator.geolocation) {

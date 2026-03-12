@@ -23,6 +23,7 @@ let tipoAssinaturaAtual = '';
 let dashboardAtual = 'acolhimento';
 let dadosAtendimentoAtual = null;
 let dadosEstatisticasExportacao = [];
+let numeroWppFixo = ''; // Número recuperado do painel admin
 
 window.idLiberacaoAtual = null; 
 window.idTransferenciaResponsavelAtual = null; 
@@ -309,6 +310,12 @@ function inicializarSistema() {
         }); 
     }
     
+    if(getDB()) {
+        getDB().collection("config").doc("geral").get().then(doc => {
+            if(doc.exists && doc.data().wpp_fixo) { numeroWppFixo = doc.data().wpp_fixo; }
+        }).catch(e => console.log("Config não carregada", e));
+    }
+
     const sessao = sessionStorage.getItem('usuarioLogado'); 
     if (sessao) { 
         const uTemp = JSON.parse(sessao); 
@@ -832,6 +839,7 @@ window.renderizarTabela = function(lista) {
                 <td style="text-align: center; vertical-align:middle;">${item.data_ficha ? item.data_ficha.split('-').reverse().join('/') : ''}</td>
                 <td style="text-align:right; vertical-align:middle;">
                     <div style="display:flex; gap:5px; justify-content:flex-end;">
+                        <button class="btn-icon" style="background:#dcfce3; color:#16a34a; border-radius:50%; width:32px; height:32px; border:none; cursor:pointer;" onclick="event.stopPropagation();window.enviarWppFixo('${item.id}')" title="Notificar Central via WhatsApp">📲</button>
                         <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')" title="Excluir">🗑️</button>
                     </div>
                 </td>`;
@@ -911,6 +919,7 @@ window.renderizarTabela = function(lista) {
             <td style="text-align:right; vertical-align:middle;">
                 <div style="display:flex; gap:5px; justify-content:flex-end;">
                     ${btnMap}
+                    <button class="btn-icon" style="background:#dcfce3; color:#16a34a; border-radius:50%; width:32px; height:32px; border:none; cursor:pointer;" onclick="event.stopPropagation();window.enviarWppFixo('${item.id}')" title="Notificar Central via WhatsApp">📲</button>
                     <button class="btn-icon btn-editar-circle" onclick="event.stopPropagation();window.editar('${item.id}')">✏️</button>
                     <button class="btn-icon btn-excluir-circle" onclick="event.stopPropagation();window.excluir('${item.id}')">🗑️</button>
                 </div>
@@ -982,14 +991,14 @@ window.renderizarTabelaAgencia = function(lista) {
         card.onclick = () => window.visualizar(item.id);
         
         let statusGRM = item.agencia_grm || 'PENDENTE'; 
-        if (item.isencao === 'SIM') statusGRM = 'ISENTO'; // Força status ISENTO se tiver gratuidade total
+        if (item.isencao === 'SIM') statusGRM = 'ISENTO'; 
         
         let badgeGRM = `<span class="badge-status ${statusGRM === 'PENDENTE' ? 'badge-pendente' : 'badge-sucesso'}">${statusGRM}</span>`;
         let statusLib = item.agencia_status_liberacao || 'PENDENTE'; 
         let badgeLib = `<span class="badge-status ${statusLib === 'PENDENTE' ? 'badge-pendente' : 'badge-sucesso'}">${statusLib === 'LIBERADO' ? 'LIBERADO' : 'AGUARDANDO'}</span>`;
         
         let docsHTML = renderChip('invol', 'INVOL', item) + renderChip('nf', 'NF', item) + renderChip('tanato', 'TANATO', item);
-        if (item.isencao !== 'SIM') { // Esconde os chips de pagamento e guia GRM se for gratuidade
+        if (item.isencao !== 'SIM') { 
             docsHTML += renderChip('comprovante', 'COMP. PGTO', item) + renderChip('guia_grm', 'GRM', item);
         }
         
@@ -1012,7 +1021,7 @@ window.renderizarTabelaAgencia = function(lista) {
         if (statusLib === 'LIBERADO') {
             let pendentes = [];
             
-            if (item.isencao !== 'SIM') { // Remove alerta de documentos faltando caso tenha gratuidade
+            if (item.isencao !== 'SIM') { 
                 if(!item.agencia_chk_invol) pendentes.push("INVOL"); 
                 if(!item.agencia_chk_nf) pendentes.push("NF"); 
                 if(!item.agencia_chk_comprovante) pendentes.push("PGTO"); 
@@ -1499,10 +1508,24 @@ window.abrirAba = function(id) {
     if (id === 'tab-backup') document.querySelectorAll('.tab-btn')[2].classList.add('active'); 
     if (id === 'tab-stats') document.querySelectorAll('.tab-btn')[3].classList.add('active'); 
     if (id === 'tab-logs') document.querySelectorAll('.tab-btn')[4].classList.add('active');
+    if (id === 'tab-config') document.querySelectorAll('.tab-btn')[5].classList.add('active');
     
     if(id === 'tab-equipe') window.listarEquipe(); 
     if(id === 'tab-logs') window.carregarLogs(); 
     if(id === 'tab-stats') window.carregarEstatisticas('7');
+    if(id === 'tab-config') {
+        const elNum = document.getElementById('config_wpp_fixo');
+        if (elNum) elNum.value = numeroWppFixo;
+    }
+}
+
+window.salvarConfigWpp = function() {
+    const num = document.getElementById('config_wpp_fixo').value.replace(/\D/g, '');
+    if(!num) { alert("Digite um número válido."); return; }
+    getDB().collection("config").doc("geral").set({ wpp_fixo: num }, { merge: true }).then(() => {
+        numeroWppFixo = num;
+        alert("Número atualizado com sucesso!");
+    }).catch(e => alert("Erro ao salvar configuração."));
 }
 
 window.carregarEstatisticas = function(modo) {
@@ -2095,7 +2118,6 @@ if(formAcolhimento) {
             if(el.id && el.type !== 'submit' && el.type !== 'button') { 
                 let key = el.id === 'data_ficha_modal' ? 'data_ficha' : el.id; 
                 
-                // Mapeamento corrigido dos checkboxes
                 if (key === 'chk_tanato') key = 'tanato';
                 if (key === 'chk_invol') key = 'invol';
                 if (key === 'chk_translado') key = 'translado';
@@ -2671,8 +2693,38 @@ window.visualizar = function(id) {
 }
 
 // ============================================================================
-// WHATSAPP E SMS
+// WHATSAPP, SMS E NOTIFICAÇÃO CENTRAL
 // ============================================================================
+window.enviarWppFixo = function(id) {
+    if (!numeroWppFixo) {
+        alert("O número da Central de Atendimento não está configurado. Aceda ao Painel Admin > Configurações para definir o número.");
+        return;
+    }
+    
+    getDB().collection("atendimentos").doc(id).get().then(doc => {
+        if(doc.exists) {
+            const d = doc.data();
+            const fd = d.data_ficha ? d.data_ficha.split('-').reverse().join('/') : '';
+            
+            const doencasInfecciosas = ['COVID', 'MENINGITE', 'TUBERCULOSE', 'H1N1', 'HIV', 'SIDA', 'SARAMPO'];
+            let isContagioso = d.causa && doencasInfecciosas.some(doenca => d.causa.toUpperCase().includes(doenca));
+            let alertaContagio = isContagioso ? `\n⚠️ *ATENÇÃO: CAUSA DE MORTE INFECTOCONTAGIOSA (${d.causa.toUpperCase()})*\n` : '';
+
+            let texto = `*NOVO AGENDAMENTO - SERVIÇOS FUNERÁRIOS*\n${alertaContagio}\n📄 *Protocolo:* ${d.protocolo || '-'}\n👤 *Falecido(a):* ${(d.nome || '-').toUpperCase()}\n⚰️ *Cemitério:* ${d.local || '-'}\n📍 *Quadra/Rua:* ${d.qd || '-'}\n🪦 *Tipo de Sepultura:* ${d.tipo_sepultura || '-'}\n🔢 *Nº Sepultura:* ${d.sepul || '-'}\n✝️ *Capela:* ${d.cap || '-'}\n📅 *Data do Sepultamento:* ${fd}\n🕒 *Horário:* ${d.hora || '-'}\n👨‍💼 *Atendente:* ${(d.atendente_sistema || '-').toUpperCase()}`;
+            
+            let url = `https://wa.me/${numeroWppFixo}?text=${encodeURIComponent(texto)}`;
+            window.open(url, '_blank');
+            
+            registrarHistorico(id, 'WHATSAPP', `Notificação de agendamento enviada para a Central (${numeroWppFixo})`);
+        }
+    });
+}
+
+window.enviarWppFixoAtual = function() {
+    if (!dadosAtendimentoAtual || !dadosAtendimentoAtual.id) return;
+    window.enviarWppFixo(dadosAtendimentoAtual.id);
+}
+
 window.abrirModalWpp = function() { 
     if (!dadosAtendimentoAtual) return; 
     safeDisplay('modal-whatsapp', 'flex'); 
