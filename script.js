@@ -58,6 +58,216 @@ function getDB() {
 }
 
 // ============================================================================
+// IMPORTAÇÃO E BUSCA DE BENEFÍCIOS (PORTAL DA TRANSPARÊNCIA)
+// ============================================================================
+window.importarBeneficiarios = function() {
+    const fileInput = document.getElementById('file-import-beneficios');
+    const file = fileInput.files[0];
+    if (!file) { alert("Por favor, selecione um arquivo Excel ou CSV."); return; }
+
+    const statusEl = document.getElementById('import-status');
+    statusEl.innerText = "Lendo arquivo na memória... Aguarde.";
+    statusEl.style.color = "#d97706";
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = window.XLSX.read(data, {type: 'array'});
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = window.XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+
+            if (rows.length === 0) { 
+                statusEl.innerText = "Planilha parece estar vazia."; 
+                return; 
+            }
+
+            statusEl.innerText = `Processando ${rows.length} registros. Iniciando envio para o servidor (lotes de 500)...`;
+
+            const dbInstance = getDB();
+            let batch = dbInstance.batch();
+            let count = 0;
+            let cpfsSalvos = 0;
+
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i];
+                let cpfKey = Object.keys(row).find(k => k.toUpperCase().includes("CPF"));
+                let nomeKey = Object.keys(row).find(k => k.toUpperCase().includes("NOME") || k.toUpperCase().includes("BENEFICI"));
+                let nisKey = Object.keys(row).find(k => k.toUpperCase().includes("NIS"));
+                
+                let cpfRaw = cpfKey ? row[cpfKey] : Object.values(row)[0];
+                let nomeRaw = nomeKey ? row[nomeKey] : (Object.values(row)[1] || "Beneficiário");
+                let nisRaw = nisKey ? row[nisKey] : "";
+
+                let cpfStr = String(cpfRaw).replace(/\D/g, '');
+                let nisStr = String(nisRaw).replace(/\D/g, '');
+                let cpfParcial = "";
+                
+                if (cpfStr.length === 11) {
+                    cpfParcial = cpfStr.substring(3, 9);
+                } else if (cpfStr.length === 6) {
+                    cpfParcial = cpfStr; 
+                }
+
+                if (cpfParcial && nomeRaw) {
+                    let nomeLimpo = String(nomeRaw).toUpperCase().trim();
+                    let docId = nisStr ? nisStr : (cpfParcial + "_" + nomeLimpo.replace(/[^A-Z0-9]/g, '').substring(0, 15)); 
+                    
+                    let docRef = dbInstance.collection("beneficiarios").doc(docId);
+                    batch.set(docRef, { 
+                        cpf_parcial: cpfParcial,
+                        nis: nisStr,
+                        nome: nomeLimpo, 
+                        data_importacao: new Date().toISOString() 
+                    });
+                    
+                    count++;
+                    cpfsSalvos++;
+
+                    if (count === 490) {
+                        await batch.commit();
+                        statusEl.innerText = `Enviando... ${cpfsSalvos} registros salvos de ${rows.length}.`;
+                        batch = dbInstance.batch();
+                        count = 0;
+                    }
+                }
+            }
+            
+            if (count > 0) {
+                await batch.commit();
+            }
+
+            statusEl.innerText = `✅ Importação concluída! ${cpfsSalvos} beneficiários cadastrados na base.`;
+            statusEl.style.color = "#10b981";
+            fileInput.value = ""; 
+            
+            registrarHistorico("SISTEMA", "CADASTRO", `Base de benefícios importada: ${cpfsSalvos} registros`);
+
+        } catch (err) {
+            console.error(err);
+            statusEl.innerText = "❌ Erro ao processar a planilha. Verifique o formato.";
+            statusEl.style.color = "red";
+        }
+    };
+    reader.readAsArrayBuffer(file);
+};
+
+window.beneficiariosCache = null; 
+
+window.abrirModalBuscaBeneficio = function() {
+    document.getElementById('input_busca_beneficio').value = '';
+    document.getElementById('resultado-busca-beneficio').innerHTML = '<span style="color:#64748b; font-size:12px;">Use a busca acima para encontrar o beneficiário.</span>';
+    safeDisplay('modal-busca-beneficio', 'block');
+}
+
+window.fecharModalBuscaBeneficio = function() {
+    safeDisplay('modal-busca-beneficio', 'none');
+}
+
+window.realizarBuscaBeneficio = function() {
+    const tipo = document.getElementById('tipo_busca_beneficio').value;
+    let termo = document.getElementById('input_busca_beneficio').value.trim();
+    const divRes = document.getElementById('resultado-busca-beneficio');
+
+    if (!termo || (tipo !== 'NOME' && termo.length < 3)) {
+        divRes.innerHTML = '<span style="color:#ef4444; font-size:12px;">Digite um termo válido para buscar.</span>';
+        return;
+    }
+
+    divRes.innerHTML = '<span style="color:#64748b; font-size:12px;">⏳ Buscando...</span>';
+
+    if (tipo === 'NOME') {
+        termo = termo.toUpperCase();
+        
+        const renderizarResultadosNome = (lista) => {
+            let filtrados = lista.filter(d => d.nome && d.nome.includes(termo)).slice(0, 20);
+            
+            if (filtrados.length === 0) {
+                divRes.innerHTML = '<span style="color:#ef4444; font-size:12px;">❌ Nenhum beneficiário encontrado com estes dados parciais.</span>';
+                return;
+            }
+            
+            let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+            filtrados.forEach(d => {
+                html += `
+                    <div style="background:#fff; border:1px solid #cbd5e1; padding:10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:bold; color:#1e293b; font-size:13px;">${d.nome}</div>
+                            <div style="font-size:11px; color:#64748b;">NIS: ${d.nis || '-'} | CPF: ***.${d.cpf_parcial || '---'}.***-**</div>
+                        </div>
+                        <button type="button" class="btn-novo" style="background-color:#10b981; padding:4px 8px; font-size:11px; width:auto;" onclick="aplicarIsencaoBeneficio('${d.nome}')">Aplicar Isenção</button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            divRes.innerHTML = html;
+        };
+
+        if (window.beneficiariosCache) {
+            renderizarResultadosNome(window.beneficiariosCache);
+        } else {
+            getDB().collection("beneficiarios").get().then(snap => {
+                window.beneficiariosCache = [];
+                snap.forEach(doc => window.beneficiariosCache.push(doc.data()));
+                renderizarResultadosNome(window.beneficiariosCache);
+            }).catch(err => {
+                console.error("Erro na busca de nome (cache):", err);
+                divRes.innerHTML = '<span style="color:#ef4444; font-size:12px;">❌ Erro ao realizar a busca de nomes.</span>';
+            });
+        }
+    } 
+    else {
+        let query = getDB().collection("beneficiarios");
+        
+        if (tipo === 'NIS') {
+            termo = termo.replace(/\D/g, '');
+            query = query.where("nis", "==", termo);
+        } else if (tipo === 'CPF') {
+            termo = termo.replace(/\D/g, '');
+            if (termo.length === 11) termo = termo.substring(3, 9);
+            query = query.where("cpf_parcial", "==", termo);
+        }
+
+        query.limit(20).get().then(snap => {
+            if (snap.empty) {
+                divRes.innerHTML = '<span style="color:#ef4444; font-size:12px;">❌ Nenhum beneficiário encontrado com estes dados.</span>';
+                return;
+            }
+
+            let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+            snap.forEach(doc => {
+                const d = doc.data();
+                html += `
+                    <div style="background:#fff; border:1px solid #cbd5e1; padding:10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:bold; color:#1e293b; font-size:13px;">${d.nome}</div>
+                            <div style="font-size:11px; color:#64748b;">NIS: ${d.nis || '-'} | CPF: ***.${d.cpf_parcial || '---'}.***-**</div>
+                        </div>
+                        <button type="button" class="btn-novo" style="background-color:#10b981; padding:4px 8px; font-size:11px; width:auto;" onclick="aplicarIsencaoBeneficio('${d.nome}')">Aplicar Isenção</button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            divRes.innerHTML = html;
+        }).catch(err => {
+            console.error("Erro na busca:", err);
+            divRes.innerHTML = '<span style="color:#ef4444; font-size:12px;">❌ Erro ao realizar a busca. Tente novamente.</span>';
+        });
+    }
+}
+
+window.aplicarIsencaoBeneficio = function(nome) {
+    const selIsencao = document.getElementById('isencao');
+    const inReq = document.getElementById('requisito');
+    if(selIsencao) selIsencao.value = "SIM";
+    if(inReq) inReq.value = "CADUNICO / GOVERNO (SISTEMA)";
+    
+    alert(`✅ Isenção aplicada com sucesso para:\n${nome}`);
+    window.fecharModalBuscaBeneficio();
+}
+
+// ============================================================================
 // HISTÓRICO DE MOVIMENTAÇÕES (POR ATENDIMENTO)
 // ============================================================================
 function registrarHistorico(atendimentoId, tipo, descricao) {
@@ -152,7 +362,6 @@ window.fazerLogin = async function() {
     const msgErro = document.getElementById('msg-erro-login');
     msgErro.style.display = 'none';
 
-    // Acesso hardcoded do admin geral mantido para fallback extremo
     if (p === "2026" && (u === "admin" || u === "Admin")) { 
         usuarioLogado = {nome: "Admin", login: "admin", nivel: "COMPLETO"}; 
         window.liberarAcesso(); 
@@ -176,23 +385,18 @@ window.fazerLogin = async function() {
     msgErro.style.display = 'block';
 
     try {
-        // Limpa estado anterior corrompido, se houver
         await auth.signOut().catch(() => {});
         
-        // 1. TENTA LOGIN EXCLUSIVAMENTE PELO FIREBASE AUTH
         const userCredential = await auth.signInWithEmailAndPassword(u, p);
         const userEmail = userCredential.user.email.toLowerCase();
 
-        // 2. SE SUCESSO, BUSCA O NÍVEL DE ACESSO NA COLEÇÃO 'equipe'
         const db = getDB();
         const snapshot = await db.collection("equipe").where("email", "==", userEmail).get();
         
         if (!snapshot.empty) {
-            // Usuário achado na equipe de forma exata
             usuarioLogado = snapshot.docs[0].data();
             usuarioLogado.id = snapshot.docs[0].id;
         } else {
-            // Busca manual ignorando case sensitive, caso o banco tenha sido salvo com Maiúsculas
             const allUsers = await db.collection("equipe").get();
             let foundUser = null;
             allUsers.forEach(doc => {
@@ -206,13 +410,12 @@ window.fazerLogin = async function() {
             if (foundUser) {
                 usuarioLogado = foundUser;
             } else {
-                // AUTORIZAÇÃO EXCEPCIONAL: Auth passou, mas não existe no BD equipe.
                 let nomeBase = userEmail.split('@')[0];
                 usuarioLogado = {
                     nome: nomeBase.charAt(0).toUpperCase() + nomeBase.slice(1),
                     email: userEmail,
                     login: nomeBase,
-                    nivel: "COMPLETO" // Garante o acesso se a restrição não foi definida no painel
+                    nivel: "COMPLETO" 
                 };
             }
         }
@@ -237,7 +440,6 @@ window.checarLoginEnter = function(e) {
 window.getNivelAcesso = function() {
     if (!usuarioLogado) return 'COMPLETO';
     let n = usuarioLogado.nivel || 'COMPLETO';
-    // Conversão de legados para os novos níveis mantendo compatibilidade
     if (n === 'ACOLHIMENTO') return 'ACOLHIMENTO_AGENCIA';
     if (n === 'AGENCIA') return 'AGENCIA_ACOLHIMENTO';
     return n;
@@ -247,9 +449,7 @@ window.liberarAcesso = function() {
     safeDisplay('tela-bloqueio', 'none'); 
     sessionStorage.setItem('usuarioLogado', JSON.stringify(usuarioLogado)); 
     
-    // O carregamento do número do Whatsapp fixo
     if(getDB()) {
-        // Usa o token Auth que acabou de ser gerado, acesso autorizado.
         getDB().collection("config").doc("geral").get().then(doc => {
             if(doc.exists && doc.data().wpp_fixo) { numeroWppFixo = doc.data().wpp_fixo; }
         }).catch(e => console.log("Aviso: Configurações de WhatsApp não carregadas.", e));
@@ -266,10 +466,8 @@ window.liberarAcesso = function() {
     if(btnAcolhimento) btnAcolhimento.style.display = '';
     if(btnAgencia) btnAgencia.style.display = '';
     
-    // Admin apenas para nível COMPLETO
     if(btnAdmin) btnAdmin.style.display = (nAcesso === 'COMPLETO') ? '' : 'none';
 
-    // Regras dos botões + Novo
     if(btnNovoAcolhimento) btnNovoAcolhimento.style.display = (nAcesso === 'AGENCIA_ACOLHIMENTO') ? 'none' : '';
     if(btnNovoAgencia) btnNovoAgencia.style.display = (nAcesso === 'ACOLHIMENTO_AGENCIA') ? 'none' : '';
 
@@ -360,8 +558,6 @@ function inicializarSistema() {
                 }) : Promise.resolve(null);
                 
                 authReady.then((user) => {
-                    // Para garantir que a sessão persista mesmo se não houver documento na equipe,
-                    // validamos pelo email logado do Auth ou pelo email salvo no uTemp
                     let queryEmail = (user && user.email) ? user.email : (uTemp.email || "");
                     
                     if (queryEmail) {
@@ -369,7 +565,6 @@ function inicializarSistema() {
                             if (!snap.empty) { 
                                 usuarioLogado = snap.docs[0].data(); 
                             } else {
-                                // Se não encontrar exato, procura manual ou aceita o uTemp direto
                                 usuarioLogado = uTemp; 
                             }
                             window.liberarAcesso();
@@ -378,7 +573,6 @@ function inicializarSistema() {
                             window.liberarAcesso(); 
                         });
                     } else {
-                        // Sem email na sessão/auth
                         usuarioLogado = uTemp; 
                         window.liberarAcesso(); 
                     }
@@ -1041,7 +1235,14 @@ window.renderizarTabelaAgencia = function(lista) {
         let statusLib = item.agencia_status_liberacao || 'PENDENTE'; 
         let badgeLib = `<span class="badge-status ${statusLib === 'PENDENTE' ? 'badge-pendente' : 'badge-sucesso'}">${statusLib === 'LIBERADO' ? 'LIBERADO' : 'AGUARDANDO'}</span>`;
         
-        let docsHTML = renderChip('invol', 'INVOL', item) + renderChip('nf', 'NF', item) + renderChip('tanato', 'TANATO', item);
+        let isAcolhimento = item.funeraria && (item.funeraria.toUpperCase().includes('SOCIAL') || item.funeraria.toUpperCase().includes('ACOLHIMENTO'));
+
+        let docsHTML = renderChip('invol', 'INVOL', item);
+        if (!isAcolhimento) {
+            docsHTML += renderChip('nf', 'NF', item);
+        }
+        docsHTML += renderChip('tanato', 'TANATO', item);
+        
         if (item.isencao !== 'SIM') { // Esconde os chips de pagamento e guia GRM se for gratuidade
             docsHTML += renderChip('comprovante', 'COMP. PGTO', item) + renderChip('guia_grm', 'GRM', item);
         }
@@ -1067,7 +1268,7 @@ window.renderizarTabelaAgencia = function(lista) {
             
             if (item.isencao !== 'SIM') { // Remove alerta de documentos faltando caso tenha gratuidade
                 if(!item.agencia_chk_invol) pendentes.push("INVOL"); 
-                if(!item.agencia_chk_nf) pendentes.push("NF"); 
+                if(!isAcolhimento && !item.agencia_chk_nf) pendentes.push("NF"); 
                 if(!item.agencia_chk_comprovante) pendentes.push("PGTO"); 
                 if(!item.agencia_chk_guia_grm) pendentes.push("GRM"); 
                 if(!item.url_docs_agencia) pendentes.push("NUVEM");
@@ -1314,6 +1515,15 @@ window.abrirModalAgencia = function(id) {
                 if(elChk) elChk.checked = (d[`agencia_chk_${k}`] === true); 
             });
             
+            let isAcolhimento = d.funeraria && (d.funeraria.toUpperCase().includes('SOCIAL') || d.funeraria.toUpperCase().includes('ACOLHIMENTO'));
+            let nfInput = document.getElementById('agencia_chk_nf');
+            if(nfInput) {
+                let labelNf = nfInput.closest('label');
+                if (labelNf) {
+                    labelNf.style.display = isAcolhimento ? 'none' : 'flex';
+                }
+            }
+
             const elLnk = document.getElementById('link_docs_agencia'); 
             if(elLnk) elLnk.value = d.url_docs_agencia || '';
             
@@ -2337,7 +2547,7 @@ window.gerarFormularioLiberacao = function(tipoImpressao) {
             const dF = d.data_ficha ? d.data_ficha.split('-').reverse().join('/') : ''; 
             const ag = new Date(); 
             const hA = String(ag.getHours()).padStart(2,'0')+':'+String(ag.getMinutes()).padStart(2,'0'); 
-            const at = (d.agencia_atendente || (usuarioLogado ? usuarioLogado.nome : '')).toUpperCase(); 
+            const at = (usuarioLogado && usuarioLogado.nome ? usuarioLogado.nome : (d.agencia_atendente || '')).toUpperCase(); 
             const tp = tipoImpressao === 'municipal' ? 'SEPULTAMENTO' : 'CREMAÇÃO';
             let se = ''; 
             
@@ -2395,7 +2605,7 @@ window.gerarReciboFuneraria = function() {
         tS = `${tS} - ${c}`; 
     }
 
-    let nA = (d.atendente_sistema || (usuarioLogado ? usuarioLogado.nome : 'N/A')).toUpperCase();
+    let nA = (usuarioLogado && usuarioLogado.nome ? usuarioLogado.nome : (d.atendente_sistema || 'N/A')).toUpperCase();
     let bA = d.assinatura_atendente ? `<div style="text-align:center;height:45px;"><img src="${d.assinatura_atendente}" style="max-height:40px;max-width:80%;"></div>` : `<div style="height:45px;"></div>`;
     
     let tanatoStr = (d.tanato === 'SIM' || d.chk_tanato === 'SIM') ? 'SIM' : 'NÃO'; 
@@ -2566,7 +2776,7 @@ window.gerarComprovante = function() {
     
     let bF = d.assinatura_responsavel ? `<div style="text-align:center;height:45px;"><img src="${d.assinatura_responsavel}" style="max-height:40px;max-width:80%;"></div>` : `<div style="height:45px;"></div>`;
     let bA = d.assinatura_atendente ? `<div style="text-align:center;height:45px;"><img src="${d.assinatura_atendente}" style="max-height:40px;max-width:80%;"></div>` : `<div style="height:45px;"></div>`;
-    let nA = (d.atendente_sistema || (usuarioLogado ? usuarioLogado.nome : 'N/A')).toUpperCase();
+    let nA = (usuarioLogado && usuarioLogado.nome ? usuarioLogado.nome : (d.atendente_sistema || 'N/A')).toUpperCase();
     
     let isTanato = (d.tanato === 'SIM' || d.chk_tanato === 'SIM');
 
@@ -2886,7 +3096,7 @@ window.excluir = function(id) {
 };
 
 window.onclick = function(e) { 
-    const m = ['modal-visualizar', 'modal-estatisticas', 'modal-admin', 'modal-transferir', 'modal-whatsapp', 'modal-agencia', 'modal-liberacao', 'modal-transferir-responsavel', 'modal-onedrive', 'modal-docs-acolhimento', 'modal-particular', 'modal-assinatura', 'modal-particular-ficha', 'modal-historico']; 
+    const m = ['modal-visualizar', 'modal-estatisticas', 'modal-admin', 'modal-transferir', 'modal-whatsapp', 'modal-agencia', 'modal-liberacao', 'modal-transferir-responsavel', 'modal-onedrive', 'modal-docs-acolhimento', 'modal-particular', 'modal-assinatura', 'modal-particular-ficha', 'modal-historico', 'modal-busca-beneficio']; 
     if (m.includes(e.target.id)) {
         safeDisplay(e.target.id, 'none'); 
     }
