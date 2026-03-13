@@ -398,7 +398,7 @@
                     <div class="input-group span-4 form-section-divider"><h4 class="form-section-title" style="color: #3b82f6;">📄 Documentos Marcados (Agência)</h4></div>
                     <div class="input-group span-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; padding: 15px; background: #fafafa; border: 1px dashed #cbd5e1; border-radius: 8px;">
                         <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer; padding: 6px; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'"><input type="checkbox" id="agencia_chk_invol"> Guia INVOL</label>
-                        <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer; padding: 6px; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'"><input type="checkbox" id="agencia_chk_nf"> Nota Fiscal</label>
+                        <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer; padding: 6px; border-radius: 6px; transition: 0.2s;" id="label_agencia_chk_nf" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'"><input type="checkbox" id="agencia_chk_nf"> Nota Fiscal</label>
                         <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer; padding: 6px; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'"><input type="checkbox" id="agencia_chk_tanato"> Cert. Tanato</label>
                         <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer; padding: 6px; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'"><input type="checkbox" id="agencia_chk_comprovante"> Comp. Pagamento</label>
                         <label style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155; font-size: 12px; cursor: pointer; padding: 6px; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'"><input type="checkbox" id="agencia_chk_guia_grm"> Guia GRM</label>
@@ -984,7 +984,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js?v=39"></script>
+    <script src="script.js?v=40"></script>
     <script>
         window.pegarLocalizacaoGPS = function() {
             if (navigator.geolocation) {
