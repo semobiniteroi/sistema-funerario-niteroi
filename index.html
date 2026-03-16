@@ -100,6 +100,45 @@
         .agencia-info-value { color: #334155; font-weight: 700; text-align: right; }
         .agencia-card-footer { padding: 15px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 10px; }
 
+        /* ================================================================= */
+        /* ESTILOS DO CHAT INTERNO (MESSENGER INTRANET) */
+        /* ================================================================= */
+        #btn-chat-flutuante {
+            position: fixed; bottom: 20px; right: 20px; background-color: #3b82f6; color: white;
+            border: none; border-radius: 50px; padding: 14px 20px; font-size: 14px; font-weight: 600;
+            cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 9999; display: none;
+            display: flex; align-items: center; gap: 8px; transition: transform 0.2s;
+        }
+        #btn-chat-flutuante:hover { transform: scale(1.05); background-color: #2563eb; }
+        #chat-badge {
+            background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px;
+            position: absolute; top: -5px; right: -5px; display: none; border: 2px solid white;
+        }
+        #chat-panel {
+            position: fixed; bottom: 80px; right: 20px; width: 340px; height: 480px;
+            background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column; z-index: 9998; overflow: hidden;
+            transform: scale(0); transform-origin: bottom right; transition: transform 0.2s ease;
+        }
+        #chat-panel.open { transform: scale(1); }
+        .chat-header { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 15px; font-weight: 600; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-header span.close-chat { cursor: pointer; font-size: 20px; transition: 0.2s; }
+        .chat-header span.close-chat:hover { opacity: 0.7; }
+        .chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
+        .chat-message { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.4; position: relative; word-wrap: break-word; }
+        .chat-message.me { background: #dbeafe; color: #1e3a8a; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .chat-message.other { background: #fff; border: 1px solid #e2e8f0; color: #334155; align-self: flex-start; border-bottom-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .chat-message.private-msg { border-left: 3px solid #ef4444 !important; }
+        .chat-user { font-size: 10px; font-weight: bold; margin-bottom: 4px; display: block; opacity: 0.7; color: #64748b; }
+        .chat-message.me .chat-user { color: #3b82f6; }
+        .chat-time { font-size: 9px; opacity: 0.6; text-align: right; display: block; margin-top: 4px; }
+        .chat-footer { padding: 12px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: center; }
+        .chat-footer select { max-width: 90px; padding: 8px; border-radius: 20px; border: 1px solid #cbd5e1; font-size: 11px; outline: none; background: #f8fafc; cursor: pointer; }
+        .chat-footer input { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 13px; outline: none; background: #f8fafc; }
+        .chat-footer input:focus { background: #fff; border-color: #3b82f6; }
+        .chat-footer button { background: #3b82f6; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
+        .chat-footer button:hover { background: #2563eb; transform: scale(1.05); }
+
         @media (max-width: 768px) {
             .modal-footer-custom { padding-bottom: 20px; }
             .modal-footer-custom button { flex: 1 1 45%; max-width: 100%; }
@@ -108,6 +147,8 @@
             .col-actions { position: absolute; top: 15px; right: 15px; }
             .tab-header { padding-bottom: 5px; }
             .modal-resumo-grid { grid-template-columns: 1fr !important; }
+            
+            #chat-panel { width: calc(100% - 40px); bottom: 80px; right: 20px; }
         }
     </style>
 </head>
@@ -237,7 +278,8 @@
                         <div class="input-group span-3" style="grid-column: span 3;"><label style="color:#d97706;">Nome Completo (Responsável - PF)</label><input type="text" id="part_pf_nome"></div>
                         <div class="input-group span-1" style="grid-column: span 1;"><label style="color:#d97706;">Telefone 1</label><input type="text" id="part_pf_tel" placeholder="(21) 99999-9999"></div>
                         <div class="input-group span-1" style="grid-column: span 1;"><label style="color:#d97706;">Telefone 2 (Opcional)</label><input type="text" id="part_pf_tel2" placeholder="(21) 99999-9999"></div>
-                        <div class="input-group span-2" style="grid-column: span 2;"><label style="color:#d97706;">E-mail</label><input type="email" id="part_pf_email" placeholder="email@exemplo.com"></div>
+                        <div class="input-group span-2" style="grid-column: span 2;"><label style="color:#d97706;">E-mail p/ Comprovante</label><input type="email" id="part_pf_email" placeholder="email@exemplo.com"></div>
+                        
                         <div class="input-group span-1" style="grid-column: span 1;"><label style="color:#d97706;">CEP</label><input type="text" id="part_pf_cep" placeholder="00000-000" onblur="buscarCEP_PF(this.value)"></div>
                         <div class="input-group span-2" style="grid-column: span 2;"><label style="color:#d97706;">Endereço (Rua, Av)</label><input type="text" id="part_pf_endereco"></div>
                         <div class="input-group span-1" style="grid-column: span 1;"><label style="color:#d97706;">Número</label><input type="text" id="part_pf_numero"></div>
@@ -482,7 +524,8 @@
                     <div class="input-group span-1"><label>Cidade</label><input type="text" id="resp_cidade"></div>
                     <div class="input-group span-1"><label>UF</label><input type="text" id="resp_uf" placeholder="Ex: RJ"></div>
                     <div class="input-group span-2"><label>Telefone Responsável</label><input type="text" id="telefone" placeholder="(21) 99999-9999" required></div>
-                    <div class="input-group span-2"><label>Grau Parentesco</label><input type="text" id="parentesco" list="lista-parentesco" placeholder="Selecione..."><datalist id="lista-parentesco"><option value="CÔNJUGE"><option value="FILHO(A)"><option value="PAI/MÃE"><option value="IRMÃO(Ã)"><option value="NETO(A)"><option value="SOBRINHO(A)"><option value="GENRO/NORA"><option value="CUNHADO(A)"><option value="TIO(A)"><option value="PRIMO(A)"><option value="OUTRO"></datalist></div>
+                    <div class="input-group span-2"><label>E-mail Responsável (Opcional)</label><input type="email" id="resp_email" placeholder="Para envio de comprovante"></div>
+                    <div class="input-group span-4"><label>Grau Parentesco</label><input type="text" id="parentesco" list="lista-parentesco" placeholder="Selecione..."><datalist id="lista-parentesco"><option value="CÔNJUGE"><option value="FILHO(A)"><option value="PAI/MÃE"><option value="IRMÃO(Ã)"><option value="NETO(A)"><option value="SOBRINHO(A)"><option value="GENRO/NORA"><option value="CUNHADO(A)"><option value="TIO(A)"><option value="PRIMO(A)"><option value="OUTRO"></datalist></div>
                     <div class="input-group span-4 form-section-divider"><span style="font-size:16px;">⚰️</span><h4 class="form-section-title">Dados do Falecido e Estrutura</h4></div>
                     <div class="input-group span-2"><label>Estado Civil (Falecido)</label><select id="estado_civil"><option value="">Selecione...</option><option value="SOLTEIRO">SOLTEIRO</option><option value="CASADO">CASADO</option><option value="VIUVO">VIÚVO</option><option value="UNIAO_ESTAVEL">UNIÃO ESTÁVEL</option><option value="DIVORCIADO">DIVORCIADO</option><option value="IGNORADO">IGNORADO</option></select></div>
                     <div class="input-group span-2"><label>Funerária</label><input type="text" id="funeraria" list="lista-funerarias" placeholder="Selecione..." required><datalist id="lista-funerarias"><option value="RIO PAX NITERÓI"><option value="FUNERÁRIA SANTA ROSA"><option value="FUNERÁRIA NITERÓI"><option value="FUNERÁRIA SÃO FRANCISCO"><option value="FUNERÁRIA MENINO DEUS"><option value="SAF (ASSISTÊNCIA FAMILIAR)"><option value="PLASIR"><option value="SOCIAL"><option value="DOM BOSCO"><option value="MAVERICK"><option value="PRÓPRIA FAMÍLIA"></datalist></div>
@@ -507,7 +550,16 @@
                     <div class="input-group span-2 hidden" id="div-membro"><input type="hidden" id="membro_amputado"></div>
                     <div class="input-group span-1"><label>Nº Sepul</label><input type="text" id="sepul" required></div>
                     <div class="input-group span-1"><label>QD</label><input type="text" id="qd" required></div>
-                    <div class="input-group span-1"><label>GPS</label><div style="display:flex; gap:5px;"><input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps"><button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center; border-radius:6px;">📍</button></div></div>
+                    
+                    <div class="input-group span-1">
+                        <label>GPS</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="geo_coords" placeholder="-22..., -43..." title="Copie do Google Maps">
+                            <button type="button" onclick="pegarLocalizacaoGPS()" class="btn-novo" style="width:40px; padding:0; justify-content:center; border-radius:6px;" title="Pegar minha localização atual">📍</button>
+                            <button type="button" onclick="abrirGMapsRegistro()" class="btn-novo" style="width:40px; padding:0; justify-content:center; border-radius:6px; background-color:#8b5cf6;" title="Testar Rota no Maps">🗺️</button>
+                        </div>
+                    </div>
+                    
                     <div class="input-group span-4 hidden" id="div-motivo-sepultura"><label style="color:red;">Motivo Troca</label><input type="text" id="motivo_troca_sepultura" placeholder="Explique a mudança..."></div>
                     <div class="input-group span-2"><label>Hospital / Local</label><input type="text" id="hospital" list="lista-hospitais" placeholder="Selecione..." required><datalist id="lista-hospitais"><option value="DOMICÍLIO"><option value="OUTRO HOSPITAL (DIGITE O NOME)"><option value="HMCT (CARLOS TORTELLY)"><option value="HEAL (AZEVEDO LIMA)"><option value="HUAP (ANTÔNIO PEDRO)"><option value="HOSP. ORÊNCIO DE FREITAS)"><option value="HOSP. PSIQUIÁTRICO JURUJUBA)"><option value="HOSP. OCEÂNICO)"><option value="HOSP. GETULINHO)"><option value="UPA MÁRIO MONTEIRO)"><option value="UPA FONSECA)"><option value="CHN (COMPLEXO HOSPITALAR)"><option value="HCN (CLÍNICAS DE NITERÓI)"><option value="HOSP. SANTA MARTHA)"><option value="HOSP. SÃO LUCAS)"><option value="HOSP. ICARAÍ)"><option value="HEAT (ALBERTO TORRES)"><option value="HOSP. LUIZ PALMIER)"><option value="PRONTO SOCORRO CENTRAL (SG)"><option value="HOSP. SÃO GONÇALO)"><option value="HOSP. FRANCISCANO (NS. GRAÇAS)"><option value="IML - NITERÓI)"><option value="IML - SÃO GONÇALO)"></datalist></div>
                     <div class="input-group span-2 hidden" id="div-local-domicilio" style="flex-direction: row; gap: 5px;"><div style="flex: 1;"><label>UF</label><select id="estado_obito"><option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></div><div style="flex: 2;"><label>Cidade</label><select id="cidade_obito" disabled><option value="">Selecione a UF</option></select></div></div>
@@ -605,13 +657,14 @@
                     <button type="button" class="btn-tag" onclick="gerarEtiqueta()">🏷️ Etiqueta</button>
                 </div>
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;">
+                    <button type="button" class="btn-novo" style="background-color: #f59e0b;" onclick="reenviarEmailAtual()">✉️ Reenviar E-mail</button>
                     <button type="button" id="btn-view-docs-acolhimento" class="btn-novo" style="background-color: #3b82f6;" onclick="abrirModalDocsAcolhimentoModal()">📂 Docs Acolhimento</button>
                     <button type="button" class="btn-wpp" style="background-color: #059669 !important;" onclick="enviarWppFixoAtual()">📲 Notificar Central</button>
                     <button type="button" id="btn-view-assinar-fam" class="btn-sign-fam" onclick="abrirModalAssinatura('responsavel')">✍️ Assinar Família</button>
                     <button type="button" id="btn-view-assinar-func" class="btn-sign-func" onclick="abrirModalAssinatura('atendente')">✍️ Assinar Equipe</button>
                     <button type="button" class="btn-wpp" onclick="abrirModalWpp()">📱 WhatsApp</button>
                     <button type="button" id="btn-view-transferir" class="btn-transfer" onclick="abrirModalTransferir()">🔄 Transferir</button>
-                    <button type="button" style="background-color:#475569;color:white;" onclick="if(dadosAtendimentoAtual)abrirModalHistorico(dadosAtendimentoAtual.id)">📋 Histórico</button>
+                    <button type="button" style="background-color:#475569;color:white;" onclick="if(window.dadosAtendimentoAtual)window.abrirModalHistorico(window.dadosAtendimentoAtual.id)">📋 Histórico</button>
                     <button type="button" class="btn-close" onclick="fecharModalVisualizar()">Fechar</button>
                 </div>
             </div>
@@ -861,18 +914,104 @@
         </div>
     </div>
 
-    <div id="modal-transferir-responsavel" class="modal">
-        <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
-            <h3 style="color: #1e293b; margin-bottom: 15px;">Repassar Processo</h3>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o novo responsável por este atendimento na Agência:</p>
-            <select id="novo_responsavel_agencia" style="margin-bottom: 15px; font-weight: bold; width: 100%;"><option value="">Carregando equipe...</option></select>
-            <label style="text-align: left; margin-bottom: 5px; display: block; color: #475569; font-size: 12px; font-weight: 600;">Justificativa do Repasse (Obrigatório):</label>
-            <textarea id="justificativa_repasse" rows="3" placeholder="Informe o motivo da transferência..." style="margin-bottom: 20px; width: 100%; resize: none;"></textarea>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="fecharModalTransferirResponsavel()" class="btn-close" style="padding: 10px 20px; font-weight: 600;">Cancelar</button>
-                <button onclick="confirmarTransferenciaResponsavel()" class="btn-novo" style="background-color: #8b5cf6; padding: 10px 20px;">Confirmar Repasse</button>
+    <div id="modal-busca-beneficio" class="modal">
+        <div class="modal-content" style="max-width: 500px; padding: 20px;">
+            <div class="modal-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="color: #1e293b; margin: 0;">Consultar Base de Benefícios</h3>
+                <span class="close" onclick="fecharModalBuscaBeneficio()" style="cursor: pointer; color: #64748b; font-size: 20px;">×</span>
             </div>
-            <button onclick="fecharModalTransferirResponsavel()" class="close" style="position: absolute; top: 15px; right: 20px;">×</button>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <select id="tipo_busca_beneficio" style="width: 30%;">
+                    <option value="CPF">CPF</option>
+                    <option value="NIS">Número NIS</option>
+                    <option value="NOME">Nome</option>
+                </select>
+                <input type="text" id="input_busca_beneficio" placeholder="Digite para buscar..." style="width: 45%;">
+                <button onclick="realizarBuscaBeneficio()" class="btn-novo" style="background-color: #3b82f6; width: 25%; justify-content: center;">Buscar Local</button>
+            </div>
+            <div id="resultado-busca-beneficio" style="min-height: 100px; max-height: 300px; overflow-y: auto; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                </div>
+        </div>
+    </div>
+
+    <div id="modal-historico" class="modal">
+        <div class="modal-content" style="max-width: 600px; padding: 20px;">
+            <div class="modal-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="color: #1e293b; margin: 0;">Histórico de Movimentações</h3>
+                <span class="close" onclick="fecharModalHistorico()" style="cursor: pointer; color: #64748b; font-size: 20px;">×</span>
+            </div>
+            <div id="historico-lista" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                </div>
+        </div>
+    </div>
+
+    <div id="modal-assinatura" class="modal">
+        <div class="modal-content" style="max-width: 500px; padding: 20px; text-align: center;">
+            <div class="modal-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 id="titulo-assinatura" style="color: #1e293b; margin: 0;">Assinatura</h3>
+                <span class="close" onclick="fecharModalAssinatura()" style="cursor: pointer; color: #64748b; font-size: 20px;">×</span>
+            </div>
+            <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                <canvas id="signature-pad" width="400" height="200" style="border: 2px dashed #cbd5e1; border-radius: 6px; background: #fff; touch-action: none; max-width: 100%;"></canvas>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="limparAssinatura()" class="btn-close" style="width: auto;">Limpar Traço</button>
+                <button onclick="salvarAssinatura()" class="btn-novo" style="background-color: #10b981; width: auto;">Salvar Assinatura</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-transferir" class="modal">
+        <div class="modal-content" style="max-width: 400px; padding: 20px; text-align: center;">
+            <div class="modal-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="color: #1e293b; margin: 0;">Transferir Atendimento</h3>
+                <span class="close" onclick="fecharModalTransferir()" style="cursor: pointer; color: #64748b; font-size: 20px;">×</span>
+            </div>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o novo cemitério de destino para este atendimento:</p>
+            <select id="novo_cemiterio_transferencia" style="width: 100%; margin-bottom: 20px; font-weight: bold; padding: 10px;">
+                <option value="CEMITÉRIO DO MARUÍ">CEMITÉRIO DO MARUÍ</option>
+                <option value="CEMITÉRIO DE SÃO FRANCISCO">CEMITÉRIO DE SÃO FRANCISCO</option>
+                <option value="CEMITÉRIO DE ITAIPU">CEMITÉRIO DE ITAIPU</option>
+            </select>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="fecharModalTransferir()" class="btn-close" style="width: auto;">Cancelar</button>
+                <button onclick="confirmarTransferencia()" class="btn-novo" style="background-color: #0ea5e9; width: auto;">Confirmar Transferência</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-whatsapp" class="modal">
+        <div class="modal-content" style="max-width: 400px; padding: 20px; text-align: center;">
+            <div class="modal-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="color: #1e293b; margin: 0;">Enviar Mensagem</h3>
+                <span class="close" onclick="fecharModalWpp()" style="cursor: pointer; color: #64748b; font-size: 20px;">×</span>
+            </div>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o tipo de mensagem que deseja enviar para o responsável da família:</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button onclick="enviarWppTemplate('info')" class="btn-novo" style="background-color: #3b82f6; width: 100%;">ℹ️ Informações do Atendimento</button>
+                <button onclick="enviarWppTemplate('gps')" class="btn-novo" style="background-color: #10b981; width: 100%;">📍 Localização GPS da Sepultura</button>
+                <button onclick="enviarWppTemplate('convite')" class="btn-novo" style="background-color: #8b5cf6; width: 100%;">✉️ Convite de Velório (Para Família)</button>
+            </div>
+            <button onclick="enviarSMS()" class="btn-novo" style="background-color: #f59e0b; width: 100%; margin-top: 10px;">💬 Enviar GPS por SMS</button>
+            <button onclick="fecharModalWpp()" class="btn-close" style="width: 100%; margin-top: 15px;">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="modal-onedrive" class="modal">
+        <div class="modal-content" style="max-width: 800px; height: 80vh; display: flex; flex-direction: column; padding: 0;">
+            <div class="modal-header" style="padding: 15px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                <div style="flex-grow: 1;">
+                    <h3 style="margin: 0; color: #1e293b;">Nuvem de Documentos (OneDrive)</h3>
+                    <span style="font-size: 11px; color: #64748b;">Pasta do Atendimento: <strong id="onedrive_nome_pasta" style="color: #0ea5e9;"></strong></span>
+                </div>
+                <span class="close" onclick="fecharModalOneDrive()" style="font-size: 24px; cursor: pointer;">×</span>
+            </div>
+            <div style="padding: 15px 20px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="input_root_onedrive" placeholder="Cole o link da sua pasta raiz compartilhada do OneDrive..." style="flex: 1; min-width: 250px;">
+                <button onclick="salvarRootOneDrive()" class="btn-novo" style="background-color: #10b981; width: auto; padding: 8px 15px;">Salvar Raiz</button>
+                <a id="btn_nova_aba_onedrive" href="#" target="_blank" class="btn-novo" style="background-color: #3b82f6; width: auto; padding: 8px 15px; text-decoration: none;">Abrir Nova Guia</a>
+            </div>
+            <iframe id="iframe_onedrive" src="" style="width: 100%; flex-grow: 1; border: none; background: #f1f5f9;"></iframe>
         </div>
     </div>
     
@@ -888,7 +1027,7 @@
                     <li style="margin-bottom: 8px;"><b>Integração com API Federal:</b> Agora é possível consultar benefícios diretos do Portal da Transparência através de CPF ou NIS. O sistema usa Proxy para contornar bloqueios.</li>
                     <li style="margin-bottom: 8px;"><b>Busca Local Aprimorada:</b> Busca inteligente por nome com sistema de cache de memória para resultados extremamente rápidos.</li>
                     <li style="margin-bottom: 8px;"><b>Visualização Detalhada:</b> Nome completo, CPF formatado e NIS são exibidos no alerta de confirmação de benefício.</li>
-                    <li style="margin-bottom: 8px;"><b>Assinaturas Dinâmicas:</b> Comprovantes e Liberações agora imprimem automaticamente o nome do usuário/atendente que está operando no momento.</li>
+                    <li style="margin-bottom: 8px;"><b>Automação de E-mail:</b> O sistema agora envia os dados do sepultamento direto para o e-mail da família automaticamente com layout idêntico ao comprovante impresso.</li>
                 </ul>
                 <div style="background: #f8fafc; border-left: 4px solid #10b981; padding: 12px; border-radius: 4px; font-size: 13px;">
                     <b>Dica:</b> Para a API Federal funcionar, lembre-se de configurar sua "Chave API" no menu <b>Admin > Configurações</b>.
@@ -900,6 +1039,30 @@
         </div>
     </div>
 
+    <button id="btn-chat-flutuante" onclick="toggleChat()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        Chat Interno
+        <span id="chat-badge">0</span>
+    </button>
+
+    <div id="chat-panel">
+        <div class="chat-header">
+            <span>Comunicação Interna</span>
+            <span class="close-chat" onclick="toggleChat()">×</span>
+        </div>
+        <div class="chat-body" id="chat-body">
+            </div>
+        <div class="chat-footer">
+            <select id="chat-destinatario" style="max-width: 90px; padding: 8px; border-radius: 20px; border: 1px solid #cbd5e1; font-size: 11px; outline: none; background: #f8fafc;" title="Destinatário da Mensagem">
+                <option value="Todos">Todos</option>
+            </select>
+            <input type="text" id="chat-input" placeholder="Digite..." onkeypress="checarChatEnter(event)">
+            <button onclick="enviarMensagemChat()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -908,7 +1071,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js?v=44"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="script.js?v=50"></script>
     <script>
         window.pegarLocalizacaoGPS = function() {
             if (navigator.geolocation) {
@@ -924,6 +1088,38 @@
                 );
             } else {
                 alert("Geolocalização não suportada pelo navegador.");
+            }
+        };
+        
+        window.abrirGMapsRegistro = function() {
+            const coordsInput = document.getElementById('geo_coords');
+            if(!coordsInput) return;
+            const coords = coordsInput.value;
+            if (!coords) {
+                alert("Preencha as coordenadas primeiro.");
+                return;
+            }
+            const cleanCoords = coords.replace(/[^0-9.,\-]/g, '');
+            if (cleanCoords && cleanCoords.includes(',')) {
+                window.open(`https://maps.google.com/?q=${cleanCoords}`, '_blank');
+            } else {
+                alert("Coordenadas inválidas. Use o formato: latitude, longitude");
+            }
+        };
+        
+        window.reenviarEmailAtual = function() {
+            if (!window.dadosAtendimentoAtual) {
+                alert("Nenhum atendimento selecionado.");
+                return;
+            }
+            const emailDestino = window.dadosAtendimentoAtual.resp_email || window.dadosAtendimentoAtual.part_pf_email;
+            if (!emailDestino) {
+                alert("Não há e-mail cadastrado neste atendimento para reenviar o comprovante.");
+                return;
+            }
+            if (confirm(`Deseja reenviar o comprovante para o e-mail: ${emailDestino}?`)) {
+                window.enviarEmailAutomato(window.dadosAtendimentoAtual, emailDestino);
+                alert("Comprovante enviado para a fila de disparo!");
             }
         };
     </script>
