@@ -101,7 +101,7 @@
         .agencia-card-footer { padding: 15px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 10px; }
 
         /* ================================================================= */
-        /* ESTILOS DO CHAT INTERNO (MESSENGER INTRANET) */
+        /* ESTILOS DO CHAT INTERNO E BOTÕES FLUTUANTES */
         /* ================================================================= */
         #btn-chat-flutuante {
             position: fixed; bottom: 20px; right: 20px; background-color: #3b82f6; color: white;
@@ -347,7 +347,7 @@
 
     <div id="modal-transferir-responsavel" class="modal">
         <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
-            <h3 style="color: #1e293b; margin-bottom: 15px;">Repassar Processo</h3>
+            <h3 style="color: #1e293b; margin: bottom: 15px;">Repassar Processo</h3>
             <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o novo responsável por este atendimento na Agência:</p>
             <select id="novo_responsavel_agencia" style="margin-bottom: 15px; font-weight: bold; width: 100%;"><option value="">Carregando equipe...</option></select>
             <label style="text-align: left; margin-bottom: 5px; display: block; color: #475569; font-size: 12px; font-weight: 600;">Justificativa do Repasse (Obrigatório):</label>
@@ -531,7 +531,7 @@
                     <div class="input-group span-2"><label>Funerária</label><input type="text" id="funeraria" list="lista-funerarias" placeholder="Selecione..." required><datalist id="lista-funerarias"><option value="RIO PAX NITERÓI"><option value="FUNERÁRIA SANTA ROSA"><option value="FUNERÁRIA NITERÓI"><option value="FUNERÁRIA SÃO FRANCISCO"><option value="FUNERÁRIA MENINO DEUS"><option value="SAF (ASSISTÊNCIA FAMILIAR)"><option value="PLASIR"><option value="SOCIAL"><option value="DOM BOSCO"><option value="MAVERICK"><option value="PRÓPRIA FAMÍLIA"></datalist></div>
                     <div class="input-group span-2"><label>Rep. Funerária (Se houver)</label><input type="text" id="func_funeraria" placeholder="Nome do funcionário da funerária"></div>
                     <div class="input-group span-1"><label>Isenção?</label><select id="isencao" required><option value="NAO">NÃO (PAGO)</option><option value="SIM">SIM (100% GRATUIDADE)</option><option value="50">SIM (50% DESCONTO)</option></select></div>
-                    <div class="input-group span-1"><label>Requisito Isenção</label><input type="text" id="requisito" list="lista-requisitos" placeholder="Motivo..."><datalist id="lista-requisitos"><option value="CADUNICO / GOVERNO (SISTEMA)"><option value="MOEDA ARARIBOIA"><option value="FUNCIONÁRIO PMN"><option value="OUTRO (DIGITE)"></datalist></div>
+                    <div class="input-group span-1"><label>Requisito Isenção</label><input type="text" id="requisito" list="lista-requisitos" placeholder="Motivo..."><datalist id="lista-requisitos"><option value="CADUNICO / GOVERNO (SISTEMA)"><option value="BOLSA FAMÍLIA (FEDERAL)"><option value="BPC / LOAS (FEDERAL)"><option value="TARIFA SOCIAL (FEDERAL)"><option value="CARTÃO RECOMEÇAR (ESTADUAL RJ)"><option value="SUPERARJ (ESTADUAL RJ)"><option value="ALUGUEL SOCIAL (ESTADUAL RJ)"><option value="MOEDA ARARIBÓIA (MUNICIPAL NITERÓI)"><option value="RENDA BÁSICA TEMPORÁRIA (MUNICIPAL NITERÓI)"><option value="ESCOLA PARCEIRA (MUNICIPAL NITERÓI)"><option value="BUSCA ATIVA (MUNICIPAL NITERÓI)"><option value="AUXÍLIO MORADIA (MUNICIPAL NITERÓI)"><option value="FUNCIONÁRIO PMN"><option value="TIO DE FUNCIONÁRIO"><option value="OUTRO (DIGITE)"></datalist></div>
                     <div class="input-group span-1"><label>Classificação</label><select id="classificacao_obito"><option value="ADULTO">ADULTO</option><option value="ANJO">ANJO (Criança/Natimorto)</option></select></div>
                     <div class="input-group span-3 box-membros-custom">
                         <label class="titulo-membros">Situação: Membros</label>
@@ -881,6 +881,35 @@
 
                 <div id="tab-config" class="tab-pane">
                     <h4 style="color: #334155; margin-bottom: 15px;">Configurações do Sistema</h4>
+                    
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                        <label style="color: #f59e0b; font-weight: bold; font-size: 13px; display: block; margin-bottom: 8px;">📢 Popup de Avisos / Novidades (Tela Inicial)</label>
+                        <p style="font-size: 11px; color: #64748b; margin-top: 0; margin-bottom: 15px;">Configure a mensagem que aparecerá para os usuários ao logarem no sistema. Atualize o "Código da Versão" para forçar que todos vejam o aviso novamente.</p>
+                        
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px;">
+                            <div style="flex: 1; min-width: 250px;">
+                                <label>Título do Aviso</label>
+                                <input type="text" id="config_aviso_titulo" placeholder="Ex: 🚀 Atualizações Importantes!">
+                            </div>
+                            <div style="width: 150px;">
+                                <label>Código da Versão</label>
+                                <input type="text" id="config_aviso_versao" placeholder="Ex: v1.6">
+                            </div>
+                            <div style="width: 120px; display: flex; align-items: flex-end; padding-bottom: 5px;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0; text-transform:none; font-weight:bold; color:#334155;">
+                                    <input type="checkbox" id="config_aviso_ativo"> Ativar Popup
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label>Conteúdo da Mensagem (Suporta HTML: &lt;b&gt;negrito&lt;/b&gt;, &lt;br&gt; para pular linha)</label>
+                            <textarea id="config_aviso_conteudo" rows="6" placeholder="Escreva os avisos, links ou diretrizes aqui..."></textarea>
+                        </div>
+                        
+                        <button onclick="salvarConfiguracoesGerais()" class="btn-novo" style="background-color: #10b981; width: auto;">💾 Salvar Configurações</button>
+                    </div>
+
                     <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
                         <label style="color: #3b82f6; font-weight: bold; font-size: 13px; display: block; margin-bottom: 8px;">Número WhatsApp Fixo (Notificações de Agendamento)</label>
                         <p style="font-size: 11px; color: #64748b; margin-top: 0; margin-bottom: 15px;">Este número receberá a mensagem quando clicar no botão "📲 Notificar Central". Formato: 55 + DDD + Número.</p>
@@ -1018,23 +1047,13 @@
     <div id="modal-novidades" class="modal" style="display:none; z-index: 9999;">
         <div class="modal-content" style="max-width: 600px; background: #fff; padding: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
             <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 20px; text-align: center; color: white;">
-                <h2 style="margin: 0; font-size: 22px; display: flex; align-items: center; justify-content: center; gap: 10px;">🚀 Novidades do Sistema!</h2>
-                <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Confira o que mudou na última atualização</p>
+                <h2 id="aviso-dinamico-titulo" style="margin: 0; font-size: 22px; display: flex; align-items: center; justify-content: center; gap: 10px;">🚀 Novidades do Sistema!</h2>
+                <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Mensagem da Administração</p>
             </div>
-            <div style="padding: 25px; max-height: 60vh; overflow-y: auto; color: #334155; font-size: 14px; line-height: 1.6;">
-                <h4 style="color: #1e293b; margin-top: 0; margin-bottom: 10px; font-size: 16px;">✨ Versão 1.5 - Atualizações Recentes</h4>
-                <ul style="padding-left: 20px; margin-bottom: 20px;">
-                    <li style="margin-bottom: 8px;"><b>Integração com API Federal:</b> Agora é possível consultar benefícios diretos do Portal da Transparência através de CPF ou NIS. O sistema usa Proxy para contornar bloqueios.</li>
-                    <li style="margin-bottom: 8px;"><b>Busca Local Aprimorada:</b> Busca inteligente por nome com sistema de cache de memória para resultados extremamente rápidos.</li>
-                    <li style="margin-bottom: 8px;"><b>Visualização Detalhada:</b> Nome completo, CPF formatado e NIS são exibidos no alerta de confirmação de benefício.</li>
-                    <li style="margin-bottom: 8px;"><b>Automação de E-mail:</b> O sistema agora envia os dados do sepultamento direto para o e-mail da família automaticamente com layout idêntico ao comprovante impresso.</li>
-                </ul>
-                <div style="background: #f8fafc; border-left: 4px solid #10b981; padding: 12px; border-radius: 4px; font-size: 13px;">
-                    <b>Dica:</b> Para a API Federal funcionar, lembre-se de configurar sua "Chave API" no menu <b>Admin > Configurações</b>.
+            <div id="aviso-dinamico-conteudo" style="padding: 25px; max-height: 60vh; overflow-y: auto; color: #334155; font-size: 14px; line-height: 1.6;">
                 </div>
-            </div>
             <div style="background: #f1f5f9; padding: 15px 20px; display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0;">
-                <button onclick="fecharModalNovidades()" class="btn-novo" style="background-color: #3b82f6; width: auto; padding: 10px 25px; font-size: 14px;">Entendi, começar a usar!</button>
+                <button onclick="fecharModalNovidades()" class="btn-novo" style="background-color: #3b82f6; width: auto; padding: 10px 25px; font-size: 14px;">Ciente, fechar aviso!</button>
             </div>
         </div>
     </div>
@@ -1072,7 +1091,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script src="script.js?v=50"></script>
+    <script src="script.js?v=52"></script>
     <script>
         window.pegarLocalizacaoGPS = function() {
             if (navigator.geolocation) {
@@ -1101,7 +1120,7 @@
             }
             const cleanCoords = coords.replace(/[^0-9.,\-]/g, '');
             if (cleanCoords && cleanCoords.includes(',')) {
-                window.open(`https://maps.google.com/?q=${cleanCoords}`, '_blank');
+                window.open(`https://maps.google.com/?q={cleanCoords}`, '_blank');
             } else {
                 alert("Coordenadas inválidas. Use o formato: latitude, longitude");
             }
