@@ -173,6 +173,7 @@
                 <div style="display: flex; gap: 10px; margin-left: 15px; border-left: 2px solid #999; padding-left: 15px; align-items: center;">
                     <button id="nav-btn-acolhimento" class="btn-nav-dashboard active" onclick="alternarDashboard('acolhimento')">🏠 Acolhimento</button>
                     <button id="nav-btn-agencia" class="btn-nav-dashboard" onclick="alternarDashboard('agencia')">🏢 Agência</button>
+                    <button id="nav-btn-sepulturas" class="btn-nav-dashboard" onclick="alternarDashboard('sepulturas')" style="display: none; background-color: #f59e0b; color: white;">🪦 Sepulturas</button>
                 </div>
             </div>
         </div>
@@ -204,6 +205,20 @@
         </div>
     </header>
 
+    <div id="painel-relatorios-rapidos" style="display: none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; padding: 20px; max-width: 1400px; margin: 0 auto 25px auto;">
+        <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+            <span style="font-size: 11px; text-transform: uppercase; font-weight: 600; opacity: 0.9;">Sepultamentos Totais (Dia)</span>
+            <div id="kpi-hoje-total" style="font-size: 28px; font-weight: 800; margin-top: 5px;">0</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+            <span style="font-size: 11px; text-transform: uppercase; font-weight: 600; opacity: 0.9;">Acolhimento Social (100%)</span>
+            <div id="kpi-hoje-isencoes" style="font-size: 28px; font-weight: 800; margin-top: 5px;">0</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">
+            <span style="font-size: 11px; text-transform: uppercase; font-weight: 600; opacity: 0.9;">Atendimentos Particulares</span>
+            <div id="kpi-hoje-particulares" style="font-size: 28px; font-weight: 800; margin-top: 5px;">0</div>
+        </div>
+    </div>
     <div id="dashboard-acolhimento" class="main-content">
         <div class="controles">
             <button onclick="imprimirRelatorio('portrait')" class="btn-imprimir">🖨️ Retrato</button>
@@ -246,6 +261,53 @@
         <div id="tabela-corpo-agencia" class="agencia-grid"></div>
     </div>
 
+    <div id="dashboard-sepulturas" class="main-content hidden">
+        <div class="controles" style="justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h3 style="color: #1e293b; margin: 0; font-size: 18px;">🪦 Gestão de Sepulturas e Exumações</h3>
+                <p style="font-size: 12px; color: #64748b; margin: 5px 0 0 0;">Painel de controle de ocupação, prazos e perpetuidade (Acesso Admin)</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="sincronizarSepulturasComAtendimentos(event)" class="btn-novo" style="background-color: #f59e0b;" title="Puxar dados do Acolhimento para criar as sepulturas automaticamente">🔄 Sincronizar Fichas Antigas</button>
+                <button onclick="alert('Funcionalidade de cadastro avulso em desenvolvimento.')" class="btn-novo" style="background-color: #10b981;">+ Cadastrar Sepultura</button>
+            </div>
+        </div>
+        
+        <div class="controles-topo filtros-minimalistas" style="margin-bottom: 15px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div class="filtro-item" style="flex: 1;">
+                <select id="filtro-local-sepulturas" onchange="window.carregarSepulturas()">
+                    <option value="CEMITÉRIO DO MARUÍ">📍 Maruí</option>
+                    <option value="CEMITÉRIO DE SÃO FRANCISCO">📍 São Francisco</option>
+                    <option value="CEMITÉRIO DE ITAIPU">📍 Itaipu</option>
+                </select>
+            </div>
+            <div class="filtro-item filtro-busca" style="flex: 2;">
+                <input type="text" id="input-busca-sepulturas" placeholder="🔍 Buscar Quadra, Rua ou Nº da Sepultura..." onkeypress="if(event.key === 'Enter') window.carregarSepulturas()">
+                <button onclick="window.carregarSepulturas()" class="btn-busca-mini" title="Pesquisar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="tabela-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">Cemitério</th>
+                        <th style="width: 100px; text-align: center;">QD/Rua</th>
+                        <th style="width: 100px; text-align: center;">Nº Sepul</th>
+                        <th>Tipo / Categoria</th>
+                        <th style="text-align: center;">Status / Prazos</th>
+                        <th>Ocupante(s) Histórico</th>
+                        <th style="text-align: right; width: 80px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-corpo-sepulturas">
+                    <tr><td colspan="7" style="text-align:center; padding: 30px; color:#64748b; font-weight: bold;">Clique no botão "Sincronizar" acima para gerar a base de sepulturas com os dados existentes.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div id="modal-particular" class="modal">
         <div class="modal-content" style="max-width: 650px; background: #fff; padding: 0;">
             <div class="modal-header" style="background: #f3e8ff; border-bottom: 1px solid #e9d5ff; padding: 15px 20px; border-radius: 12px 12px 0 0;">
@@ -347,7 +409,7 @@
 
     <div id="modal-transferir-responsavel" class="modal">
         <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 12px; padding: 30px;">
-            <h3 style="color: #1e293b; margin: bottom: 15px;">Repassar Processo</h3>
+            <h3 style="color: #1e293b; margin-bottom: 15px;">Repassar Processo</h3>
             <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Selecione o novo responsável por este atendimento na Agência:</p>
             <select id="novo_responsavel_agencia" style="margin-bottom: 15px; font-weight: bold; width: 100%;"><option value="">Carregando equipe...</option></select>
             <label style="text-align: left; margin-bottom: 5px; display: block; color: #475569; font-size: 12px; font-weight: 600;">Justificativa do Repasse (Obrigatório):</label>
@@ -531,7 +593,7 @@
                     <div class="input-group span-2"><label>Funerária</label><input type="text" id="funeraria" list="lista-funerarias" placeholder="Selecione..." required><datalist id="lista-funerarias"><option value="RIO PAX NITERÓI"><option value="FUNERÁRIA SANTA ROSA"><option value="FUNERÁRIA NITERÓI"><option value="FUNERÁRIA SÃO FRANCISCO"><option value="FUNERÁRIA MENINO DEUS"><option value="SAF (ASSISTÊNCIA FAMILIAR)"><option value="PLASIR"><option value="SOCIAL"><option value="DOM BOSCO"><option value="MAVERICK"><option value="PRÓPRIA FAMÍLIA"></datalist></div>
                     <div class="input-group span-2"><label>Rep. Funerária (Se houver)</label><input type="text" id="func_funeraria" placeholder="Nome do funcionário da funerária"></div>
                     <div class="input-group span-1"><label>Isenção?</label><select id="isencao" required><option value="NAO">NÃO (PAGO)</option><option value="SIM">SIM (100% GRATUIDADE)</option><option value="50">SIM (50% DESCONTO)</option></select></div>
-                    <div class="input-group span-1"><label>Requisito Isenção</label><input type="text" id="requisito" list="lista-requisitos" placeholder="Motivo..."><datalist id="lista-requisitos"><option value="CADUNICO / GOVERNO (SISTEMA)"><option value="BOLSA FAMÍLIA (FEDERAL)"><option value="BPC / LOAS (FEDERAL)"><option value="TARIFA SOCIAL (FEDERAL)"><option value="CARTÃO RECOMEÇAR (ESTADUAL RJ)"><option value="SUPERARJ (ESTADUAL RJ)"><option value="ALUGUEL SOCIAL (ESTADUAL RJ)"><option value="MOEDA ARARIBÓIA (MUNICIPAL NITERÓI)"><option value="RENDA BÁSICA TEMPORÁRIA (MUNICIPAL NITERÓI)"><option value="ESCOLA PARCEIRA (MUNICIPAL NITERÓI)"><option value="BUSCA ATIVA (MUNICIPAL NITERÓI)"><option value="AUXÍLIO MORADIA (MUNICIPAL NITERÓI)"><option value="FUNCIONÁRIO PMN"><option value="TIO DE FUNCIONÁRIO"><option value="OUTRO (DIGITE)"></datalist></div>
+                    <div class="input-group span-1"><label>Requisito Isenção</label><input type="text" id="requisito" list="lista-requisitos" placeholder="Motivo..."><datalist id="lista-requisitos"><option value="CADUNICO / GOVERNO (SISTEMA)"><option value="BOLSA FAMÍLIA (FEDERAL)"><option value="BPC / LOAS (FEDERAL)"><option value="TARIFA SOCIAL (FEDERAL)"><option value="AUXÍLIO GÁS (FEDERAL)"><option value="CARTÃO RECOMEÇAR (ESTADUAL RJ)"><option value="SUPERARJ (ESTADUAL RJ)"><option value="ALUGUEL SOCIAL (ESTADUAL RJ)"><option value="MOEDA ARARIBÓIA (MUNICIPAL NITERÓI)"><option value="RENDA BÁSICA TEMPORÁRIA (MUNICIPAL NITERÓI)"><option value="ESCOLA PARCEIRA (MUNICIPAL NITERÓI)"><option value="BUSCA ATIVA (MUNICIPAL NITERÓI)"><option value="AUXÍLIO MORADIA (MUNICIPAL NITERÓI)"><option value="FUNCIONÁRIO PMN"><option value="TIO DE FUNCIONÁRIO"><option value="OUTRO (DIGITE)"></datalist></div>
                     <div class="input-group span-1"><label>Classificação</label><select id="classificacao_obito"><option value="ADULTO">ADULTO</option><option value="ANJO">ANJO (Criança/Natimorto)</option></select></div>
                     <div class="input-group span-3 box-membros-custom">
                         <label class="titulo-membros">Situação: Membros</label>
@@ -903,7 +965,7 @@
                         </div>
                         
                         <div style="margin-bottom: 15px;">
-                            <label>Conteúdo da Mensagem (Suporta HTML: &lt;b&gt;negrito&lt;/b&gt;, &lt;br&gt; para pular linha)</label>
+                            <label>Conteúdo da Mensagem (Suporta HTML: <b>negrito</b>, <br> para pular linha)</label>
                             <textarea id="config_aviso_conteudo" rows="6" placeholder="Escreva os avisos, links ou diretrizes aqui..."></textarea>
                         </div>
                         
@@ -1058,6 +1120,20 @@
         </div>
     </div>
 
+    <div id="modal-sepultura" class="modal">
+        <div class="modal-content" style="max-width: 700px; background: #fff; padding: 0;">
+            <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 12px 12px 0 0;">
+                <h3 style="margin: 0; color: #1e293b; font-size: 16px;">Detalhes da Sepultura</h3>
+                <span class="close" onclick="fecharModalSepultura()" style="font-size: 24px; cursor: pointer; color: #64748b;">×</span>
+            </div>
+            <div style="padding: 20px; max-height: 65vh; overflow-y: auto;" id="detalhes-sepultura-conteudo">
+                </div>
+            <div class="modal-footer-custom" style="background: #f8fafc; padding: 15px 20px; border-top: 1px solid #e2e8f0; border-radius: 0 0 12px 12px; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn-close" onclick="fecharModalSepultura()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <button id="btn-chat-flutuante" onclick="toggleChat()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
         Chat Interno
@@ -1091,7 +1167,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script src="script.js?v=52"></script>
+    <script src="script.js?v=53"></script>
+    <script src="sepulturas.js?v=1"></script>
     <script>
         window.pegarLocalizacaoGPS = function() {
             if (navigator.geolocation) {
