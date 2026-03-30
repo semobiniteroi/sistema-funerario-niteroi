@@ -254,3 +254,96 @@ body.design-classico .btn-icon { border: 1px solid #000 !important; border-radiu
     }
 }
 }
+/* ==========================================
+   ESTILOS DO MAPA VISUAL DE OCUPAÇÃO
+   ========================================== */
+.painel-mapa {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.legenda-mapa {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.legenda-item {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.legenda-item span {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    margin-right: 5px;
+    border-radius: 3px;
+    border: 1px solid #333;
+}
+
+.cor-livre { background-color: #4CAF50; } /* Verde */
+.cor-ocupada { background-color: #F44336; } /* Vermelho */
+.cor-alerta { background-color: #FFC107; } /* Amarelo */
+
+/* Estilos do SVG */
+#container-svg-marui svg {
+    width: 100%;
+    max-height: 600px;
+    background-color: #eef2f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.quadra-poligono {
+    stroke: #333;
+    stroke-width: 1px;
+    cursor: pointer;
+    transition: fill 0.3s, stroke-width 0.2s;
+}
+
+.quadra-poligono:hover {
+    stroke-width: 3px;
+    opacity: 0.8;
+}
+
+/* Classes dinâmicas que o JS vai aplicar */
+.status-livre { fill: #4CAF50; }
+.status-ocupada { fill: #F44336; }
+.status-alerta { fill: #FFC107; }
+.status-padrao { fill: #b0bec5; } /* Cinza (sem dados) */
+/* Estilo para a animação do formulário expandível */
+.edit-form-inline {
+    max-height: 0; /* Começa com altura zero */
+    overflow: hidden; /* Esconde o conteúdo */
+    transition: max-height 0.4s ease-out, opacity 0.3s ease; /* Animação suave */
+    opacity: 0;
+    background-color: #f8fafc; /* Um fundo levemente diferente para destacar */
+    border-bottom: 2px solid #e2e8f0;
+}
+
+/* Classe que o JavaScript vai adicionar para "baixar" a janela */
+.edit-form-inline.expanded {
+    max-height: 500px; /* Altura máxima para permitir a animação */
+    opacity: 1;
+    padding: 20px 0; /* Dá um respiro visual ao expandir */
+}
+
+/* Ajuste na linha da tabela para acomodar o formulário */
+.table-equipe-row {
+    display: flex;
+    flex-direction: column; /* Permite que o formulário fique abaixo dos dados */
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* Área dos dados principais (o que aparece antes de expandir) */
+.row-data {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    padding: 10px 0;
+}
